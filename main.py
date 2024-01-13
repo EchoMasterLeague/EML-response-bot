@@ -30,7 +30,7 @@ async def ranks(interaction: discord.Interaction):
 
 @bot.tree.command(name='matches')
 async def matches(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://echomasterleague.com/team-matches-and-results/")
+    await interaction.response.send_message(f"https://echomasterleague.com/season-matches-and-results/")
 
 @bot.tree.command(name='rosters')
 async def rosters(interaction: discord.Interaction):
@@ -60,6 +60,14 @@ async def ticket(interaction: discord.Interaction):
 async def support(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://discord.com/channels/1182380144887865406/1182380148436242476")
 
+@bot.tree.command(name='staff_app')
+async def staff_app(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://echomasterleague.com/staff-application/")
+
+@bot.tree.command(name='calendar')
+async def staff_app(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1195235539289391114/Untitled401_20240111221722.png?ex=65b340d6&is=65a0cbd6&hm=d3d4ca3e5c16c9ef471c47782a4449698609cbb1ef1faf5ec70b9a1f570e98a8&")
+
 @bot.tree.command(name='list_members')
 async def list_members(interaction: discord.Interaction, role_input: str):
     # Get role based on the provided role_input (case-insensitive)
@@ -75,7 +83,7 @@ async def list_members(interaction: discord.Interaction, role_input: str):
         print(f"Role found: {role.name}, {role.id}")
 
         # Get all members with the specified role (case-insensitive comparison)
-        members_with_role = [member.name for member in role.members]
+        members_with_role = [member.display_name for member in role.members]
 
         if members_with_role:
             await interaction.response.send_message(f"Members with the role {role.mention}: {', '.join(members_with_role)}",ephemeral=True)
