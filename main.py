@@ -24,6 +24,30 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+@bot.tree.command(name='help')
+async def help(interaction: discord.Interaction):
+    """
+    Displays information about available commands.
+    """
+    help_message = (
+        "Here are the available commands:\n"
+        "`/ranks`: Display team rankings.\n"
+        "`/matches`: Display season matches and results.\n"
+        "`/rosters`: Display team rosters.\n"
+        "`/registration`: Display registration information.\n"
+        "`/website`: Display the league website.\n"
+        "`/league_rules`: Display league rules.\n"
+        "`/server_coc`: Display server Code of Conduct.\n"
+        "`/ticket`: Display ticket information.\n"
+        "`/support`: Display support information.\n"
+        "`/staff_app`: Display staff application link.\n"
+        "`/calendar`: Display the league calendar.\n"
+        "`/eml_action_list`: Display the EML action list.\n"
+        "`/list_members <role>`: List members with a specific role."
+    )
+
+    await interaction.response.send_message(help_message)
+
 @bot.tree.command(name='ranks')
 async def ranks(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/team-rankings-2/")
@@ -48,8 +72,8 @@ async def website(interaction: discord.Interaction):
 async def league_rules(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/eml-league-rules/")
 
-@bot.tree.command(name='server_coc')
-async def server_coc(interaction: discord.Interaction):
+@bot.tree.command(name='coc')
+async def coc(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://discord.com/channels/1182380144887865406/1182380146506866823")
 
 @bot.tree.command(name='ticket')
@@ -67,6 +91,10 @@ async def staff_app(interaction: discord.Interaction):
 @bot.tree.command(name='calendar')
 async def staff_app(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1195235539289391114/Untitled401_20240111221722.png?ex=65b340d6&is=65a0cbd6&hm=d3d4ca3e5c16c9ef471c47782a4449698609cbb1ef1faf5ec70b9a1f570e98a8&")
+
+@bot.tree.command(name='eml_action_list')
+async def eml_action_list(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/14cDlyY394BzAtXH8AiBeEf-uSM-Mfl_8mfyNCzWUxro/edit?usp=sharing")
 
 @bot.tree.command(name='list_members')
 async def list_members(interaction: discord.Interaction, role_input: str):
