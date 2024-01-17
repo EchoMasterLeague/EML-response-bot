@@ -97,6 +97,10 @@ async def staff_app(interaction: discord.Interaction):
 async def ap(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml")
 
+@bot.tree.command(name='action_list')
+async def action_list(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml")
+
 @bot.tree.command(name='list_members')
 async def list_members(interaction: discord.Interaction, role_input1: str, role_input2: Optional[str] = None):
     # Get the guild from the interaction
