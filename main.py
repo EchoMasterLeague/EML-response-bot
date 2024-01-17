@@ -55,7 +55,7 @@ async def ranks(interaction: discord.Interaction):
 
 @bot.tree.command(name='matches')
 async def matches(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://echomasterleague.com/season-matches-and-results/")
+    await interaction.response.send_message(f"https://echomasterleague.com/current-week-matches-and-results/")
 
 @bot.tree.command(name='rosters')
 async def rosters(interaction: discord.Interaction):
