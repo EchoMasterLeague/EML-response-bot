@@ -93,8 +93,8 @@ async def staff_app(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1195235539289391114/Untitled401_20240111221722.png?ex=65b340d6&is=65a0cbd6&hm=d3d4ca3e5c16c9ef471c47782a4449698609cbb1ef1faf5ec70b9a1f570e98a8&")
 
-@bot.tree.command(name='eml_action_list')
-async def eml_action_list(interaction: discord.Interaction):
+@bot.tree.command(name='ap')
+async def ap(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/14cDlyY394BzAtXH8AiBeEf-uSM-Mfl_8mfyNCzWUxro/edit?usp=sharing")
 
 @bot.tree.command(name='list_members')
