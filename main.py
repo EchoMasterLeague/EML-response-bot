@@ -95,7 +95,7 @@ async def staff_app(interaction: discord.Interaction):
 
 @bot.tree.command(name='ap')
 async def ap(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/14cDlyY394BzAtXH8AiBeEf-uSM-Mfl_8mfyNCzWUxro/edit?usp=sharing")
+    await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml")
 
 @bot.tree.command(name='list_members')
 async def list_members(interaction: discord.Interaction, role_input1: str, role_input2: Optional[str] = None):
