@@ -101,6 +101,10 @@ async def ap(interaction: discord.Interaction):
 async def action_list(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml")
 
+@bot.tree.command(name='lounge_report')
+async def lounge_report(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system. https://discord.gg/echo-combat-lounge-779349159852769310")
+
 @bot.tree.command(name='list_members')
 async def list_members(interaction: discord.Interaction, role_input1: str, role_input2: Optional[str] = None):
     # Get the guild from the interaction
