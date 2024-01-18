@@ -1,0 +1,5 @@
+nose
+sphinx
+discord
+python-dotenv
+gspread
