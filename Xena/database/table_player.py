@@ -70,21 +70,12 @@ class Action:
 
     async def get_player(self, discord_id: str = None, player_name: str = None):
         """Get an existing Player record"""
-        cell_list: List[gspread.cell.Cell] = []
-        if discord_id:
-            cell_list += self.worksheet.findall(
-                query=discord_id,
-                in_column=Field.discord_id + 1,  # `gspread` uses 1-based indexes
-                case_sensitive=False,
-            )
-        if player_name:
-            cell_list += self.worksheet.findall(
-                query=player_name,
-                in_column=Field.player_name + 1,  # `gspread` uses 1-based indexes
-                case_sensitive=False,
-            )
-        for cell in cell_list:
-            row = self.worksheet.row_values(cell.row)
-            record = Record(row)
-            return record
+        table = self.worksheet.get_all_values()
+        for row in table:
+            if (
+                discord_id.casefold() == str(row[Field.discord_id]).casefold()
+                or player_name.casefold() == str(row[Field.player_name]).casefold()
+            ):
+                existing_record = Record(row)
+                return existing_record
         return None

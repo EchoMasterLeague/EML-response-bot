@@ -64,7 +64,7 @@ class Action:
         self, team_id: str, player_id: str, is_captain: bool, is_co_captain: bool
     ):
         """Create a new TeamPlayer record"""
-        existing_record = await self.get_team_player(team_id, player_id)
+        existing_record = await self.get_team_player_record(team_id, player_id)
         if existing_record:
             return None
         record_list = [None] * (len(Field) + 1)  # columns are 1-based
@@ -87,7 +87,7 @@ class Action:
             return None
         return record.to_dict()
 
-    async def get_team_player(self, team_id: str, player_id: str):
+    async def get_team_player_record(self, team_id: str, player_id: str):
         """Get an existing TeamPlayer record"""
         table = self.worksheet.get_all_values()
         for row in table:
@@ -96,4 +96,54 @@ class Action:
                 return existing_record
         return None
 
-    # TODO: get team members, get player team
+    async def get_team_members(self, team_id: str):
+        """Get all TeamPlayer records for a Team"""
+        table = self.worksheet.get_all_values()
+        team_members = []
+        for row in table:
+            if row[Field.team_id] == team_id:
+                team_members.append(Record(row))
+        return team_members
+
+    async def get_player_team(self, player_id: str):
+        """Get the TeamPlayer record for a Player"""
+        table = self.worksheet.get_all_values()
+        for row in table:
+            if row[Field.player_id] == player_id:
+                existing_record = Record(row)
+                return existing_record
+        return None
+
+    async def is_player_main_captain(self, team_player_record: Record):
+        """Check if the Player is a Captain"""
+        record_dict = team_player_record.data_dict
+        return record_dict[Field.is_captain.name] == Bool.TRUE.value
+
+    async def is_player_co_captain(self, team_player_record: Record):
+        """Check if the Player is a Co-Captain"""
+        record_dict = team_player_record.data_dict
+        return record_dict[Field.is_co_captain.name] == Bool.TRUE.value
+
+    async def is_player_any_captain(self, team_player_record: Record):
+        """Check if the Player is any type of Captain"""
+        return self.is_player_main_captain(
+            team_player_record
+        ) or self.is_player_co_captain(team_player_record)
+
+    async def is_player_regular_member(self, team_player_record: Record):
+        """Check if the Player is a Regular Member"""
+        return (
+            self.is_player_main_captain(team_player_record) is False
+            and self.is_player_co_captain(team_player_record) is False
+        )
+
+    async def remove_team_player(self, team_id: str, player_id: str):
+        """Remove a TeamPlayer record"""
+        table = self.worksheet.get_all_values()
+        for row in table:
+            if row[Field.team_id] == team_id and row[Field.player_id] == player_id:
+                self.worksheet.delete_rows(table.index(row) + 1)
+                return True
+        return False
+
+    # TODO: continue here

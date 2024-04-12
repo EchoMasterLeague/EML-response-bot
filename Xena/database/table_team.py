@@ -78,13 +78,9 @@ class Action:
 
     async def get_team(self, team_name: str):
         """Get an existing Team record"""
-        cell_list = self.worksheet.findall(
-            query=team_name,
-            in_column=Field.team_name + 1,  # `gspread` uses 1-based indexes
-            case_sensitive=False,
-        )
-        for cell in cell_list:
-            row = self.worksheet.row_values(cell.row)
-            record = Record(row)
-            return record
+        table = self.worksheet.get_all_values()
+        for row in table:
+            if team_name.casefold() == str(row[Field.team_name]).casefold():
+                existing_record = Record(row)
+                return existing_record
         return None
