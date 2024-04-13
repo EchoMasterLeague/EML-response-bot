@@ -76,11 +76,16 @@ class Action:
             return None
         return record
 
-    async def get_team(self, team_name: str):
+    async def get_team(self, team_id: str = None, team_name: str = None):
         """Get an existing Team record"""
         table = self.worksheet.get_all_values()
         for row in table:
-            if team_name.casefold() == str(row[Field.team_name]).casefold():
+            if (
+                team_id and team_id.casefold() == str(row[Field.record_id]).casefold()
+            ) or (
+                team_name
+                and team_name.casefold() == str(row[Field.team_name]).casefold()
+            ):
                 existing_record = Record(row)
                 return existing_record
         return None

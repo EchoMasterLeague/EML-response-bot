@@ -1,5 +1,5 @@
-from bot_functions import manage_players
-from bot_functions import manage_teams
+from bot_functions.manage_players import ManagePlayers
+from bot_functions.manage_teams import ManageTeams
 from database.database import Database
 import discord
 import discord.ext.commands as commands
@@ -9,14 +9,14 @@ import os
 
 # Configuration
 dotenv.load_dotenv(".secrets/.env")
+GOOGLE_CREDENTIALS_FILE = ".secrets/google_credentials.json"
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-DISCORD_GUILD = os.environ.get("DISCORD_GUILD")
-SERVICE_ACCOUNT_FILE = ".secrets/google_credentials.json"
-
 
 # Google Sheets "Database"
-gs_client = gspread.service_account(SERVICE_ACCOUNT_FILE)
+gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
 database = Database(gs_client)
+manage_players = ManagePlayers(database)
+manage_teams = ManageTeams(database)
 
 # Discord Intents
 intents = discord.Intents.default()
@@ -25,8 +25,8 @@ intents.members = True
 intents.message_content = True
 
 # Discord Bot
-# bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
-bot = commands.Bot(command_prefix=".", intents=intents)
+bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
+# bot = commands.Bot(command_prefix=".", intents=intents)
 
 
 @bot.event
@@ -49,13 +49,13 @@ async def on_ready():
 
 
 @bot.tree.command(name="eml_register_as_player")
-async def bot_player_register(interaction: discord.Interaction):
+async def bot_player_register(interaction: discord.Interaction, region: str = "NA"):
     """Register to become a Player"""
     await interaction.response.send_message(
         await manage_players.register_player(
-            database,
             discord_id=interaction.user.id,
             player_name=interaction.user.display_name,
+            region=region,
         )
     )
 
@@ -67,7 +67,7 @@ async def bot_player_lookup(
     """Lookup a Player by name or Discord ID"""
     await interaction.response.send_message(
         await manage_players.get_player_details(
-            database, player_name=player_name, discord_id=discord_id
+            player_name=player_name, discord_id=discord_id
         )
     )
 
@@ -82,10 +82,9 @@ async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     await interaction.response.send_message(
         await manage_teams.register_team(
-            database,
-            team_name,
+            interaction=interaction,
+            team_name=team_name,
             discord_id=interaction.user.id,
-            player_name=interaction.user.display_name,
         )
     )
 
@@ -93,16 +92,14 @@ async def bot_team_register(interaction: discord.Interaction, team_name: str):
 @bot.tree.command(name="eml_add_player")
 async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Add a new player to your Team"""
-    await interaction.response.send_message(
-        await manage_teams.register_team(database, team_name)
-    )
+    await interaction.response.send_message(await manage_teams.register_team(team_name))
 
 
 @bot.tree.command(name="eml_team_lookup")
 async def bot_team_lookup(interaction: discord.Interaction, team_name: str):
     """Lookup a Team by name"""
     await interaction.response.send_message(
-        await manage_teams.get_team_details(database, team_name)
+        await manage_teams.get_team_details(team_name)
     )
 
 
