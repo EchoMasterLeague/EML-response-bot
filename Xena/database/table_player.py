@@ -25,7 +25,7 @@ class Region(StrEnum):
 
     NorthAmerica = "NA"  # North America
     Europe = "EU"  # Europe
-    AsiaPacific = "APAC"  # Asia-Pacific
+    Oceanic = "OCE"  # Oceanic
 
 
 class Record:
@@ -59,7 +59,9 @@ class Action:
             constants.LEAGUE_DB_TAB_PLAYER
         )
 
-    async def create_player(self, discord_id: str, player_name: str, region: str):
+    async def create_player(
+        self, discord_id: str, player_name: str, region: str
+    ) -> Record | None:
         """Create a new Player record"""
         # Verify Region Validity
         region = region.upper()
@@ -73,7 +75,7 @@ class Action:
         record_list = [None] * len(Field)
         record_list[Field.record_id] = await helpers.random_id()
         record_list[Field.created_at] = await helpers.iso_timestamp()
-        record_list[Field.discord_id] = discord_id
+        record_list[Field.discord_id] = str(discord_id)
         record_list[Field.player_name] = player_name
         record_list[Field.region] = region
         new_record = Record(record_list)
@@ -85,17 +87,41 @@ class Action:
             return None
         return new_record
 
-    async def get_player(self, discord_id: str = None, player_name: str = None):
+    async def get_player(
+        self, record_id: str = None, discord_id: str = None, player_name: str = None
+    ) -> Record:
         """Get an existing Player record"""
         table = self.worksheet.get_all_values()
         for row in table:
             if (
-                discord_id
-                and str(discord_id).casefold() == str(row[Field.discord_id]).casefold()
-            ) or (
-                player_name
-                and player_name.casefold() == str(row[Field.player_name]).casefold()
+                (
+                    record_id
+                    and str(record_id).casefold()
+                    == str(row[Field.record_id]).casefold()
+                )
+                or (
+                    discord_id
+                    and str(discord_id).casefold()
+                    == str(row[Field.discord_id]).casefold()
+                )
+                or (
+                    player_name
+                    and player_name.casefold() == str(row[Field.player_name]).casefold()
+                )
             ):
                 existing_record = Record(row)
                 return existing_record
         return None
+
+    async def get_players_by_region(self, region: str) -> list[Record]:
+        """Get all players from a specific region"""
+        region = region.upper()
+        if region not in [r.value for r in Region]:
+            return None
+        table = self.worksheet.get_all_values()
+        players = []
+        for row in table:
+            if region == row[Field.region]:
+                player = Record(row)
+                players.append(player)
+        return players

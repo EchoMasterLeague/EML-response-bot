@@ -1,6 +1,5 @@
 from database.database import Database
 from enum import IntEnum, StrEnum, verify, EnumCheck
-from typing import List
 import constants
 import database.helpers as helpers
 import gspread
@@ -30,13 +29,13 @@ class Status(StrEnum):
 class Record:
     """Record class for this table"""
 
-    def __init__(self, data_list: List[int | float | str | None]):
+    def __init__(self, data_list: list[int | float | str | None]):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         self.data_dict = {}
         for field in Field:
             self.data_dict[field.name] = data_list[field.value]
 
-    def to_list(self) -> List[int | float | str | None]:
+    def to_list(self) -> list[int | float | str | None]:
         """Return the record as a list of data (e.g. for `gsheets`)"""
         data_list = [None] * len(Field)
         for field in Field:
@@ -58,7 +57,7 @@ class Action:
             constants.LEAGUE_DB_TAB_TEAM
         )
 
-    async def create_team(self, team_name: str):
+    async def create_team(self, team_name: str) -> Record | None:
         """Create a new Team record"""
         existing_record = await self.get_team(team_name)
         if existing_record:
@@ -76,7 +75,9 @@ class Action:
             return None
         return record
 
-    async def get_team(self, team_id: str = None, team_name: str = None):
+    async def get_team(
+        self, team_id: str = None, team_name: str = None
+    ) -> Record | None:
         """Get an existing Team record"""
         table = self.worksheet.get_all_values()
         for row in table:

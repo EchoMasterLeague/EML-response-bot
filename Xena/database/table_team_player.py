@@ -36,12 +36,24 @@ class Record:
         self.data_dict = {}
         for field in Field:
             self.data_dict[field.name] = data_list[field.value]
+        self.data_dict[Field.is_captain.name] = (
+            data_list[Field.is_captain.value] == Bool.TRUE
+        )
+        self.data_dict[Field.is_co_captain.name] = (
+            data_list[Field.is_co_captain.value] == Bool.TRUE
+        )
 
     def to_list(self) -> list[int | float | str | None]:
         """Return the record as a list of data (e.g. for `gsheets`)"""
         data_list = [None] * len(Field)
         for field in Field:
             data_list[field.value] = self.data_dict[field.name]
+        is_captain = self.data_dict[Field.is_captain.name]
+        is_co_captain = self.data_dict[Field.is_co_captain.name]
+        data_list[Field.is_captain.value] = Bool.TRUE if is_captain else Bool.FALSE
+        data_list[Field.is_co_captain.value] = (
+            Bool.TRUE if is_co_captain else Bool.FALSE
+        )
         return data_list
 
     def to_dict(self) -> dict:
@@ -60,45 +72,51 @@ class Action:
         )
 
     async def create_team_player(
-        self, team_id: str, player_id: str, is_captain: bool, is_co_captain: bool
-    ):
+        self,
+        team_id: str,
+        player_id: str,
+        is_captain: bool = False,
+        is_co_captain: bool = False,
+    ) -> Record:
         """Create a new TeamPlayer record"""
         existing_record = await self.get_team_player_records(team_id, player_id)
         if existing_record:
             return None
+        is_captain = Bool.TRUE if is_captain else Bool.FALSE
+        is_co_captain = Bool.TRUE if is_co_captain else Bool.FALSE
         record_list = [None] * len(Field)
         record_list[Field.record_id] = await helpers.random_id()
         record_list[Field.created_at] = await helpers.iso_timestamp()
         record_list[Field.team_id] = team_id
         record_list[Field.player_id] = player_id
-        record_list[Field.is_captain] = (
-            Bool.TRUE.value if is_captain else Bool.FALSE.value
-        )
-        record_list[Field.is_co_captain] = (
-            Bool.TRUE.value if is_co_captain else Bool.FALSE.value
-        )
+        record_list[Field.is_captain] = is_captain
+        record_list[Field.is_co_captain] = is_co_captain
         record = Record(record_list)
         try:
             self.worksheet.append_row(record.to_list())
         except gspread.exceptions.APIError as error:
             print(f"Error: {error}")
             return None
-        return record.to_dict()
+        return record
 
-    async def get_team_player_records(self, team_id: str = None, player_id: str = None):
+    async def get_team_player_records(
+        self, team_id: str = None, player_id: str = None
+    ) -> list[Record]:
         """Get existing TeamPlayer records"""
         table = self.worksheet.get_all_values()
         existing_records: list[Record] = []
         for row in table:
             if (
-                (team_id and team_id.casefold() == str(row[Field.team_id]).casefold())
+                (
+                    (team_id and not player_id)
+                    and team_id.casefold() == str(row[Field.team_id]).casefold()
+                )
                 or (
-                    player_id
+                    (not team_id and player_id)
                     and player_id.casefold() == str(row[Field.player_id]).casefold()
                 )
                 or (
-                    team_id
-                    and player_id
+                    (team_id and player_id)
                     and team_id.casefold() == str(row[Field.team_id]).casefold()
                     and player_id.casefold() == str(row[Field.player_id]).casefold()
                 )
@@ -106,13 +124,26 @@ class Action:
                 existing_records.append(Record(row))
         return existing_records if existing_records else None
 
-    async def remove_team_player(self, team_id: str, player_id: str):
+    async def remove_team_player(self, team_player_id: str) -> bool:
         """Remove a TeamPlayer record"""
         table = self.worksheet.get_all_values()
         for row in table:
-            if row[Field.team_id] == team_id and row[Field.player_id] == player_id:
+            if row[Field.record_id] == team_player_id:
                 self.worksheet.delete_rows(table.index(row) + 1)
                 return True
         return False
 
-    # TODO: continue here
+    async def update_team_player(
+        self, team_player_id: str, is_captain: bool, is_co_captain: bool
+    ) -> bool:
+        """Update a TeamPlayer record"""
+        is_captain_value = Bool.TRUE if is_captain else Bool.FALSE
+        is_co_captain_value = Bool.TRUE if is_co_captain else Bool.FALSE
+        table = self.worksheet.get_all_values()
+        for row in table:
+            if team_player_id == row[Field.record_id]:
+                row[Field.is_captain] = is_captain_value
+                row[Field.is_co_captain] = is_co_captain_value
+                self.worksheet.update(f"A{table.index(row) + 1}", row)
+                return True
+        return False

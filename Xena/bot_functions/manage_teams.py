@@ -1,68 +1,53 @@
-from bot_functions import helpers
-from database.database import Database
-from database import table_team as Team
+from bot_functions import helpers as bot_helpers
+from bot_functions.helpers import DiscordHelpers
+from database.related_records import RelatedRecords
 from database import table_player as Player
+from database import table_team as Team
 from database import table_team_player as TeamPlayer
-import discord
+from database.database import Database
 import constants
+import discord
 
 
-class DiscordHelpers:
-    """Discord Helper Functions"""
+class ManageTeamsHelpers:
+    """EML Team Management Helpers"""
 
-    @staticmethod
-    async def guild_create_role(guild: discord.Guild, role_name: str):
-        """Create a new role in the Discord server"""
-        existing_role = await DiscordHelpers.guild_get_role(guild, role_name)
-        if existing_role:
-            return None
-        return await guild.create_role(name=role_name)
+    ### DISCORD ###
 
     @staticmethod
-    async def guild_get_role(guild: discord.Guild, role_name: str):
-        """Get a role from the Discord server"""
-        return discord.utils.get(guild.roles, name=role_name)
+    async def member_from_discord_id(guild: discord.Guild, discord_id: str):
+        """Get a Guild Member from a Discord ID"""
+        member = guild.get_member(discord_id)
+        if not member:
+            member = await guild.fetch_member(discord_id)
+        return member
 
     @staticmethod
-    async def guild_get_all_roles(guild: discord.Guild):
-        """Get all roles from the Discord server"""
-        return await guild.fetch_roles()
-
-    @staticmethod
-    async def guild_remove_role(guild: discord.Guild, role: discord.Role):
-        """Remove a role from the Discord server"""
-        return await role.delete()
-
-    @staticmethod
-    async def user_add_role(member: discord.Member, role: discord.Role):
-        """Add a role to a member in the Discord server"""
-        existing_role = DiscordHelpers.user_get_role(member, role.name)
-        if existing_role:
-            return None
-        return await member.add_roles(role)
-
-    @staticmethod
-    async def user_get_role(member: discord.Member, role_name: str):
-        """Get a role from a member in the Discord server"""
-        return discord.utils.get(member.roles, name=role_name)
-
-    @staticmethod
-    async def user_get_all_roles(member: discord.Member):
-        """Get all roles from a member in the Discord server"""
-        return member.roles
-
-    @staticmethod
-    async def user_remove_role(member: discord.Member, role: discord.Role):
-        """Remove a role from a member in the Discord server"""
-        return await member.remove_roles(role)
-
-    @staticmethod
-    async def user_remove_team_roles(member: discord.Member):
-        """Remove all team roles from a member in the Discord server"""
+    async def member_remove_team_roles(member: discord.Member):
+        """Remove all Team roles from a Guild Member"""
+        prefixes = [constants.ROLE_PREFIX_TEAM, constants.ROLE_PREFIX_CAPTAIN]
         for role in member.roles:
-            if role.name.startswith(constants.ROLE_PREFIX_TEAM):
+            if any(role.name.startswith(prefix) for prefix in prefixes):
                 await member.remove_roles(role)
         return True
+
+    @staticmethod
+    async def member_add_team_role(member: discord.Member, team_name: str):
+        """Add a Team role to a Guild Member"""
+        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+        role = await DiscordHelpers.guild_role_get_or_create(member.guild, role_name)
+        await member.add_roles(role)
+        return True
+
+    @staticmethod
+    async def member_add_captain_role(member: discord.Member, region: str):
+        """Add a Captain role to a Guild Member"""
+        role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
+        role = await DiscordHelpers.guild_role_get_or_create(member.guild, role_name)
+        await member.add_roles(role)
+        return True
+
+    ### DATABASE ###
 
 
 class ManageTeams:
@@ -70,6 +55,7 @@ class ManageTeams:
 
     def __init__(self, database: Database):
         self.database = database
+        self.related_records = RelatedRecords(database)
         self.table_team = Team.Action(database)
         self.table_player = Player.Action(database)
         self.table_team_player = TeamPlayer.Action(database)
@@ -86,70 +72,81 @@ class ManageTeams:
         - Check if the Player is registered
         - Check if the Player is already on a Team
         - Check if the Team already exists
-        - Create the Team
-        - Add the Player as the Captain of the Team
-        - Create new team role in discord
-        - Add team role to player
-        - Add captain role to player
+        - Create the Team and Captain Database Records
+        - Update Discord roles
         """
         # Check if the Player is registered
         player = await self.table_player.get_player(discord_id=discord_id)
         if not player:
             return f"You must be registered as a player to create a Team."
         # Check if the Player is already on a Team
-        team_players = await self.table_team_player.get_team_player_records(
-            player_id=player.to_dict()[Player.Field.record_id.name]
-        )
-        if team_players:
-            existing_team = await self.table_team.get_team(
-                team_id=team_players[0].to_dict()[TeamPlayer.Field.team_id.name]
-            )
+        existing_team = await self.related_records.get_team_from_player(player)
+        if existing_team:
             return f"You are already on a Team: {existing_team.to_dict()[Team.Field.team_name.name]}"
         # Check if the Team already exists
         existing_team = await self.table_team.get_team(team_name=team_name)
         if existing_team:
             return f"Team already exists: {team_name}"
-        # Create the Team
-        new_team = await self.table_team.create_team(team_name)
-        # Add the Player as the Captain of the Team
+        # Create the Team and Captain Records
+        new_team = await self.related_records.create_new_team_with_captain(
+            team_name, player=player
+        )
         if not new_team:
-            return f"Error: Failed to create Team: {team_name}"
-        new_team_player = await self.table_team_player.create_team_player(
-            new_team.to_dict()[Team.Field.record_id.name],
-            player.to_dict()[Player.Field.record_id.name],
-            is_captain=True,
-            is_co_captain=False,
+            return f"Error: Failed to create Team or add Player as captain: {team_name}"
+        # Update Discord roles
+        await ManageTeamsHelpers.member_remove_team_roles(interaction.user)
+        await ManageTeamsHelpers.member_add_team_role(interaction.user, team_name)
+        await ManageTeamsHelpers.member_add_captain_role(
+            interaction.user, player.to_dict()[Player.Field.region.name]
         )
-        if not new_team_player:
-            return f"Error: Failed to add player to Team: {team_name}"
-        # Create new team role in discord
-        team_role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
-        team_role = DiscordHelpers.guild_create_role(interaction.guild, team_role_name)
-        if not team_role:
-            return f"Error: Failed to create Team role: {team_role_name}"
-        # Remove all team roles from player
-        await DiscordHelpers.user_remove_team_roles(interaction.message.author)
-        # Add team role to player
-        new_captain = interaction.message.author
-        await new_captain.add_roles(captain_role)
-        # Add region-specific captain role to player
-        region = player.to_dict()[Player.Field.region.name]
-        captain_role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
-        captain_role = await DiscordHelpers.guild_get_role(
-            interaction.guild, captain_role_name
-        )
-        if not captain_role:
-            print(f"Creating new role: {captain_role_name}")
-            captain_role = await DiscordHelpers.guild_create_role(
-                interaction.guild, captain_role_name
-            )
-        await new_captain.add_roles(captain_role)
         # Success
-        return f"You are now the captain of Team: {team_name}"
+        return f"You are now the captain of Team: {team_name}\n{await self.get_team_details(team_name)}"
+
+    async def add_player_to_team(
+        self, interaction: discord.Interaction, player_name: str
+    ):
+        """Add a Player to a Team by name"""
+        captain = await self.table_player.get_player(discord_id=interaction.user.id)
+        if not captain:
+            return f"You must be registered as a player to add a Player to a Team."
+        team_player = await self.table_team_player.get_team_player_records(
+            player_id=captain.to_dict()[Player.Field.record_id.name]
+        )
+        if not team_player or not self.related_records.is_any_captain(team_player[0]):
+            return f"You must be a Team captain to add a Player."
+        team = await self.table_team.get_team(
+            team_id=team_player[0].to_dict()[TeamPlayer.Field.team_id.name]
+        )
+        if not team:
+            return f"Your Team could not be found."
+        player = await self.table_player.get_player(player_name=player_name)
+        if not player:
+            return f"Player not found: {player_name}"
+        existing_team = await self.related_records.get_team_from_player(player)
+        if existing_team:
+            return f"Player is already on a Team: {existing_team.to_dict()[Team.Field.team_name.name]}"
+        await self.table_team_player.create_team_player(
+            team_id=team.to_dict()[Team.Field.record_id.name],
+            player_id=player.to_dict()[Player.Field.record_id.name],
+        )
+        # Update Discord roles
+        discord_member = await ManageTeamsHelpers.member_from_discord_id(
+            guild=interaction.guild,
+            discord_id=player.to_dict()[Player.Field.discord_id.name],
+        )
+        team_name = team.to_dict()[Team.Field.team_name.name]
+        await ManageTeamsHelpers.member_remove_team_roles(discord_member)
+        await ManageTeamsHelpers.member_add_team_role(discord_member, team_name)
+        return f"Player '{player_name}' added to Team '{team_name}'"
 
     async def get_team_details(self, team_name: str):
         """Get a Team by name"""
-        response = await self.table_team.get_team(team_name=team_name)
-        if not response:
+        team = await self.table_team.get_team(team_name=team_name)
+        if not team:
             return f"Team not found: {team_name}"
-        return await helpers.format_json(response.to_dict())
+        players = await self.related_records.get_player_records_from_team(team)
+        response = {
+            "team": team.to_dict(),
+            "players": [player.to_dict() for player in players],
+        }
+        return await bot_helpers.format_json(response)

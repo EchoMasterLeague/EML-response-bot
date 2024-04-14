@@ -15,7 +15,9 @@ class ManagePlayers:
         region = region.upper()
         if region not in [r.value for r in Player.Region]:
             return f"Invalid region: '{region}' provided. Valid regions: {', '.join([r.value for r in Player.Region])}"
-        new_player = await self.table_player.create_player(discord_id, player_name)
+        new_player = await self.table_player.create_player(
+            discord_id, player_name, region
+        )
         if new_player:
             return await helpers.format_json(new_player.to_dict())
         else:
@@ -28,7 +30,6 @@ class ManagePlayers:
         existing_player = await self.table_player.get_player(
             discord_id=discord_id, player_name=player_name
         )
-        if existing_player:
-            return await helpers.format_json(existing_player.to_dict())
-        else:
-            return f"Player not found."
+        if not existing_player:
+            return "Player not found."
+        return await helpers.format_json(existing_player.to_dict())

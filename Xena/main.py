@@ -49,7 +49,7 @@ async def on_ready():
 
 
 @bot.tree.command(name="eml_register_as_player")
-async def bot_player_register(interaction: discord.Interaction, region: str = "NA"):
+async def bot_player_register(interaction: discord.Interaction, region: str):
     """Register to become a Player"""
     await interaction.response.send_message(
         await manage_players.register_player(
@@ -90,9 +90,11 @@ async def bot_team_register(interaction: discord.Interaction, team_name: str):
 
 
 @bot.tree.command(name="eml_add_player")
-async def bot_team_register(interaction: discord.Interaction, team_name: str):
+async def bot_team_add_player(interaction: discord.Interaction, player_name: str):
     """Add a new player to your Team"""
-    await interaction.response.send_message(await manage_teams.register_team(team_name))
+    await interaction.response.send_message(
+        await manage_teams.add_player_to_team(interaction, player_name)
+    )
 
 
 @bot.tree.command(name="eml_team_lookup")
