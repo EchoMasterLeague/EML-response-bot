@@ -37,9 +37,13 @@ class PlayerRecord(BaseRecord):
     _fields: Type[PlayerFields]
     _data_dict: dict
 
-    def __init__(self, data_list: list[int | float | str | None]):
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[PlayerFields] = PlayerFields,
+    ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(PlayerFields, data_list)
+        super().__init__(data_list, fields)
         # Conversion / Validaton
         ## Discord ID
         discord_id = self._data_dict[PlayerFields.DISCORD_ID.name]
@@ -72,9 +76,12 @@ class PlayerTable(BaseTable):
     ) -> PlayerRecord:
         """Create a new Player record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_player_record(
-            discord_id=discord_id, player_name=player_name
-        )
+        try:
+            existing_record = await self.get_player_record(
+                discord_id=discord_id, player_name=player_name
+            )
+        except DbErrors.EmlPlayerNotFound:
+            existing_record = None
         if existing_record:
             raise DbErrors.EmlPlayerAlreadyExists(
                 f"Player '{player_name}' already exists"
@@ -84,7 +91,7 @@ class PlayerTable(BaseTable):
         record_list[PlayerFields.DISCORD_ID] = discord_id
         record_list[PlayerFields.PLAYER_NAME] = player_name
         record_list[PlayerFields.REGION] = region
-        new_record = self.create_record(PlayerFields, record_list)
+        new_record = await self.create_record(record_list, PlayerFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
         return new_record
@@ -95,7 +102,7 @@ class PlayerTable(BaseTable):
 
     async def delete_player_record(self, record: PlayerRecord) -> None:
         """Delete an existing Player record"""
-        record_id = record.get_field(PlayerFields.RECORD_ID)
+        record_id = await record.get_field(PlayerFields.RECORD_ID)
         self.delete_record(record_id)
 
     async def get_player_record(
@@ -106,7 +113,7 @@ class PlayerTable(BaseTable):
             raise DbErrors.EmlPlayerNotFound(
                 "At least one of 'record_id', 'discord_id', or 'player_name' is required"
             )
-        table = self.get_table_data()
+        table = await self.get_table_data()
         for row in table:
             if (
                 (
@@ -139,7 +146,7 @@ class PlayerTable(BaseTable):
                 f"Region '{region}' not available. Available Regions: {region_list}"
             )
         # Get the players from the region
-        table = self.get_table_data()
+        table = await self.get_table_data()
         players = []
         for row in table:
             if region == row[PlayerFields.REGION]:

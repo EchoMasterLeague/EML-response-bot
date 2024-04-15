@@ -7,6 +7,7 @@ from database import table_team_player as TeamPlayer
 from database.database import Database
 import constants
 import discord
+import errors.database_errors as DbErrors
 
 
 class ManageTeams:
@@ -19,12 +20,7 @@ class ManageTeams:
         self.table_player = Player.PlayerTable(database)
         self.table_team_player = TeamPlayer.TeamPlayerTable(database)
 
-    async def register_team(
-        self,
-        interaction: discord.Interaction,
-        team_name: str,
-        discord_id: str,
-    ):
+    async def register_team(self, interaction: discord.Interaction, team_name: str):
         """Create a Team with the given name
 
         Process:
@@ -35,15 +31,22 @@ class ManageTeams:
         - Update Discord roles
         """
         # Check if the Player is registered
+        discord_id = interaction.user.id
         player = await self.table_player.get_player_record(discord_id=discord_id)
         if not player:
             return f"You must be registered as a player to create a Team."
         # Check if the Player is already on a Team
-        existing_team = await self.related_records.get_team_from_player(player)
+        try:
+            existing_team = await self.related_records.get_team_from_player(player)
+        except DbErrors.EmlTeamPlayerNotFound:
+            existing_team = None
         if existing_team:
-            return f"You are already on a Team: {existing_team.to_dict()[Team.TeamFields.team_name.name]}"
+            return f"You are already on a Team: {await existing_team.get_field(Team.TeamFields.TEAM_NAME.name)}"
         # Check if the Team already exists
-        existing_team = await self.table_team.get_team(team_name=team_name)
+        try:
+            existing_team = await self.table_team.get_team(team_name=team_name)
+        except DbErrors.EmlTeamNotFound:
+            existing_team = None
         if existing_team:
             return f"Team already exists: {team_name}"
         # Create the Team and Captain Records
@@ -56,7 +59,7 @@ class ManageTeams:
         await ManageTeamsHelpers.member_remove_team_roles(interaction.user)
         await ManageTeamsHelpers.member_add_team_role(interaction.user, team_name)
         await ManageTeamsHelpers.member_add_captain_role(
-            interaction.user, player.to_dict()[Player.Field.region.name]
+            interaction.user, await player.get_field(Player.PlayerFields.REGION.name)
         )
         # Success
         return f"You are now the captain of Team: {team_name}\n{await self.get_team_details(team_name)}"
@@ -71,12 +74,14 @@ class ManageTeams:
         if not captain:
             return f"You must be registered as a player to add a Player to a Team."
         team_player = await self.table_team_player.get_team_player_records(
-            player_id=captain.to_dict()[Player.Field.record_id.name]
+            player_id=await captain.get_field(Player.PlayerFields.RECORD_ID.name)
         )
         if not team_player or not self.related_records.is_any_captain(team_player[0]):
             return f"You must be a Team captain to add a Player."
-        team = await self.table_team.get_team(
-            team_id=team_player[0].to_dict()[TeamPlayer.TeamPlayerFields.TEAM_ID.name]
+        team: Team.TeamRecord = await self.table_team.get_team(
+            team_id=await team_player[0].get_field(
+                TeamPlayer.TeamPlayerFields.TEAM_ID.name
+            )
         )
         if not team:
             return f"Your Team could not be found."
@@ -85,24 +90,27 @@ class ManageTeams:
             return f"Player not found: {player_name}"
         existing_team = await self.related_records.get_team_from_player(player)
         if existing_team:
-            return f"Player is already on a Team: {existing_team.to_dict()[Team.TeamFields.team_name.name]}"
+            return f"Player is already on a Team: {await existing_team.get_field(Team.TeamFields.TEAM_NAME.name)}"
         await self.table_team_player.create_team_player_record(
-            team_id=team.to_dict()[Team.TeamFields.record_id.name],
-            player_id=player.to_dict()[Player.Field.record_id.name],
+            team_id=await team.get_field(Team.TeamFields.RECORD_ID.name),
+            player_id=await player.get_field(Player.PlayerFields.RECORD_ID.name),
         )
         # Update Discord roles
         discord_member = await ManageTeamsHelpers.member_from_discord_id(
             guild=interaction.guild,
-            discord_id=player.to_dict()[Player.Field.discord_id.name],
+            discord_id=await player.get_field(Player.PlayerFields.DISCORD_ID.name),
         )
-        team_name = team.to_dict()[Team.TeamFields.team_name.name]
+        team_name = await team.get_field(Team.TeamFields.TEAM_NAME.name)
         await ManageTeamsHelpers.member_remove_team_roles(discord_member)
         await ManageTeamsHelpers.member_add_team_role(discord_member, team_name)
         return f"Player '{player_name}' added to Team '{team_name}'"
 
     async def get_team_details(self, team_name: str):
         """Get a Team by name"""
-        team = await self.table_team.get_team(team_name=team_name)
+        try:
+            team = await self.table_team.get_team(team_name=team_name)
+        except DbErrors.EmlTeamNotFound:
+            team = None
         if not team:
             return f"Team not found: {team_name}"
         players = await self.related_records.get_player_records_from_team(team)

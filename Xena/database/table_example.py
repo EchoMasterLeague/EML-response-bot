@@ -56,9 +56,9 @@ class ExmapleTable(BaseTable):
         record_list = [None] * len(ExampleFields)
         record_list[ExampleFields.EAXMPLE_A] = example_a
         record_list[ExampleFields.EXAMPLE_B] = example_b
-        new_record = super().create_record(ExampleRecord, record_list)
+        new_record = await self.create_record(ExampleRecord, record_list)
         # Insert the new record into the "database"
-        await super().insert_record(new_record)
+        await self.insert_record(new_record)
         return new_record
 
     async def update_record(self, record: BaseRecord):
@@ -67,7 +67,7 @@ class ExmapleTable(BaseTable):
 
     async def delete_record(self, record: BaseRecord):
         """Delete an existing Example record"""
-        record_id = record.to_dict()[ExampleFields.RECORD_ID]
+        record_id = await record.get_field(ExampleFields.RECORD_ID.name)
         return await super().delete_record(record_id)
 
     async def get_example(
@@ -78,7 +78,7 @@ class ExmapleTable(BaseTable):
             raise DbErrors.EmlRecordNotFound(
                 "At least one of 'record_id', 'example_a', or 'example_b' must be provided"
             )
-        table = self.get_table_data()
+        table = await self.get_table_data()
         for row in table:
             if (
                 (

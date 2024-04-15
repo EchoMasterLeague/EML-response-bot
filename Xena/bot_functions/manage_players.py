@@ -23,7 +23,7 @@ class ManagePlayers:
     ):
         """Create a new Player"""
         discord_id = interaction.user.id
-        player_name = interaction.user.name
+        player_name = interaction.user.display_name
         region = region
         try:
             new_player = await self.table_player.create_player_record(

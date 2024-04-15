@@ -36,9 +36,13 @@ class TeamRecord(BaseRecord):
     _fields: Type[TeamFields]
     _data_dict: dict
 
-    def __init__(self, data_list: list[int | float | str | None]):
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[TeamFields] = TeamFields,
+    ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(TeamFields, data_list)
+        super().__init__(data_list, fields)
         # Conversion / Validaton
         ## Status
         status = self._data_dict[TeamFields.STATUS.name]
@@ -66,14 +70,17 @@ class TeamTable(BaseTable):
     async def create_team(self, team_name: str) -> TeamRecord:
         """Create a new Team record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_team(team_name=team_name)
+        try:
+            existing_record = await self.get_team(team_name=team_name)
+        except DbErrors.EmlTeamNotFound:
+            existing_record = None
         if existing_record:
             raise DbErrors.EmlTeamAlreadyExists(f"Team '{team_name}' already exists")
         # Create the Team record
         record_list = [None] * len(TeamFields)
         record_list[TeamFields.TEAM_NAME] = team_name
         record_list[TeamFields.STATUS] = TeamStatus.ACTIVE
-        new_record = self.create_record(TeamRecord, record_list)
+        new_record = await self.create_record(record_list, TeamFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
         return new_record
@@ -84,7 +91,7 @@ class TeamTable(BaseTable):
 
     async def delete_team(self, record: TeamRecord) -> None:
         """Delete an existing Team record"""
-        record_id = record.get_field(TeamFields.RECORD_ID)
+        record_id = await record.get_field(TeamFields.RECORD_ID)
         await self.delete_record(record_id)
 
     async def get_team(
@@ -95,7 +102,7 @@ class TeamTable(BaseTable):
             raise DbErrors.EmlTeamNotFound(
                 "At least one of 'record_id' or 'team_name' is required"
             )
-        table = self.get_table_data()
+        table = await self.get_table_data()
         for row in table:
             if (
                 not record_id

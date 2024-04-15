@@ -37,15 +37,22 @@ class TeamPlayerRecord(BaseRecord):
     _fields: Type[TeamPlayerFields]
     _data_dict: dict
 
-    def __init__(self, data_list: list[int | float | str | None]):
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[TeamPlayerFields] = TeamPlayerFields,
+    ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(TeamPlayerFields, data_list)
+        super().__init__(data_list, fields)
         # Conversion / Validation
         ## Is Captain
         is_captain = data_list[TeamPlayerFields.IS_CAPTAIN.value]
         is_captain = (
             True
-            if (is_captain == True or is_captain.casefold() == Bool.TRUE.casefold())
+            if (
+                is_captain == True
+                or str(is_captain).casefold() == str(Bool.TRUE).casefold()
+            )
             else False
         )
         self._data_dict[TeamPlayerFields.IS_CAPTAIN.name] = is_captain
@@ -55,17 +62,15 @@ class TeamPlayerRecord(BaseRecord):
             True
             if (
                 is_co_captain == True
-                or is_co_captain.casefold() == Bool.TRUE.casefold()
+                or str(is_co_captain).casefold() == str(Bool.TRUE).casefold()
             )
             else False
         )
         self._data_dict[TeamPlayerFields.IS_CO_CAPTAIN.name] = is_co_captain
 
-    def to_list(self) -> list[int | float | str | None]:
+    async def to_list(self) -> list[int | float | str | None]:
         """Return the record as a list of data (e.g. for `gsheets`)"""
-        data_list = [None] * len(TeamPlayerFields)
-        for field in TeamPlayerFields:
-            data_list[field.value] = self._data_dict[field.name]
+        data_list = await super().to_list()
         # Conversion
         is_captain = self._data_dict[TeamPlayerFields.IS_CAPTAIN.name]
         data_list[TeamPlayerFields.IS_CAPTAIN.value] = (
@@ -76,10 +81,6 @@ class TeamPlayerRecord(BaseRecord):
             Bool.TRUE if is_co_captain else Bool.FALSE
         )
         return data_list
-
-    def to_dict(self) -> dict:
-        """Return the record as a dictionary"""
-        return self._data_dict
 
 
 class TeamPlayerTable(BaseTable):
@@ -101,9 +102,12 @@ class TeamPlayerTable(BaseTable):
     ) -> TeamPlayerRecord:
         """Create a new TeamPlayer record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_team_player_records(
-            team_id=team_id, player_id=player_id
-        )
+        try:
+            existing_record = await self.get_team_player_records(
+                team_id=team_id, player_id=player_id
+            )
+        except DbErrors.EmlTeamPlayerNotFound:
+            existing_record = None
         if existing_record:
             raise DbErrors.EmlTeamPlayerAlreadyExists(
                 f"TeamPlayer '{team_id}' '{player_id}' already exists"
@@ -113,7 +117,7 @@ class TeamPlayerTable(BaseTable):
         record_list[TeamPlayerFields.PLAYER_ID] = player_id
         record_list[TeamPlayerFields.IS_CAPTAIN] = is_captain
         record_list[TeamPlayerFields.IS_CO_CAPTAIN] = is_co_captain
-        new_record = self.create_record(TeamPlayerFields, record_list)
+        new_record = await self.create_record(record_list, TeamPlayerFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
         return new_record
@@ -124,7 +128,7 @@ class TeamPlayerTable(BaseTable):
 
     async def delete_team_player_record(self, record: TeamPlayerRecord) -> None:
         """Delete an existing Player record"""
-        record_id = record.get_field(TeamPlayerFields.RECORD_ID)
+        record_id = await record.get_field(TeamPlayerFields.RECORD_ID)
         self.delete_record(record_id)
 
     async def get_team_player_records(

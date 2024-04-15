@@ -23,7 +23,9 @@ class BaseRecord:
     """Record of a Database Table (row of the worksheet)"""
 
     def __init__(
-        self, fields: Type[BaseFields], data_list: list[int | float | str | None]
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[BaseFields] = BaseFields,
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         self._fields = fields
@@ -42,13 +44,13 @@ class BaseRecord:
         """Return the record as a dictionary"""
         return self._data_dict
 
-    async def get_field(self, field: IntEnum) -> int | float | str | None:
+    async def get_field(self, field_name: str) -> int | float | str | None:
         """Get the value of a field"""
-        return self._data_dict[field.name]
+        return self._data_dict[field_name]
 
-    async def set_field(self, field: IntEnum, value: int | float | str | None) -> None:
+    async def set_field(self, field_name: str, value: int | float | str | None) -> None:
         """Set the value of a field"""
-        self._data_dict[field.name] = value
+        self._data_dict[field_name] = value
 
     async def record_fields(self) -> Type[BaseFields]:
         """Get the Enum fields of the record"""
@@ -83,17 +85,16 @@ class BaseTable:
             )
         return table
 
-    async def test_function():
-        pass
-
     async def create_record(
-        self, fields: Type[BaseFields], data_list: list[int | float | str | None]
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[BaseFields] = BaseFields,
     ):
         """Create a new record"""
         data_list[BaseFields.RECORD_ID] = await helpers.random_id()
         data_list[BaseFields.CREATED_AT] = await helpers.iso_timestamp()
         data_list[BaseFields.UPDATED_AT] = await helpers.iso_timestamp()
-        record = self._record_type(fields, data_list)
+        record = self._record_type(data_list=data_list, fields=fields)
         return record
 
     async def insert_record(self, record: BaseRecord):
@@ -115,7 +116,7 @@ class BaseTable:
 
     async def update_record(self, record: BaseRecord):
         """Update a record in the table"""
-        record_id = record.get_field(BaseFields.RECORD_ID)
+        record_id = await record.get_field(BaseFields.RECORD_ID)
         record.set_field(BaseFields.UPDATED_AT, await helpers.iso_timestamp())
         table = await self.get_table_data()
         for row in table:

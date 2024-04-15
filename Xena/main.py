@@ -68,29 +68,19 @@ async def bot_player_lookup(
 @bot.tree.command(name="eml_create_team")
 async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
-    await interaction.response.send_message(
-        await manage_teams.register_team(
-            interaction=interaction,
-            team_name=team_name,
-            discord_id=interaction.user.id,
-        )
-    )
+    await manage_teams.register_team(interaction=interaction, team_name=team_name)
 
 
 @bot.tree.command(name="eml_add_player")
 async def bot_team_add_player(interaction: discord.Interaction, player_name: str):
     """Add a new player to your Team"""
-    await interaction.response.send_message(
-        await manage_teams.add_player_to_team(interaction, player_name)
-    )
+    await manage_teams.add_player_to_team(interaction, player_name)
 
 
 @bot.tree.command(name="eml_team_lookup")
 async def bot_team_lookup(interaction: discord.Interaction, team_name: str):
     """Lookup a Team by name"""
-    await interaction.response.send_message(
-        await manage_teams.get_team_details(team_name)
-    )
+    await manage_teams.get_team_details(interaction, team_name)
 
 
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###
