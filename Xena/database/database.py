@@ -1,5 +1,6 @@
 import constants
 import gspread
+import errors.database_errors as DbErrors
 
 
 class Database:
@@ -15,32 +16,30 @@ class Database:
 
     def __init__(self, gs_client: gspread.Client):
         """Initialize the Database class"""
+        self.gs_client = gs_client
         try:
-            self.gs_client: gspread.client.Client = gs_client
-            self.table_spreadsheet: gspread.spreadsheet.Spreadsheet = (
-                gs_client.open_by_url(constants.LEAGUE_DB_SPREADSHEET_URL)
+            self.table_spreadsheet = gs_client.open_by_url(
+                constants.LEAGUE_DB_SPREADSHEET_URL
             )
-            self.view_spreadsheet: gspread.spreadsheet.Spreadsheet = (
-                gs_client.open_by_url(constants.LEAGUE_VIEW_SPREADSHEET_URL)
+            self.view_spreadsheet = gs_client.open_by_url(
+                constants.LEAGUE_VIEW_SPREADSHEET_URL
             )
         except gspread.SpreadsheetNotFound as error:
-            print(f"Spreadsheet not found: {error}")
-            self.table_spreadsheet = None
+            raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
 
     def get_db_worksheet(self, title: str) -> gspread.Worksheet:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
             worksheet = self.table_spreadsheet.worksheet(title)
-            return worksheet
         except gspread.WorksheetNotFound as error:
-            print(f"Worksheet not found: {error}")
-            return None
+            raise DbErrors.EmlWorksheetDoesNotExist(f"Worksheet not found: {error}")
+        return worksheet
 
     def get_view_worksheet(self, title: str) -> gspread.Worksheet:
         """Get a worksheet from the View spreadsheet by title"""
         try:
             worksheet = self.view_spreadsheet.worksheet(title)
-            return worksheet
+
         except gspread.WorksheetNotFound as error:
-            print(f"Worksheet not found: {error}")
-            return None
+            raise DbErrors.EmlWorksheetDoesNotExist(f"Worksheet not found: {error}")
+        return worksheet

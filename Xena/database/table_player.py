@@ -1,127 +1,150 @@
+from database.base_table import BaseFields, BaseRecord, BaseTable
 from database.database import Database
 from enum import IntEnum, verify, EnumCheck, StrEnum
+from typing import Type
 import constants
-import database.helpers as helpers
+import errors.database_errors as DbErrors
 import gspread
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class Field(IntEnum):
+class PlayerFields(IntEnum):
     """Lookup for column numbers of fields in this table
 
     note: `gspread` uses 1-based indexes, these are 0-based.
     """
 
-    record_id = 0  # The unique identifier for the record
-    created_at = 1  # The ISO 8601 timestamp of when the record was created
-    discord_id = 2  # Numeric Discord ID of the player
-    player_name = 3  # Display Name of the player
-    region = 4  # Region of the player
+    RECORD_ID = BaseFields.RECORD_ID
+    CREATED_AT = BaseFields.CREATED_AT
+    UPDATED_AT = BaseFields.UPDATED_AT
+    DISCORD_ID = 3  # Numeric Discord ID of the player
+    PLAYER_NAME = 4  # Display Name of the player
+    REGION = 5  # Region of the player
 
 
 @verify(EnumCheck.UNIQUE)
-class Region(StrEnum):
+class Regions(StrEnum):
     """Lookup for Region values in the Player table"""
 
-    NorthAmerica = "NA"  # North America
-    Europe = "EU"  # Europe
-    Oceanic = "OCE"  # Oceanic
+    NA = "NA"  # North America
+    EU = "EU"  # Europe
+    OCE = "OCE"  # Oceanic
 
 
-class Record:
+class PlayerRecord(BaseRecord):
     """Record class for this table"""
+
+    _fields: Type[PlayerFields]
+    _data_dict: dict
 
     def __init__(self, data_list: list[int | float | str | None]):
         """Create a record from a list of data (e.g. from `gsheets`)"""
-        self._data_dict = {}
-        for field in Field:
-            self._data_dict[field.name] = data_list[field.value]
+        super().__init__(PlayerFields, data_list)
+        # Conversion / Validaton
+        ## Discord ID
+        discord_id = self._data_dict[PlayerFields.DISCORD_ID.name]
+        self._data_dict[PlayerFields.DISCORD_ID.name] = str(discord_id)
+        ## Region
+        region = self._data_dict[PlayerFields.REGION.name]
+        region_list = [r.value for r in Regions]
+        for allowed_region in region_list:
+            if str(region).casefold() == allowed_region.casefold():
+                self._data_dict[PlayerFields.REGION.name] = allowed_region
+                break
+        if self._data_dict[PlayerFields.REGION.name] not in region_list:
+            raise DbErrors.EmlPlayerRegionNotFound(
+                f"Region '{region}' not available. Available Regions: {region_list}"
+            )
 
-    def to_list(self) -> list[int | float | str | None]:
-        """Return the record as a list of data (e.g. for `gsheets`)"""
-        data_list = [None] * len(Field)
-        for field in Field:
-            data_list[field.value] = self._data_dict[field.name]
-        return data_list
 
-    def to_dict(self) -> dict:
-        """Return the record as a dictionary"""
-        return self._data_dict
-
-
-class Action:
+class PlayerTable(BaseTable):
     """A class to manipulate the Player table in the database"""
+
+    _db: Database
+    _worksheet: gspread.Worksheet
 
     def __init__(self, db: Database):
         """Initialize the Player Action class"""
-        self.db: Database = db
-        self.worksheet: gspread.worksheet.Worksheet = db.get_db_worksheet(
-            constants.LEAGUE_DB_TAB_PLAYER
-        )
+        super().__init__(db, constants.LEAGUE_DB_TAB_PLAYER, PlayerRecord)
 
-    async def create_player(
+    async def create_player_record(
         self, discord_id: str, player_name: str, region: str
-    ) -> Record | None:
+    ) -> PlayerRecord:
         """Create a new Player record"""
-        # Verify Region Validity
-        region = region.upper()
-        if region not in [r.value for r in Region]:
-            return None
-        # Check if the Player already exists
-        existing_record = await self.get_player(discord_id, player_name)
+        # Check for existing records to avoid duplication
+        existing_record = await self.get_player_record(
+            discord_id=discord_id, player_name=player_name
+        )
         if existing_record:
-            return None
+            raise DbErrors.EmlPlayerAlreadyExists(
+                f"Player '{player_name}' already exists"
+            )
         # Create the Player record
-        record_list = [None] * len(Field)
-        record_list[Field.record_id] = await helpers.random_id()
-        record_list[Field.created_at] = await helpers.iso_timestamp()
-        record_list[Field.discord_id] = str(discord_id)
-        record_list[Field.player_name] = player_name
-        record_list[Field.region] = region
-        new_record = Record(record_list)
+        record_list = [None] * len(PlayerFields)
+        record_list[PlayerFields.DISCORD_ID] = discord_id
+        record_list[PlayerFields.PLAYER_NAME] = player_name
+        record_list[PlayerFields.REGION] = region
+        new_record = self.create_record(PlayerFields, record_list)
         # Insert the new record into the database
-        try:
-            self.worksheet.append_row(new_record.to_list())
-        except gspread.exceptions.APIError as error:
-            print(f"Error: {error}")
-            return None
+        await self.insert_record(new_record)
         return new_record
 
-    async def get_player(
+    async def update_player_record(self, record: PlayerRecord) -> None:
+        """Update an existing Player record"""
+        self.update_record(record)
+
+    async def delete_player_record(self, record: PlayerRecord) -> None:
+        """Delete an existing Player record"""
+        record_id = record.get_field(PlayerFields.RECORD_ID)
+        self.delete_record(record_id)
+
+    async def get_player_record(
         self, record_id: str = None, discord_id: str = None, player_name: str = None
-    ) -> Record:
+    ) -> PlayerRecord:
         """Get an existing Player record"""
-        table = self.worksheet.get_all_values()
+        if record_id is None and discord_id is None and player_name is None:
+            raise DbErrors.EmlPlayerNotFound(
+                "At least one of 'record_id', 'discord_id', or 'player_name' is required"
+            )
+        table = self.get_table_data()
         for row in table:
             if (
                 (
-                    record_id
-                    and str(record_id).casefold()
-                    == str(row[Field.record_id]).casefold()
+                    not record_id
+                    or str(record_id).casefold()
+                    == str(row[PlayerFields.RECORD_ID]).casefold()
                 )
-                or (
-                    discord_id
-                    and str(discord_id).casefold()
-                    == str(row[Field.discord_id]).casefold()
+                and (
+                    not discord_id
+                    or str(discord_id).casefold()
+                    == str(row[PlayerFields.DISCORD_ID]).casefold()
                 )
-                or (
-                    player_name
-                    and player_name.casefold() == str(row[Field.player_name]).casefold()
+                and (
+                    not player_name
+                    or player_name.casefold()
+                    == str(row[PlayerFields.PLAYER_NAME]).casefold()
                 )
             ):
-                existing_record = Record(row)
+                existing_record = PlayerRecord(row)
                 return existing_record
-        return None
+        raise DbErrors.EmlPlayerNotFound("Player not found")
 
-    async def get_players_by_region(self, region: str) -> list[Record]:
+    async def get_players_by_region(self, region: str) -> list[PlayerRecord]:
         """Get all players from a specific region"""
+        # Validate the region
         region = region.upper()
-        if region not in [r.value for r in Region]:
-            return None
-        table = self.worksheet.get_all_values()
+        region_list = [r.value for r in Regions]
+        if region not in region_list:
+            raise DbErrors.EmlPlayerRegionNotFound(
+                f"Region '{region}' not available. Available Regions: {region_list}"
+            )
+        # Get the players from the region
+        table = self.get_table_data()
         players = []
         for row in table:
-            if region == row[Field.region]:
-                player = Record(row)
+            if region == row[PlayerFields.REGION]:
+                player = PlayerRecord(row)
                 players.append(player)
-        return players
+        if players:
+            return players
+        raise DbErrors.EmlPlayerNotFound(f"No Players found in region '{region}'")
