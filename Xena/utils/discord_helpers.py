@@ -1,6 +1,46 @@
 import discord
 
 
+### Responses ###
+
+
+async def respond(interaction: discord.Interaction, response: str) -> True:
+    """Respond to a Discord interaction
+
+    This works fine for quick interactions, under 3 seconds
+    For longer inderactions, use defer and followup.
+    """
+    await interaction.response.send_message(response)
+    return True
+
+
+async def response_ephemeral(interaction: discord.Interaction, response: str) -> True:
+    """Respond to a Discord interaction, but disappear after a few seconds"""
+    await interaction.response.send_message(response, ephemeral=True)
+
+
+async def response_deferral(interaction: discord.Interaction) -> True:
+    """Send intent to respond to an interaction later"""
+    await interaction.response.defer()
+    return True
+
+
+async def response_followup(interaction: discord.Interaction, response: str) -> True:
+    """Send the response to an interaction that was deferred earlier"""
+    await interaction.followup.send(response)
+    return True
+
+
+async def member_from_discord_id(guild: discord.Guild, discord_id: str):
+    """Get a Guild Member from a Discord ID"""
+    member = guild.get_member(discord_id)
+    member = await guild.fetch_member(discord_id) if not member else member
+    return member
+
+
+### Roles ###
+
+
 async def guild_role_get_or_create(
     guild: discord.Guild, role_name: str
 ) -> discord.Role:

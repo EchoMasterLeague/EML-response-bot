@@ -14,13 +14,13 @@ class TeamPlayerFields(IntEnum):
     note: `gspread` uses 1-based indexes, these are 0-based.
     """
 
-    RECORD_ID = BaseFields.RECORD_ID
-    CREATED_AT = BaseFields.CREATED_AT
-    UPDATED_AT = BaseFields.UPDATED_AT
-    TEAM_ID = 3  # The id of the team
-    PLAYER_ID = 4  # The id of the player
-    IS_CAPTAIN = 5  # Whether or not the player is the captain of the team
-    IS_CO_CAPTAIN = 6  # Whether or not the player is a co-captain of the team
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    team_id = 3  # The id of the team
+    player_id = 4  # The id of the player
+    is_captain = 5  # Whether or not the player is the captain of the team
+    is_co_captain = 6  # Whether or not the player is a co-captain of the team
 
 
 @verify(EnumCheck.UNIQUE)
@@ -46,7 +46,7 @@ class TeamPlayerRecord(BaseRecord):
         super().__init__(data_list, fields)
         # Conversion / Validation
         ## Is Captain
-        is_captain = data_list[TeamPlayerFields.IS_CAPTAIN.value]
+        is_captain = data_list[TeamPlayerFields.is_captain.value]
         is_captain = (
             True
             if (
@@ -55,9 +55,9 @@ class TeamPlayerRecord(BaseRecord):
             )
             else False
         )
-        self._data_dict[TeamPlayerFields.IS_CAPTAIN.name] = is_captain
+        self._data_dict[TeamPlayerFields.is_captain.name] = is_captain
         ## Is Co-Captain
-        is_co_captain = data_list[TeamPlayerFields.IS_CO_CAPTAIN.value]
+        is_co_captain = data_list[TeamPlayerFields.is_co_captain.value]
         is_co_captain = (
             True
             if (
@@ -66,18 +66,18 @@ class TeamPlayerRecord(BaseRecord):
             )
             else False
         )
-        self._data_dict[TeamPlayerFields.IS_CO_CAPTAIN.name] = is_co_captain
+        self._data_dict[TeamPlayerFields.is_co_captain.name] = is_co_captain
 
     async def to_list(self) -> list[int | float | str | None]:
         """Return the record as a list of data (e.g. for `gsheets`)"""
         data_list = await super().to_list()
         # Conversion
-        is_captain = self._data_dict[TeamPlayerFields.IS_CAPTAIN.name]
-        data_list[TeamPlayerFields.IS_CAPTAIN.value] = (
+        is_captain = self._data_dict[TeamPlayerFields.is_captain.name]
+        data_list[TeamPlayerFields.is_captain.value] = (
             Bool.TRUE if is_captain else Bool.FALSE
         )
-        is_co_captain = self._data_dict[TeamPlayerFields.IS_CO_CAPTAIN.name]
-        data_list[TeamPlayerFields.IS_CO_CAPTAIN.value] = (
+        is_co_captain = self._data_dict[TeamPlayerFields.is_co_captain.name]
+        data_list[TeamPlayerFields.is_co_captain.value] = (
             Bool.TRUE if is_co_captain else Bool.FALSE
         )
         return data_list
@@ -102,21 +102,19 @@ class TeamPlayerTable(BaseTable):
     ) -> TeamPlayerRecord:
         """Create a new TeamPlayer record"""
         # Check for existing records to avoid duplication
-        try:
-            existing_record = await self.get_team_player_records(
-                team_id=team_id, player_id=player_id
-            )
-        except DbErrors.EmlTeamPlayerNotFound:
-            existing_record = None
+        existing_record = await self.get_team_player_records(
+            team_id=team_id, player_id=player_id
+        )
         if existing_record:
-            raise DbErrors.EmlTeamPlayerAlreadyExists(
+            raise DbErrors.EmlRecordAlreadyExists(
                 f"TeamPlayer '{team_id}' '{player_id}' already exists"
             )
         # Create the TeamPlayer record
         record_list = [None] * len(TeamPlayerFields)
-        record_list[TeamPlayerFields.PLAYER_ID] = player_id
-        record_list[TeamPlayerFields.IS_CAPTAIN] = is_captain
-        record_list[TeamPlayerFields.IS_CO_CAPTAIN] = is_co_captain
+        record_list[TeamPlayerFields.team_id] = team_id
+        record_list[TeamPlayerFields.player_id] = player_id
+        record_list[TeamPlayerFields.is_captain] = is_captain
+        record_list[TeamPlayerFields.is_co_captain] = is_co_captain
         new_record = await self.create_record(record_list, TeamPlayerFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -124,19 +122,19 @@ class TeamPlayerTable(BaseTable):
 
     async def update_team_player_record(self, record: TeamPlayerRecord) -> None:
         """Update an existing Player record"""
-        self.update_record(record)
+        await self.update_record(record)
 
     async def delete_team_player_record(self, record: TeamPlayerRecord) -> None:
         """Delete an existing Player record"""
-        record_id = await record.get_field(TeamPlayerFields.RECORD_ID)
-        self.delete_record(record_id)
+        record_id = await record.get_field(TeamPlayerFields.record_id)
+        await self.delete_record(record_id)
 
     async def get_team_player_records(
         self, record_id: str = None, team_id: str = None, player_id: str = None
     ) -> list[TeamPlayerRecord]:
         """Get existing TeamPlayer records"""
         if record_id is None and team_id is None and player_id is None:
-            raise DbErrors.EmlTeamPlayerNotFound(
+            raise ValueError(
                 "At least one of 'record_id', 'team_id', or 'player_id' is required"
             )
         table = await self.get_table_data()
@@ -146,20 +144,18 @@ class TeamPlayerTable(BaseTable):
                 (
                     not record_id
                     or str(record_id).casefold()
-                    == str(row[TeamPlayerFields.RECORD_ID]).casefold()
+                    == str(row[TeamPlayerFields.record_id]).casefold()
                 )
                 and (
                     not team_id
                     or str(team_id).casefold()
-                    == str(row[TeamPlayerFields.TEAM_ID]).casefold()
+                    == str(row[TeamPlayerFields.team_id]).casefold()
                 )
                 and (
                     not player_id
                     or str(player_id).casefold()
-                    == str(row[TeamPlayerFields.PLAYER_ID]).casefold()
+                    == str(row[TeamPlayerFields.player_id]).casefold()
                 )
             ):
                 existing_records.append(TeamPlayerRecord(row))
-        if existing_records:
-            return existing_records
-        raise DbErrors.EmlTeamPlayerNotFound("TeamPlayer not found")
+        return existing_records

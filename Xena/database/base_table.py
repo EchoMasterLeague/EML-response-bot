@@ -14,9 +14,9 @@ class BaseFields(IntEnum):
     These must be the first three fields in ALL tables.
     """
 
-    RECORD_ID = 0  # The unique identifier for the record
-    CREATED_AT = 1  # The ISO 8601 timestamp of when the record was created
-    UPDATED_AT = 2  # The ISO 8601 timestamp of when the record was last updated
+    record_id = 0  # The unique identifier for the record
+    created_at = 1  # The ISO 8601 timestamp of when the record was created
+    updated_at = 2  # The ISO 8601 timestamp of when the record was last updated
 
 
 class BaseRecord:
@@ -44,24 +44,20 @@ class BaseRecord:
         """Return the record as a dictionary"""
         return self._data_dict
 
-    async def get_field(self, field_name: str) -> int | float | str | None:
+    async def get_field(self, field_enum: int) -> int | float | str | None:
         """Get the value of a field"""
-        return self._data_dict[field_name]
-
-    async def set_field(self, field_name: str, value: int | float | str | None) -> None:
-        """Set the value of a field"""
-        self._data_dict[field_name] = value
-
-    async def record_fields(self) -> Type[BaseFields]:
-        """Get the Enum fields of the record"""
-        return self._fields
-
-    async def list_field_names(self) -> list[str]:
-        """List the fields of the record"""
-        field_list = [None] * len(self._fields)
         for field in self._fields:
-            field_list[field.value] = field.name
-        return field_list
+            if field.value == field_enum:
+                return self._data_dict[field.name]
+        raise ValueError(f"Field '{field_enum}' not found in '{self._fields}'")
+
+    async def set_field(self, field_enum: int, value: int | float | str | None) -> None:
+        """Set the value of a field"""
+        for field in self._fields:
+            if field.value == field_enum:
+                self._data_dict[field.name] = value
+                return
+        raise ValueError(f"Field '{field_enum}' not found in '{self._fields}'")
 
 
 class BaseTable:
@@ -80,7 +76,7 @@ class BaseTable:
         try:
             table = self._worksheet.get_all_values()
         except gspread.exceptions.APIError as error:
-            raise DbErrors.EmlWorksheetRead(
+            raise DbErrors.EmlWorksheetReadError(
                 f"Error reading worksheet: {error.response.text}"
             )
         return table
@@ -91,9 +87,9 @@ class BaseTable:
         fields: Type[BaseFields] = BaseFields,
     ):
         """Create a new record"""
-        data_list[BaseFields.RECORD_ID] = await helpers.random_id()
-        data_list[BaseFields.CREATED_AT] = await helpers.iso_timestamp()
-        data_list[BaseFields.UPDATED_AT] = await helpers.iso_timestamp()
+        data_list[BaseFields.record_id] = await helpers.random_id()
+        data_list[BaseFields.created_at] = await helpers.iso_timestamp()
+        data_list[BaseFields.updated_at] = await helpers.iso_timestamp()
         record = self._record_type(data_list=data_list, fields=fields)
         return record
 
@@ -102,7 +98,7 @@ class BaseTable:
         try:
             self._worksheet.append_row(await record.to_list())
         except gspread.exceptions.APIError as error:
-            raise DbErrors.EmlWorksheetWrite(
+            raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"
             )
 
@@ -110,17 +106,17 @@ class BaseTable:
         """Get a record by its ID"""
         table = await self.get_table_data()
         for row in table:
-            if row[BaseFields.RECORD_ID] == record_id:
+            if row[BaseFields.record_id] == record_id:
                 return self._record_type(row)
         raise DbErrors.EmlRecordNotFound(f"Record '{record_id}' not found")
 
     async def update_record(self, record: BaseRecord):
         """Update a record in the table"""
-        record_id = await record.get_field(BaseFields.RECORD_ID)
-        record.set_field(BaseFields.UPDATED_AT, await helpers.iso_timestamp())
+        record_id = await record.get_field(BaseFields.record_id)
+        await record.set_field(BaseFields.updated_at, await helpers.iso_timestamp())
         table = await self.get_table_data()
         for row in table:
-            if row[BaseFields.RECORD_ID] == record_id:
+            if row[BaseFields.record_id] == record_id:
                 record_list = await record.to_list()
                 self._worksheet.update(f"A{table.index(row) + 1}", [record_list])
                 return
@@ -130,11 +126,11 @@ class BaseTable:
         """Delete a record by its ID"""
         table = await self.get_table_data()
         for row in table:
-            if row[BaseFields.RECORD_ID] == record_id:
+            if row[BaseFields.record_id] == record_id:
                 try:
                     self._worksheet.delete_rows(table.index(row) + 1)
                 except gspread.exceptions.APIError as error:
-                    raise DbErrors.EmlWorksheetWrite(
+                    raise DbErrors.EmlWorksheetWriteError(
                         f"Error writing to worksheet: {error.response.text}"
                     )
                 return

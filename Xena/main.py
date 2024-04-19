@@ -46,12 +46,6 @@ async def on_ready():
 #######################
 
 
-@bot.tree.command(name="eml_register_as_player")
-async def bot_player_register(interaction: discord.Interaction, region: str):
-    """Register to become a Player"""
-    await manage_players.register_player(interaction, region)
-
-
 @bot.tree.command(name="eml_player_lookup")
 async def bot_player_lookup(
     interaction: discord.Interaction, player_name: str = None, discord_id: str = None
@@ -60,15 +54,33 @@ async def bot_player_lookup(
     await manage_players.get_player_details(interaction, player_name, discord_id)
 
 
+@bot.tree.command(name="eml_register_as_player")
+async def bot_player_register(interaction: discord.Interaction, region: str):
+    """Register to become a Player"""
+    await manage_players.register_player(interaction=interaction, region=region)
+
+
+@bot.tree.command(name="eml_unregister_as_player")
+async def bot_player_unregister(interaction: discord.Interaction):
+    """Unregister as a Player"""
+    await manage_players.unregister_player(interaction)
+
+
 #####################
 ### Team Commands ###
 #####################
 
 
+@bot.tree.command(name="eml_team_lookup")
+async def bot_team_lookup(interaction: discord.Interaction, team_name: str):
+    """Lookup a Team by name"""
+    await manage_teams.get_team_details(interaction, team_name)
+
+
 @bot.tree.command(name="eml_create_team")
 async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
-    await manage_teams.register_team(interaction=interaction, team_name=team_name)
+    await manage_teams.register_team(interaction, team_name)
 
 
 @bot.tree.command(name="eml_add_player")
@@ -77,10 +89,34 @@ async def bot_team_add_player(interaction: discord.Interaction, player_name: str
     await manage_teams.add_player_to_team(interaction, player_name)
 
 
-@bot.tree.command(name="eml_team_lookup")
-async def bot_team_lookup(interaction: discord.Interaction, team_name: str):
-    """Lookup a Team by name"""
-    await manage_teams.get_team_details(interaction, team_name)
+@bot.tree.command(name="eml_remove_player")
+async def bot_team_remove_player(interaction: discord.Interaction, player_name: str):
+    """Remove a player from your Team"""
+    await manage_teams.remove_player_from_team(interaction, player_name)
+
+
+@bot.tree.command(name="eml_promote_player")
+async def bot_team_promote_player(interaction: discord.Interaction, player_name: str):
+    """Promote a player to Team Captain"""
+    await manage_teams.promote_player_to_captain(interaction, player_name)
+
+
+@bot.tree.command(name="eml_demote_player")
+async def bot_team_demote_player(interaction: discord.Interaction, player_name: str):
+    """Demote a player from Team Captain"""
+    await manage_teams.demote_player_from_captain(interaction, player_name)
+
+
+@bot.tree.command(name="eml_leave_team")
+async def bot_team_leave(interaction: discord.Interaction):
+    """Leave your current Team"""
+    await manage_teams.leave_team(interaction)
+
+
+@bot.tree.command(name="eml_disband_team")
+async def bot_team_disband(interaction: discord.Interaction):
+    """Disband your Team"""
+    await manage_teams.disband_team(interaction)
 
 
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###

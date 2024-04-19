@@ -15,11 +15,11 @@ class TeamFields(IntEnum):
     note: `gspread` uses 1-based indexes, these are 0-based.
     """
 
-    RECORD_ID = BaseFields.RECORD_ID
-    CREATED_AT = BaseFields.CREATED_AT
-    UPDATED_AT = BaseFields.UPDATED_AT
-    TEAM_NAME = 3  # The name of the team
-    STATUS = 4  # The status of the team
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    team_name = 3  # The name of the team
+    status = 4  # The status of the team
 
 
 @verify(EnumCheck.UNIQUE)
@@ -45,15 +45,15 @@ class TeamRecord(BaseRecord):
         super().__init__(data_list, fields)
         # Conversion / Validaton
         ## Status
-        status = self._data_dict[TeamFields.STATUS.name]
-        status_list = [s.value for s in TeamStatus]
-        for allowed_status in status_list:
-            if str(status).casefold() == allowed_status.casefold():
-                self._data_dict[TeamFields.STATUS.name] = allowed_status
+        status = self._data_dict[TeamFields.status.name]
+        allowed_status_list = [s.value for s in TeamStatus]
+        for allowed_status in allowed_status_list:
+            if str(status).casefold() == str(allowed_status).casefold():
+                self._data_dict[TeamFields.status.name] = allowed_status
                 break
-        if self._data_dict[TeamFields.STATUS.name] not in status_list:
-            raise DbErrors.EmlTeamStatusNotFound(
-                f"Status '{status}' not available. Available Statuses: {status_list}"
+        if self._data_dict[TeamFields.status.name] not in allowed_status_list:
+            raise ValueError(
+                f"Status '{status}' not available. Available Statuses: {allowed_status_list}"
             )
 
 
@@ -67,52 +67,47 @@ class TeamTable(BaseTable):
         """Initialize the Team Action class"""
         super().__init__(db, constants.LEAGUE_DB_TAB_TEAM, TeamRecord)
 
-    async def create_team(self, team_name: str) -> TeamRecord:
+    async def create_team_record(self, team_name: str) -> TeamRecord:
         """Create a new Team record"""
         # Check for existing records to avoid duplication
-        try:
-            existing_record = await self.get_team(team_name=team_name)
-        except DbErrors.EmlTeamNotFound:
-            existing_record = None
+        existing_record = await self.get_team_record(team_name=team_name)
         if existing_record:
-            raise DbErrors.EmlTeamAlreadyExists(f"Team '{team_name}' already exists")
+            raise DbErrors.EmlRecordAlreadyExists(f"Team '{team_name}' already exists")
         # Create the Team record
         record_list = [None] * len(TeamFields)
-        record_list[TeamFields.TEAM_NAME] = team_name
-        record_list[TeamFields.STATUS] = TeamStatus.ACTIVE
+        record_list[TeamFields.team_name] = team_name
+        record_list[TeamFields.status] = TeamStatus.ACTIVE
         new_record = await self.create_record(record_list, TeamFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
         return new_record
 
-    async def update_team(self, record: TeamRecord) -> None:
+    async def update_team_record(self, record: TeamRecord) -> None:
         """Update an existing Team record"""
         await self.update_record(record)
 
-    async def delete_team(self, record: TeamRecord) -> None:
+    async def delete_team_record(self, record: TeamRecord) -> None:
         """Delete an existing Team record"""
-        record_id = await record.get_field(TeamFields.RECORD_ID)
+        record_id = await record.get_field(TeamFields.record_id)
         await self.delete_record(record_id)
 
-    async def get_team(
+    async def get_team_record(
         self, record_id: str = None, team_name: str = None
     ) -> TeamRecord:
         """Get an existing Team record"""
         if record_id is None and team_name is None:
-            raise DbErrors.EmlTeamNotFound(
-                "At least one of 'record_id' or 'team_name' is required"
-            )
+            raise ValueError("At least one of 'record_id' or 'team_name' is required")
         table = await self.get_table_data()
         for row in table:
             if (
                 not record_id
                 or str(record_id).casefold()
-                == str(row[TeamFields.RECORD_ID]).casefold()
+                == str(row[TeamFields.record_id]).casefold()
             ) and (
                 not team_name
                 or str(team_name).casefold()
-                == str(row[TeamFields.RECORD_ID]).casefold()
+                == str(row[TeamFields.team_name]).casefold()
             ):
                 existing_record = TeamRecord(row)
                 return existing_record
-        raise DbErrors.EmlTeamNotFound("Team not found")
+        return None

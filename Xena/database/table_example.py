@@ -14,11 +14,11 @@ class ExampleFields(IntEnum):
     note: `gspread` uses 1-based indexes, these are 0-based.
     """
 
-    RECORD_ID = BaseFields.RECORD_ID
-    CREATED_AT = BaseFields.CREATED_AT
-    UPDATED_AT = BaseFields.UPDATED_AT
-    EAXMPLE_A = 2  # EXAMPLE_A description
-    EXAMPLE_B = 3  # EXAMPLE_B description
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    example_a = 2  # EXAMPLE_A description
+    example_b = 3  # EXAMPLE_B description
 
 
 class ExampleRecord(BaseRecord):
@@ -54,8 +54,8 @@ class ExmapleTable(BaseTable):
             )
         # Create the Example record
         record_list = [None] * len(ExampleFields)
-        record_list[ExampleFields.EAXMPLE_A] = example_a
-        record_list[ExampleFields.EXAMPLE_B] = example_b
+        record_list[ExampleFields.example_a] = example_a
+        record_list[ExampleFields.example_b] = example_b
         new_record = await self.create_record(ExampleRecord, record_list)
         # Insert the new record into the "database"
         await self.insert_record(new_record)
@@ -67,7 +67,7 @@ class ExmapleTable(BaseTable):
 
     async def delete_record(self, record: BaseRecord):
         """Delete an existing Example record"""
-        record_id = await record.get_field(ExampleFields.RECORD_ID.name)
+        record_id = await record.get_field(ExampleFields.record_id)
         return await super().delete_record(record_id)
 
     async def get_example(
@@ -75,7 +75,7 @@ class ExmapleTable(BaseTable):
     ) -> ExampleRecord:
         """Get an existing Example record"""
         if record_id is None and example_a is None and example_b is None:
-            raise DbErrors.EmlRecordNotFound(
+            raise ValueError(
                 "At least one of 'record_id', 'example_a', or 'example_b' must be provided"
             )
         table = await self.get_table_data()
@@ -84,19 +84,19 @@ class ExmapleTable(BaseTable):
                 (
                     not record_id
                     or str(record_id).casefold()
-                    == str(row[ExampleFields.RECORD_ID]).casefold()
+                    == str(row[ExampleFields.record_id]).casefold()
                 )
                 and (
                     not example_a
                     or str(example_a).casefold()
-                    == str(row[ExampleFields.EXAMPLE_A]).casefold()
+                    == str(row[ExampleFields.example_a]).casefold()
                 )
                 and (
                     not example_b
                     or str(example_b).casefold()
-                    == str(row[ExampleFields.EXAMPLE_B]).casefold()
+                    == str(row[ExampleFields.example_b]).casefold()
                 )
             ):
                 existing_record = ExampleRecord(row)
                 return existing_record
-        raise DbErrors.EmlRecordNotFound("Example not found")
+        return None

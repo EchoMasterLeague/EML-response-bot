@@ -14,12 +14,12 @@ class PlayerFields(IntEnum):
     note: `gspread` uses 1-based indexes, these are 0-based.
     """
 
-    RECORD_ID = BaseFields.RECORD_ID
-    CREATED_AT = BaseFields.CREATED_AT
-    UPDATED_AT = BaseFields.UPDATED_AT
-    DISCORD_ID = 3  # Numeric Discord ID of the player
-    PLAYER_NAME = 4  # Display Name of the player
-    REGION = 5  # Region of the player
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    discord_id = 3  # Numeric Discord ID of the player
+    player_name = 4  # Display Name of the player
+    region = 5  # Region of the player
 
 
 @verify(EnumCheck.UNIQUE)
@@ -46,17 +46,17 @@ class PlayerRecord(BaseRecord):
         super().__init__(data_list, fields)
         # Conversion / Validaton
         ## Discord ID
-        discord_id = self._data_dict[PlayerFields.DISCORD_ID.name]
-        self._data_dict[PlayerFields.DISCORD_ID.name] = str(discord_id)
+        discord_id = self._data_dict[PlayerFields.discord_id.name]
+        self._data_dict[PlayerFields.discord_id.name] = str(discord_id)
         ## Region
-        region = self._data_dict[PlayerFields.REGION.name]
+        region = self._data_dict[PlayerFields.region.name]
         region_list = [r.value for r in Regions]
         for allowed_region in region_list:
             if str(region).casefold() == allowed_region.casefold():
-                self._data_dict[PlayerFields.REGION.name] = allowed_region
+                self._data_dict[PlayerFields.region.name] = allowed_region
                 break
-        if self._data_dict[PlayerFields.REGION.name] not in region_list:
-            raise DbErrors.EmlPlayerRegionNotFound(
+        if self._data_dict[PlayerFields.region.name] not in region_list:
+            raise DbErrors.EmlRegionNotFound(
                 f"Region '{region}' not available. Available Regions: {region_list}"
             )
 
@@ -76,21 +76,18 @@ class PlayerTable(BaseTable):
     ) -> PlayerRecord:
         """Create a new Player record"""
         # Check for existing records to avoid duplication
-        try:
-            existing_record = await self.get_player_record(
-                discord_id=discord_id, player_name=player_name
-            )
-        except DbErrors.EmlPlayerNotFound:
-            existing_record = None
+        existing_record = await self.get_player_record(
+            discord_id=discord_id, player_name=player_name
+        )
         if existing_record:
-            raise DbErrors.EmlPlayerAlreadyExists(
+            raise DbErrors.EmlRecordAlreadyExists(
                 f"Player '{player_name}' already exists"
             )
         # Create the Player record
         record_list = [None] * len(PlayerFields)
-        record_list[PlayerFields.DISCORD_ID] = discord_id
-        record_list[PlayerFields.PLAYER_NAME] = player_name
-        record_list[PlayerFields.REGION] = region
+        record_list[PlayerFields.discord_id] = discord_id
+        record_list[PlayerFields.player_name] = player_name
+        record_list[PlayerFields.region] = region
         new_record = await self.create_record(record_list, PlayerFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -102,15 +99,15 @@ class PlayerTable(BaseTable):
 
     async def delete_player_record(self, record: PlayerRecord) -> None:
         """Delete an existing Player record"""
-        record_id = await record.get_field(PlayerFields.RECORD_ID)
-        self.delete_record(record_id)
+        record_id = await record.get_field(PlayerFields.record_id)
+        await self.delete_record(record_id)
 
     async def get_player_record(
         self, record_id: str = None, discord_id: str = None, player_name: str = None
     ) -> PlayerRecord:
         """Get an existing Player record"""
         if record_id is None and discord_id is None and player_name is None:
-            raise DbErrors.EmlPlayerNotFound(
+            raise ValueError(
                 "At least one of 'record_id', 'discord_id', or 'player_name' is required"
             )
         table = await self.get_table_data()
@@ -119,39 +116,42 @@ class PlayerTable(BaseTable):
                 (
                     not record_id
                     or str(record_id).casefold()
-                    == str(row[PlayerFields.RECORD_ID]).casefold()
+                    == str(row[PlayerFields.record_id]).casefold()
                 )
                 and (
                     not discord_id
                     or str(discord_id).casefold()
-                    == str(row[PlayerFields.DISCORD_ID]).casefold()
+                    == str(row[PlayerFields.discord_id]).casefold()
                 )
                 and (
                     not player_name
                     or player_name.casefold()
-                    == str(row[PlayerFields.PLAYER_NAME]).casefold()
+                    == str(row[PlayerFields.player_name]).casefold()
                 )
             ):
                 existing_record = PlayerRecord(row)
                 return existing_record
-        raise DbErrors.EmlPlayerNotFound("Player not found")
+        return None
 
     async def get_players_by_region(self, region: str) -> list[PlayerRecord]:
         """Get all players from a specific region"""
         # Validate the region
-        region = region.upper()
-        region_list = [r.value for r in Regions]
-        if region not in region_list:
-            raise DbErrors.EmlPlayerRegionNotFound(
-                f"Region '{region}' not available. Available Regions: {region_list}"
+        is_region_allowed = False
+        allowed_region_list = [r.value for r in Regions]
+        for allowed_region in allowed_region_list:
+            if region.casefold() == allowed_region.casefold():
+                region = allowed_region
+                is_region_allowed = True
+                break
+        if not is_region_allowed:
+            raise DbErrors.EmlRegionNotFound(
+                f"Region '{region}' not available. Available Regions: {allowed_region_list}"
             )
         # Get the players from the region
         table = await self.get_table_data()
         players = []
         for row in table:
-            if region == row[PlayerFields.REGION]:
+            if region == row[PlayerFields.region]:
                 player = PlayerRecord(row)
                 players.append(player)
-        if players:
-            return players
-        raise DbErrors.EmlPlayerNotFound(f"No Players found in region '{region}'")
+        return players
