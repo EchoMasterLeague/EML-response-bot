@@ -29,7 +29,7 @@ class ManagePlayers:
     ):
         """Create a new Player"""
         try:
-            await discord_helpers.response_deferral(interaction)
+            await interaction.response.defer()
             discord_id = interaction.user.id
             player_name = interaction.user.display_name
             try:
@@ -45,10 +45,10 @@ class ManagePlayers:
             except database_errors.EmlRegionNotFound:
                 available_regions = [r.value for r in Regions]
                 message = f"Region '{region}' not available. Available Regions: {available_regions}"
-            await discord_helpers.response_followup(interaction, message)
+            return await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
-            await discord_helpers.response_followup(interaction, message)
+            await interaction.followup.send(message)
             raise error
 
     async def unregister_player(self, interaction: discord.Interaction):
@@ -60,8 +60,7 @@ class ManagePlayers:
             )
             if not existing_player:
                 message = f"You are not registered."
-                await discord_helpers.response_followup(interaction, message)
-                return
+                return await interaction.followup.send(message)
             existing_player_id = await existing_player.get_field(PlayerFields.record_id)
             existing_team_players = (
                 await self.table_team_player.get_team_player_records(
@@ -73,14 +72,13 @@ class ManagePlayers:
             )
             if existing_team_player:
                 message = f"You must leave your team before unregistering."
-                await discord_helpers.response_followup(interaction, message)
-                return
+                return await interaction.followup.send(message)
             await self.table_player.delete_player_record(existing_player)
             message = f"You are no longer registered as a player"
-            await discord_helpers.response_followup(interaction, message)
+            return await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
-            await discord_helpers.response_followup(interaction, message)
+            await interaction.followup.send(message)
             raise error
 
     async def get_player_details(
@@ -91,18 +89,16 @@ class ManagePlayers:
     ):
         """Get a Player by name or Discord ID"""
         try:
-            await discord_helpers.response_deferral(interaction)
+            await interaction.response.defer()
             if not player_name and not discord_id:
                 message = "No player_name or discord_id provided."
-                await discord_helpers.response_followup(interaction, message)
-                return
+                return await interaction.followup.send(message)
             existing_player = await self.table_player.get_player_record(
                 discord_id=discord_id, player_name=player_name
             )
             if not existing_player:
                 message = f"Player not found."
-                await discord_helpers.response_followup(interaction, message)
-                return
+                return await interaction.followup.send(message)
             player_dict = await existing_player.to_dict()
             existing_team = await self.related_records.get_team_from_player(
                 existing_player
@@ -113,10 +109,10 @@ class ManagePlayers:
                 "team": team_dict,
             }
             message = await general_helpers.format_json(message_dict)
-            await discord_helpers.response_followup(interaction, message)
+            return await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
-            await discord_helpers.response_followup(interaction, message)
+            await interaction.followup.send(message)
             raise error
 
 
