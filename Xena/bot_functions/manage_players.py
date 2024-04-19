@@ -54,6 +54,7 @@ class ManagePlayers:
     async def unregister_player(self, interaction: discord.Interaction):
         """Unregister a Player"""
         try:
+            await interaction.response.defer()
             discord_id = interaction.user.id
             existing_player = await self.table_player.get_player_record(
                 discord_id=discord_id

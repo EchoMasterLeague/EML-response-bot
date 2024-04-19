@@ -405,8 +405,12 @@ class ManageTeams:
                     message = f"Cannot leave as main Team captain without a co-captain."
                     return await interaction.followup.send(message)
                 # promote the co-captain to captain
-                co_captain_team_player.set_field(TeamPlayerFields.is_captain, True)
-                co_captain_team_player.set_field(TeamPlayerFields.is_co_captain, False)
+                await co_captain_team_player.set_field(
+                    TeamPlayerFields.is_captain, True
+                )
+                await co_captain_team_player.set_field(
+                    TeamPlayerFields.is_co_captain, False
+                )
             # Remove the Player from the Team
             await self.table_team_player.delete_team_player_record(
                 requestor_team_player
@@ -446,7 +450,7 @@ class ManageTeams:
             if not requestor_team_player:
                 message = f"You must be on a Team to disband."
                 return await interaction.followup.send(message)
-            requestor_is_captain = requestor_team_player.get_field(
+            requestor_is_captain = await requestor_team_player.get_field(
                 TeamPlayerFields.is_captain
             )
             if not requestor_is_captain:
