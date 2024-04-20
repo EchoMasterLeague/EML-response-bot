@@ -179,23 +179,23 @@ class ManageTeams:
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
             team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
+            team_players = await self.table_team_player.get_team_player_records(
+                team_id=team_id
+            )
             # Get info about the Player
             player = await self.table_player.get_player_record(player_name=player_name)
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
-            team_players = await self.table_team_player.get_team_player_records(
-                team_id=team_id, player_id=player_id
+            player_team_player = None
+            for team_player in team_players:
+                if await team_player.get_field(TeamPlayerFields.player_id) == player_id:
+                    player_team_player = team_player
+            assert player_team_player, f"Player is not on the team."
+            player_is_captain = await player_team_player.get_field(
+                TeamPlayerFields.is_captain
             )
-            assert team_players, f"Player is not on the team."
-            team_player = team_players[0]
-            player_is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
             assert not player_is_captain, f"Cannot remove the team captain"
-            # Remove the Player from the Team
-            await self.table_team_player.delete_team_player_record(
-                team_id=team_id,
-                player_id=player_id,
-            )
             # Update Player's Discord roles
             player_discord_id = await player.get_field(PlayerFields.discord_id)
             player_discord_member = await discord_helpers.member_from_discord_id(
@@ -203,6 +203,8 @@ class ManageTeams:
                 discord_id=player_discord_id,
             )
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
+            # Remove the Player from the Team
+            await self.table_team_player.delete_team_player_record(player_team_player)
             # Success
             message = f"Player '{player_name}' removed from team '{team_name}'"
             return await interaction.followup.send(message)
