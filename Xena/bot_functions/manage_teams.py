@@ -1,6 +1,5 @@
 import utils.general_helpers as bot_helpers
 from utils import discord_helpers
-from database.related_records import RelatedRecords
 from database.database import Database
 import constants
 import discord
@@ -19,7 +18,6 @@ class ManageTeams:
 
     def __init__(self, database: Database):
         self.database = database
-        self.related_records = RelatedRecords(database)
         self.table_team = TeamTable(database)
         self.table_player = PlayerTable(database)
         self.table_team_player = TeamPlayerTable(database)
@@ -40,46 +38,37 @@ class ManageTeams:
             # Check if the Player is registered
             discord_id = interaction.user.id
             player = await self.table_player.get_player_record(discord_id=discord_id)
-            if not player:
-                message = f"You must be registered as a player to create a Team."
-                return await interaction.followup.send(message)
-            # Check if the Player is already on a Team
-            existing_team = await self.related_records.get_team_from_player(player)
-            if existing_team:
-                existing_team_name = await existing_team.get_field(TeamFields.team_name)
-                message = f"You are already on a Team: {existing_team_name}"
-                return await interaction.followup.send(message)
+            assert player, f"You must be registered as a player to create a team."
             # Check if the Team already exists
             existing_team = await self.table_team.get_team_record(team_name=team_name)
-            if existing_team:
-                message = f"Team already exists: {team_name}"
-                return await interaction.followup.send(message)
-            # Create the Team and Captain Records
-            try:
-                new_team = await self.related_records.create_new_team_with_captain(
-                    team_name=team_name, player=player
-                )
-            except DbErrors.EmlRecordNotInserted:
-                message = f"Error: Failed to create Team: {team_name}"
-                return await interaction.followup.send(message)
-            team_id = await new_team.get_field(TeamFields.record_id)
+            assert not existing_team, f"Team already exists."
+            # Check if the Player is already on a Team
             player_id = await player.get_field(PlayerFields.record_id)
-            team_players = await self.table_team_player.get_team_player_records(
-                team_id=team_id, player_id=player_id
+            existing_team = await self.table_team_player.get_team_player_records(
+                player_id=player_id
             )
-            team_player = team_players[0] if team_players else None
-            if not team_player:
-                message = f"Error: Failed to add Captain: {team_name}"
-                return await interaction.followup.send(message)
+            assert not existing_team, f"You are already on a team."
+            # Create the Team and Captain Records
+            new_team = await self.table_team.create_team_record(team_name=team_name)
+            assert new_team, f"Error: Could not create team."
+            team_id = await new_team.get_field(TeamFields.record_id)
+            team_player = await self.table_team_player.create_team_player_record(
+                team_id=team_id,
+                player_id=player_id,
+                is_captain=True,
+            )
+            assert team_player, f"Error: Could not add team captain."
             # Update Discord roles
-            member = interaction.user
+            discord_member = interaction.user
             region = await player.get_field(PlayerFields.region)
-            await ManageTeamsHelpers.member_remove_team_roles(member)
-            await ManageTeamsHelpers.member_add_team_role(member, team_name)
-            await ManageTeamsHelpers.member_add_captain_role(member, region)
+            await ManageTeamsHelpers.member_remove_team_roles(discord_member)
+            await ManageTeamsHelpers.member_add_team_role(discord_member, team_name)
+            await ManageTeamsHelpers.member_add_captain_role(discord_member, region)
             # Success
-            message = f"You are now the captain of Team: {team_name}"
+            message = f"Team created: '{team_name}'"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
@@ -96,52 +85,63 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            if not requestor:
-                message = f"You must be registered as a Player to add a Player"
-                return await interaction.followup.send(message)
-            requestor_player_id = await requestor.get_field(PlayerFields.record_id)
-            requestor_team_player = (
+            assert requestor, f"You must be registered as a Player to add a Player."
+            requestor_region = await requestor.get_field(PlayerFields.region)
+            requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
-                    player_id=requestor_player_id
+                    player_id=await requestor.get_field(PlayerFields.record_id)
                 )
             )
-            requestor_team_player = requestor_team_player[0]
-            if not requestor_team_player:
-                message = f"You must be on a Team to add a Player."
-                return await interaction.followup.send(message)
-            requestor_is_captain = await self.related_records.is_any_captain(requestor)
-            if not requestor_is_captain:
-                message = f"You must be a Team captain to add a Player."
-                return await interaction.followup.send(message)
-            # Get info about the Team and new Player
+            assert requestor_team_players, f"You must be on a Team to add a Player."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = False
+            for captain_field in [
+                TeamPlayerFields.is_captain,
+                TeamPlayerFields.is_co_captain,
+            ]:
+                is_captain = await requestor_team_player.get_field(captain_field)
+                requestor_is_captain = True if requestor_is_captain else is_captain
+            assert requestor_is_captain, "You must be a team captain to add a Player."
+            # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
+            team_players = await self.table_team_player.get_team_player_records(
+                team_id=team_id
+            )
+            assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
+            team = await self.table_team.get_team_record(record_id=team_id)
+            team_name = await team.get_field(TeamFields.team_name)
+            # Get info about the Player
             player = await self.table_player.get_player_record(player_name=player_name)
+            assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
+            player_region = await player.get_field(PlayerFields.region)
+            assert player_region == requestor_region, f"Player must be in same region."
             player_id = await player.get_field(PlayerFields.record_id)
-            existing_team = await self.related_records.get_team_from_player(player)
-            if existing_team:
-                existing_team_name = await existing_team.get_field(TeamFields.team_name)
-                message = f"Player is already on a Team: {existing_team_name}"
-                return await interaction.followup.send(message)
+            existing_team_player = await self.table_team_player.get_team_player_records(
+                player_id=player_id
+            )
+            assert not existing_team_player, f"Player is already on a team."
             # Add the Player to the Team
-            await self.table_team_player.create_team_player_record(
+            new_team_player = await self.table_team_player.create_team_player_record(
                 team_id=team_id,
                 player_id=player_id,
             )
+            assert new_team_player, f"Error: Could not add Player to Team."
             # Update Player's Discord roles
             player_discord_id = await player.get_field(PlayerFields.discord_id)
             player_discord_member = await discord_helpers.member_from_discord_id(
                 guild=interaction.guild,
                 discord_id=player_discord_id,
             )
-            team_name = await team.get_field(TeamFields.team_name)
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
             await ManageTeamsHelpers.member_add_team_role(
                 player_discord_member, team_name
             )
             # Success
-            message = f"Player '{player_name}' added to Team '{team_name}'"
+            message = f"Player '{player_name}' added to team '{team_name}'"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
@@ -158,38 +158,39 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            if not requestor:
-                message = f"You must be registered as a Player to remove a Player from a Team."
-                return await interaction.followup.send(message)
+            assert requestor, f"You must registered to remove players"
             requestor_player_id = await requestor.get_field(PlayerFields.record_id)
-            requestor_team_player = (
+            requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
                     player_id=requestor_player_id
                 )
             )
-            requestor_team_player = requestor_team_player[0]
-            if not requestor_team_player:
-                message = f"You must be on a Team to remove a Player."
-                return await interaction.followup.send(message)
-            requestor_is_captain = await self.related_records.is_any_captain(requestor)
-            if not requestor_is_captain:
-                message = f"You must be a Team captain to remove a Player."
-                return await interaction.followup.send(message)
-            # Get info about the Team and Player to remove
+            assert requestor_team_players, f"You must be on a team to remove players."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = False
+            for captain_field in [
+                TeamPlayerFields.is_captain,
+                TeamPlayerFields.is_co_captain,
+            ]:
+                is_captain = await requestor_team_player.get_field(captain_field)
+                requestor_is_captain = True if requestor_is_captain else is_captain
+            assert requestor_is_captain, "You must be a team captain to remove players."
+            # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
+            team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
+            team_name = await team.get_field(TeamFields.team_name)
+            # Get info about the Player
             player = await self.table_player.get_player_record(player_name=player_name)
+            assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
-            team_player = await self.table_team_player.get_team_player_records(
+            team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id, player_id=player_id
             )
-            if not team_player:
-                message = f"Player is not on the Team: {player_name}"
-                return await interaction.followup.send(message)
-            team_player = team_player[0]
+            assert team_players, f"Player is not on the team."
+            team_player = team_players[0]
             player_is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
-            if player_is_captain:
-                message = f"Cannot remove main Team captain: {player_name}"
-                return await interaction.followup.send(message)
+            assert not player_is_captain, f"Cannot remove the team captain"
             # Remove the Player from the Team
             await self.table_team_player.delete_team_player_record(
                 team_id=team_id,
@@ -203,16 +204,16 @@ class ManageTeams:
             )
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
             # Success
-            team: TeamRecord = await self.table_team.get_team_record(team_id=team_id)
-            team_name = await team.get_field(TeamFields.team_name)
-            message = f"Player '{player_name}' removed from Team '{team_name}'"
+            message = f"Player '{player_name}' removed from team '{team_name}'"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
             raise error
 
-    async def promote_player_to_captain(
+    async def promote_player_to_co_captain(
         self, interaction: discord.Interaction, player_name
     ):
         """Promote a Player to Team captain"""
@@ -223,49 +224,48 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
+            assert requestor, f"You must be registered as a player to promote players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
-            # Get info about the player
-            player = await self.table_player.get_player_record(player_name=player_name)
-            player_id = await player.get_field(PlayerFields.record_id)
-            # Get info about the team
-            team = await self.related_records.get_team_from_player(requestor)
-            team_id = await team.get_field(TeamFields.record_id)
+            requestor_team_players = (
+                await self.table_team_player.get_team_player_records(
+                    player_id=requestor_id
+                )
+            )
+            assert requestor_team_players, f"You must be on a team to promote players."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = await requestor_team_player.get_field(
+                TeamPlayerFields.is_captain
+            )
+            assert requestor_is_captain, f"You must be team captain to promote players."
+            # Get info about the Team
+            team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
             )
-            captain_id = None
+            # Get info about co-captain
             co_captain_id = None
-            player_team_player_record = None
             for team_player in team_players:
-                if await team_player.get_field(TeamPlayerFields.is_captain):
-                    captain_id = await team_player.get_field(TeamPlayerFields.player_id)
                 if await team_player.get_field(TeamPlayerFields.is_co_captain):
                     co_captain_id = await team_player.get_field(
                         TeamPlayerFields.player_id
                     )
+            assert not co_captain_id, f"Team already has a co-captain."
+            # Get info about the Player
+            player = await self.table_player.get_player_record(player_name=player_name)
+            assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
+            player_id = await player.get_field(PlayerFields.record_id)
+            player_team_player = None
+            for team_player in team_players:
                 if await team_player.get_field(TeamPlayerFields.player_id) == player_id:
-                    player_team_player_record = team_player
-            # Get info about the Team captains
-            requestor_id = await requestor.get_field(PlayerFields.record_id)
-            requestor_is_captain = captain_id == requestor_id
-            if not requestor_is_captain:
-                message = f"You must be the Team captain to promote a Player."
-                return await interaction.followup.send(message)
-            if co_captain_id:
-                message = f"Team already has a co-captain."
-                return await interaction.followup.send(message)
-            region = await requestor.get_field(PlayerFields.region)
+                    player_team_player = team_player
+            assert player_team_player, f"Player is not on the team."
+            assert player_id != requestor_id, f"Cannot promote yourself."
             # Update Player's TeamPlayer record
-            if not player_team_player_record:
-                message = f"Player is not on the Team: {player_name}"
-                return await interaction.followup.send(message)
-            await player_team_player_record.set_field(
-                TeamPlayerFields.is_co_captain, True
-            )
-            await self.table_team_player.update_team_player_record(
-                player_team_player_record
-            )
+            await player_team_player.set_field(TeamPlayerFields.is_co_captain, True)
+            await self.table_team_player.update_team_player_record(player_team_player)
             # Update Player's Discord roles
+            region = await requestor.get_field(PlayerFields.region)
             player_discord_id = await player.get_field(PlayerFields.discord_id)
             player_discord_member = await discord_helpers.member_from_discord_id(
                 guild=interaction.guild,
@@ -277,12 +277,14 @@ class ManageTeams:
             # Success
             message = f"Player '{player_name}' promoted to co-captain"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
             raise error
 
-    async def demote_player_from_captain(
+    async def demote_player_from_co_captain(
         self, interaction: discord.Interaction, player_name
     ):
         """Demote a Player from Team captain"""
@@ -293,49 +295,41 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
+            assert requestor, f"You must be registered as a player to demote players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
-            # Get info about the player
-            player = await self.table_player.get_player_record(player_name=player_name)
-            player_id = await player.get_field(PlayerFields.record_id)
-            # Get info about the team
-            team = await self.related_records.get_team_from_player(requestor)
-            team_id = await team.get_field(TeamFields.record_id)
-            team_name = await team.get_field(TeamFields.team_name)
+            requestor_team_players = (
+                await self.table_team_player.get_team_player_records(
+                    player_id=requestor_id
+                )
+            )
+            assert requestor_team_players, f"You must be on a team to demote players."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = await requestor_team_player.get_field(
+                TeamPlayerFields.is_captain
+            )
+            assert requestor_is_captain, f"You must be team captain to demote players."
+            # Get info about the Team
+            team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
             )
-            captain_id = None
-            co_captain_id = None
-            player_team_player_record = None
+            # Get info about the Player
+            player = await self.table_player.get_player_record(player_name=player_name)
+            assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
+            player_id = await player.get_field(PlayerFields.record_id)
+            player_team_player = None
             for team_player in team_players:
-                if await team_player.get_field(TeamPlayerFields.is_captain):
-                    captain_id = await team_player.get_field(TeamPlayerFields.player_id)
-                if await team_player.get_field(TeamPlayerFields.is_co_captain):
-                    co_captain_id = await team_player.get_field(
-                        TeamPlayerFields.player_id
-                    )
                 if await team_player.get_field(TeamPlayerFields.player_id) == player_id:
-                    player_team_player_record = team_player
-            # Get info about the Team captains
-            requestor_is_captain = captain_id == requestor_id
-            player_is_co_captain = co_captain_id == player_id
-            if not requestor_is_captain:
-                message = f"You must be the Team captain to demote a Player."
-                return await interaction.followup.send(message)
-
-            if not player_is_co_captain:
-                message = f"Player is not a co-captain."
-                return await interaction.followup.send(message)
+                    player_team_player = team_player
+            assert player_team_player, f"Player is not on the team."
+            is_co_captain = await player_team_player.get_field(
+                TeamPlayerFields.is_co_captain
+            )
+            assert is_co_captain, f"Player is not a co-captain."
             # Update Player's TeamPlayer record
-            if not player_team_player_record:
-                message = f"Player is not on the Team: {player_name}"
-                return await interaction.followup.send(message)
-            await player_team_player_record.set_field(
-                TeamPlayerFields.is_co_captain, False
-            )
-            await self.table_team_player.update_team_player_record(
-                player_team_player_record
-            )
+            await player_team_player.set_field(TeamPlayerFields.is_co_captain, False)
+            await self.table_team_player.update_team_player_record(player_team_player)
             # Update Player's Discord roles
             player_discord_id = await player.get_field(PlayerFields.discord_id)
             player_discord_member = await discord_helpers.member_from_discord_id(
@@ -346,6 +340,8 @@ class ManageTeams:
             # Success
             message = f"Player '{player_name}' demoted from co-captain"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
@@ -360,57 +356,39 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            if not requestor:
-                message = f"You must be registered as a Player to leave a Team."
-                return await interaction.followup.send(message)
+            assert requestor, f"You must be registered as a Player to leave a Team."
             requestor_player_id = await requestor.get_field(PlayerFields.record_id)
-            requestor_team_player = (
+            requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
                     player_id=requestor_player_id
                 )
             )
-            requestor_team_player = (
-                requestor_team_player[0] if requestor_team_player else None
+            assert requestor_team_players, f"You must be on a team to leave."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = await requestor_team_player.get_field(
+                TeamPlayerFields.is_captain
             )
-            if not requestor_team_player:
-                message = f"You must be on a Team to leave."
-                return await interaction.followup.send(message)
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
+            team = await self.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
-            # Get info about the captains
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
             )
-            captain_team_player = None
-            co_captain_team_player = None
-            requestor_team_player = None
-            for team_player in team_players:
-                player_id = await team_player.get_field(TeamPlayerFields.player_id)
-                if player_id == requestor_player_id:
-                    requestor_team_player = team_player
-                if await team_player.get_field(TeamPlayerFields.is_captain):
-                    captain_team_player = team_player
-                if await team_player.get_field(TeamPlayerFields.is_co_captain):
-                    co_captain_team_player = team_player
-            captain_id = await captain_team_player.get_field(TeamPlayerFields.player_id)
-            co_captain_id = (
-                await co_captain_team_player.get_field(TeamPlayerFields.player_id)
-                if co_captain_team_player
-                else None
-            )
-            if captain_id == requestor_player_id:
-                if not co_captain_id:
-                    message = f"Cannot leave as main Team captain without a co-captain."
-                    return await interaction.followup.send(message)
+            if requestor_is_captain:
+                # Get info about the co-captain
+                co_captain_team_player = None
+                for team_player in team_players:
+                    if await team_player.get_field(TeamPlayerFields.is_co_captain):
+                        co_captain_team_player = team_player
+                assert (
+                    co_captain_team_player
+                ), f"Captain must promote a co-captain before leaving."
                 # promote the co-captain to captain
-                await co_captain_team_player.set_field(
-                    TeamPlayerFields.is_captain, True
-                )
-                await co_captain_team_player.set_field(
-                    TeamPlayerFields.is_co_captain, False
-                )
+                co_cap = co_captain_team_player
+                await co_cap.set_field(TeamPlayerFields.is_captain, True)
+                await co_cap.set_field(TeamPlayerFields.is_co_captain, False)
+                await self.table_team_player.update_team_player_record(co_cap)
             # Remove the Player from the Team
             await self.table_team_player.delete_team_player_record(
                 requestor_team_player
@@ -421,6 +399,8 @@ class ManageTeams:
             # Success
             message = f"You have left Team '{team_name}'"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
@@ -435,36 +415,29 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            if not requestor:
-                message = f"You must be registered as a Player to disband a Team."
-                return await interaction.followup.send(message)
-            requestor_player_id = await requestor.get_field(PlayerFields.record_id)
+            assert requestor, f"You must be registered as a player to disband a team."
+            requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
-                    player_id=requestor_player_id
+                    player_id=requestor_id
                 )
             )
-            requestor_team_player = (
-                requestor_team_players[0] if requestor_team_players else None
-            )
-            if not requestor_team_player:
-                message = f"You must be on a Team to disband."
-                return await interaction.followup.send(message)
+            assert requestor_team_players, f"You must be on a team to disband it."
+            requestor_team_player = requestor_team_players[0]
             requestor_is_captain = await requestor_team_player.get_field(
                 TeamPlayerFields.is_captain
             )
-            if not requestor_is_captain:
-                message = f"You must be the main Team captain to disband a Team."
-                return await interaction.followup.send(message)
+            assert requestor_is_captain, f"You must be team captain to disband a team."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
+            team = await self.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
-            # Remove all Players from the Team
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
             )
+            # Remove all Players from the Team
             for team_player in team_players:
+                # Remove Player's Discord roles
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
                 player = await self.table_player.get_player_record(record_id=player_id)
                 player_discord_id = await player.get_field(PlayerFields.discord_id)
@@ -473,12 +446,15 @@ class ManageTeams:
                     discord_id=player_discord_id,
                 )
                 await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
+                # Remove the Player from the Team
                 await self.table_team_player.delete_team_player_record(team_player)
             # Delete the Team
             await self.table_team.delete_team_record(team)
             # Success
             message = f"Team '{team_name}' has been disbanded"
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)
@@ -489,20 +465,40 @@ class ManageTeams:
         try:
             # This could take a while
             await interaction.response.defer()
-            # Get the Team
+            # Get info about the Team
             team = await self.table_team.get_team_record(team_name=team_name)
-            if not team:
-                message = f"Team not found: {team_name}"
-                return await interaction.followup.send(message)
-            # Get team players
-            players = await self.related_records.get_player_records_from_team(team)
+            assert team, f"Team not found."
+            team_name = await team.get_field(TeamFields.team_name)
+            team_id = await team.get_field(TeamFields.record_id)
+            team_players = await self.table_team_player.get_team_player_records(
+                team_id=team_id
+            )
+            # Get info about the Players
+            captain_name = None
+            co_captain_name = None
+            player_names = []
+            for team_player in team_players:
+                player_id = await team_player.get_field(TeamPlayerFields.player_id)
+                player = await self.table_player.get_player_record(record_id=player_id)
+                player_name = await player.get_field(PlayerFields.player_name)
+                player_names.append(player_name)
+                if await team_player.get_field(TeamPlayerFields.is_captain):
+                    captain_name = player_name
+                elif await team_player.get_field(TeamPlayerFields.is_co_captain):
+                    co_captain_name = player_name
+            player_names.sort()
             # Format the message
             message_dict = {
-                "team": await team.to_dict(),
-                "players": [await player.to_dict() for player in players],
+                "team": team_name,
+                "captain": captain_name,
+                "co_captain": co_captain_name,
+                "players": player_names,
             }
             message = await bot_helpers.format_json(message_dict)
+            message = await discord_helpers.code_block(message, language="json")
             return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)

@@ -46,3 +46,11 @@ async def member_role_remove_by_prefix(
         if role.name.startswith(role_prefix):
             await member.remove_roles(role)
     return True
+
+
+### Formatting ###
+
+
+async def code_block(text: str, language: str = "") -> str:
+    """Format text as a code block"""
+    return f"```{language}\n{text}```"
