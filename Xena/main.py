@@ -60,6 +60,12 @@ async def on_ready():
 #######################
 
 
+@bot.tree.command(name=f"{BOT_PREFIX}_button_region")
+async def bot_button_region(interaction: discord.Interaction):
+    """Lookup a Player by name or Discord ID"""
+    await manage_players.button_region(interaction)
+
+
 @bot.tree.command(name=f"{BOT_PREFIX}_player_lookup")
 async def bot_player_lookup(
     interaction: discord.Interaction, player_name: str = None, discord_id: str = None

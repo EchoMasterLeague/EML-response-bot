@@ -10,6 +10,7 @@ from database.table_team_player import (
     TeamPlayerTable,
 )
 import constants
+from bot_dialogues.region_options import ButtonRegionOptions
 
 
 class ManagePlayers:
@@ -20,6 +21,24 @@ class ManagePlayers:
         self.table_player = PlayerTable(database)
         self.table_team = TeamTable(database)
         self.table_team_player = TeamPlayerTable(database)
+
+    async def button_region(
+        self,
+        interaction: discord.Interaction,
+    ):
+        await interaction.response.defer()
+        view = ButtonRegionOptions()
+        message = await interaction.followup.send(
+            content="Choose a region", view=view, wait=True
+        )
+        await view.wait()
+        region = view.value
+        print(region)
+        message = await interaction.followup.edit_message(
+            message_id=message.id,
+            content=f"Thanks {region}",
+            view=view,
+        )
 
     async def register_player(
         self,
