@@ -18,9 +18,9 @@ class QuestionPromptViewExampleUsage:
         interaction: discord.Interaction,
     ):
         options_dict = {
-            "Option 1": "option1",
-            "Option 2": "option2",
-            "Option 3": "option3",
+            "option1": "Option 1",
+            "option2": "Option 2",
+            "option3": "Option 3",
         }
         view = QuestionPromptView(options_dict=options_dict)
         await interaction.response.send_message("Which option?", view=view)
