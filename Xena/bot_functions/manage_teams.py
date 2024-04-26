@@ -147,6 +147,51 @@ class ManageTeams:
             await interaction.followup.send(message)
             raise error
 
+    async def accept_invite(self, interaction: discord.Interaction):
+        """Add the requestor to their Team"""
+        try:
+            # This could take a while
+            await interaction.response.defer()
+            # Get info about the requestor
+            requestor = await self.table_player.get_player_record(
+                discord_id=interaction.user.id
+            )
+            assert requestor, f"You must be registered as a Player to accept an invite."
+            requestor_id = await requestor.get_field(PlayerFields.record_id)
+            requestor_team_players = (
+                await self.table_team_player.get_team_player_records(
+                    player_id=requestor_id
+                )
+            )
+            assert not requestor_team_players, f"You are already on a team."
+            # Get info about the Team
+            team_id = await requestor.get_field(PlayerFields.invited_to_team_id)
+            team = await self.table_team.get_team_record(record_id=team_id)
+            team_name = await team.get_field(TeamFields.team_name)
+            team_players = await self.table_team_player.get_team_player_records(
+                team_id=team_id
+            )
+            assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
+            # Add the Player to the Team
+            new_team_player = await self.table_team_player.create_team_player_record(
+                team_id=team_id,
+                player_id=requestor_id,
+            )
+            assert new_team_player, f"Error: Could not add Player to Team."
+            # Update Player's Discord roles
+            discord_member = interaction.user
+            await ManageTeamsHelpers.member_remove_team_roles(discord_member)
+            await ManageTeamsHelpers.member_add_team_role(discord_member, team_name)
+            # Success
+            message = f"You have joined Team '{team_name}'"
+            return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
+        except Exception as error:
+            message = f"Error: Something went wrong."
+            await interaction.followup.send(message)
+            raise error
+
     async def remove_player_from_team(
         self, interaction: discord.Interaction, player_name: str
     ):

@@ -10,7 +10,7 @@ from database.table_team_player import (
     TeamPlayerTable,
 )
 import constants
-from bot_dialogues.region_options import ButtonRegionOptions
+from bot_dialogues import choices
 
 
 class ManagePlayers:
@@ -22,33 +22,30 @@ class ManagePlayers:
         self.table_team = TeamTable(database)
         self.table_team_player = TeamPlayerTable(database)
 
-    async def button_region(
-        self,
-        interaction: discord.Interaction,
-    ):
-        await interaction.response.defer()
-        view = ButtonRegionOptions()
-        message = await interaction.followup.send(
-            content="Choose a region", view=view, wait=True
-        )
-        await view.wait()
-        region = view.value
-        print(region)
-        message = await interaction.followup.edit_message(
-            message_id=message.id,
-            content=f"Thanks {region}",
-            view=view,
-        )
-
     async def register_player(
         self,
         interaction: discord.Interaction,
-        region: str,
+        region: str = None,
     ):
         """Create a new Player"""
         try:
-            # This could take a while
-            await interaction.response.defer()
+
+            # Get region
+            if region:
+                # This could take a while
+                await interaction.response.defer()
+            else:
+                options_dict = {
+                    Regions.EU.value: "Europe",
+                    Regions.NA.value: "North America",
+                    Regions.OCE.value: "Oceania",
+                }
+                view = choices.QuestionPromptView(options_dict=options_dict)
+                await interaction.response.send_message(
+                    content="Choose a region", view=view, ephemeral=True
+                )
+                await view.wait()
+                region = view.value
             # Get player info
             discord_id = interaction.user.id
             player_name = interaction.user.display_name

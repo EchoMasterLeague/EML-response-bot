@@ -62,7 +62,7 @@ async def on_ready():
 
 @bot.tree.command(name=f"{BOT_PREFIX}_button_region")
 async def bot_button_region(interaction: discord.Interaction):
-    """Lookup a Player by name or Discord ID"""
+    """Testing Button Interactions DO NOT USE"""
     await manage_players.button_region(interaction)
 
 
@@ -107,6 +107,12 @@ async def bot_team_register(interaction: discord.Interaction, team_name: str):
 async def bot_team_add_player(interaction: discord.Interaction, player_name: str):
     """Add a new player to your Team"""
     await manage_teams.add_player_to_team(interaction, player_name)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}_accept_invite")
+async def bot_team_accept_invite(interaction: discord.Interaction):
+    """Accept an invite to join a Team"""
+    await manage_teams.accept_invite(interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}_remove_player")
