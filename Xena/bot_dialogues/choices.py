@@ -64,7 +64,7 @@ class QuestionPromptView(discord.ui.View):
 
     Returns:
         self.value (str): The value of the selected option
-        self.name (str): The name of the selected option
+        self.label (str): The button text of the selected option
 
     Example Usage:
         interaction: discord.Interaction
