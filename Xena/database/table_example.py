@@ -6,6 +6,10 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 
+"""
+Example Table
+"""
+
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class ExampleFields(IntEnum):

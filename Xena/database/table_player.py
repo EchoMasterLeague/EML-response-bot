@@ -6,6 +6,10 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 
+"""
+Player Table
+"""
+
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class PlayerFields(IntEnum):
@@ -95,7 +99,7 @@ class PlayerTable(BaseTable):
 
     async def update_player_record(self, record: PlayerRecord) -> None:
         """Update an existing Player record"""
-        self.update_record(record)
+        await self.update_record(record)
 
     async def delete_player_record(self, record: PlayerRecord) -> None:
         """Delete an existing Player record"""

@@ -1,5 +1,14 @@
 import discord
 
+"""
+This module contains classes for creating multiple choice questions with buttons.
+
+Classes:
+    QuestionPromptView: Question prompt with multiple choice options of type `QuestionOptionButton`
+    QuestionOptionButton: A button for a multiple choice question of type `QuestionPromptView`
+    QuestionPromptViewExampleUsage: Contains an example usage of `QuestionPromptView`
+"""
+
 
 class QuestionPromptViewExampleUsage:
     """This class exists to keep its code out of the global namespace. It should not be used.
@@ -44,13 +53,22 @@ class QuestionOptionButton(discord.ui.Button):
     Result: A button with the label "Option 1" and the value "option1"
     """
 
-    def __init__(self, label: str, custom_id: str):
+    def __init__(
+        self,
+        label: str,
+        custom_id: str,
+        style=discord.ButtonStyle.secondary,
+        disabled=False,
+    ):
         super().__init__(
-            label=label, custom_id=custom_id, style=discord.ButtonStyle.secondary
+            label=label, custom_id=custom_id, style=style, disabled=disabled
         )
         self.view: QuestionPromptView
 
     async def callback(self, interaction: discord.Interaction):
+        """Called when button is clicked
+        This function must be named `callback` or nothing happens when the button is clicked.
+        """
         await self.view.select(interaction, self)
 
 
@@ -84,9 +102,14 @@ class QuestionPromptView(discord.ui.View):
     """
 
     def __init__(
-        self, *, timeout=180, options_dict: dict = {}, default_value: str = None
+        self,
+        *,
+        timeout=180,
+        options_dict: dict = {},
+        default_value: str = None,
     ):
         super().__init__(timeout=timeout)
+        self.label = None
         self.value = default_value
         # Add buttons for each option
         for option_id, option_label in options_dict.items():
@@ -97,11 +120,18 @@ class QuestionPromptView(discord.ui.View):
         self.label = button.label
         self.value = button.custom_id if button.custom_id else button.label
         # Update the selected button
-        button.style = discord.ButtonStyle.success
+        if button.style not in (
+            discord.ButtonStyle.primary,
+            discord.ButtonStyle.danger,
+        ):
+            button.style = discord.ButtonStyle.success
         # Disable all buttons
         for child in self.children:
-            if isinstance(child, discord.ui.Button):
-                child.disabled = True
+            if not isinstance(child, discord.ui.Button):
+                continue
+            child.disabled = True
+            if button is not child:
+                child.style = discord.ButtonStyle.secondary
         # Update the message view to reflect these changes
         await interaction.response.edit_message(view=self)
         # Stop the view, picked up by `await view.wait()` in the calling function

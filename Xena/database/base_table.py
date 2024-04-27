@@ -5,6 +5,44 @@ import errors.database_errors as DbErrors
 import gspread
 import utils.database_helpers as helpers
 
+"""
+Base Table
+
+This module contains the base classes for all database tables.
+All other tables must inherit from these classes.
+
+## Generally ##
+
+- `*Fields` classes: contain the column numbers of the fields in the table.
+- `*Record` classes: represent records of a database table (rows of the worksheet).
+- `*Table`  classes: interact with a table in the database.
+
+## Specifically ##
+
+- `BaseFields` class: contains the mandatory first three fields of all tables
+    - record_id: The unique identifier for the record
+    - created_at: The ISO 8601 timestamp of when the record was created
+    - updated_at: The ISO 8601 timestamp of when the record was last updated
+
+- `BaseRecord` class: contains the following methods available to all tables
+    - `to_list()`: Return the record as a list of data (e.g. for `gsheets`)
+    - `to_dict()`: Return the record as a dictionary
+    - `get_field(field_enum)`: Get the value of a field
+    - `set_field(field_enum, value)`: Set the value of a field
+
+- `BaseTable` class: provides the common "CRUD" operations for all tables
+    - `get_table_data()`: Get all the data from the worksheet. (i.e. the table)
+    ### Create
+    - `create_record(data_list)`: Create a new record
+    - `insert_record(record)`: Insert a new record into the table
+    ### Read
+    - `get_record(record_id)`: Get a record by its ID
+    ### Update
+    - `update_record(record)`: Update a record in the table
+    ### Delete
+    - `delete_record(record_id)`: Delete a record by its ID
+"""
+
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class BaseFields(IntEnum):

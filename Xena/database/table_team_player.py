@@ -7,6 +7,11 @@ import errors.database_errors as DbErrors
 import gspread
 
 
+"""
+TeamPlayer Table
+"""
+
+
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class TeamPlayerFields(IntEnum):
     """Lookup for column numbers of fields in this table

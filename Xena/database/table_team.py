@@ -7,6 +7,10 @@ import errors.database_errors as DbErrors
 import gspread
 import utils.database_helpers as helpers
 
+"""
+Team Table
+"""
+
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class TeamFields(IntEnum):

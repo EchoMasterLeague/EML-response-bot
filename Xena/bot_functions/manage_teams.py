@@ -11,6 +11,8 @@ from database.table_team_player import (
     TeamPlayerRecord,
     TeamPlayerTable,
 )
+from database.table_invite import InviteFields, InviteRecord, InviteTable
+from bot_dialogues import choices
 
 
 class ManageTeams:
@@ -21,6 +23,7 @@ class ManageTeams:
         self.table_team = TeamTable(database)
         self.table_player = PlayerTable(database)
         self.table_team_player = TeamPlayerTable(database)
+        self.table_invite = InviteTable(database)
 
     async def register_team(self, interaction: discord.Interaction, team_name: str):
         """Create a Team with the given name
@@ -147,8 +150,10 @@ class ManageTeams:
             await interaction.followup.send(message)
             raise error
 
-    async def accept_invite(self, interaction: discord.Interaction):
-        """Add the requestor to their Team"""
+    async def invite_player_to_team(
+        self, interaction: discord.Interaction, player_name
+    ):
+        """Invite a Player to a Team by name"""
         try:
             # This could take a while
             await interaction.response.defer()
@@ -156,18 +161,132 @@ class ManageTeams:
             requestor = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            assert requestor, f"You must be registered as a Player to accept an invite."
+            assert requestor, f"You must be registered as a Player to invite Players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
             )
-            assert not requestor_team_players, f"You are already on a team."
+            assert requestor_team_players, f"You must be on a Team to invite Players."
+            requestor_team_player = requestor_team_players[0]
+            requestor_is_captain = False
+            for captain_field in [
+                TeamPlayerFields.is_captain,
+                TeamPlayerFields.is_co_captain,
+            ]:
+                is_captain = await requestor_team_player.get_field(captain_field)
+                requestor_is_captain = True if requestor_is_captain else is_captain
+            assert requestor_is_captain, "You must be a team captain to invite Players."
+            requestor_invites = await self.table_invite.get_invite_records(
+                inviter_player_id=requestor_id
+            )
+            available_invites = constants.INVITES_PLAYER_MAX - len(requestor_invites)
+            assert available_invites > 0, f"You have sent too many pending invites."
             # Get info about the Team
-            team_id = await requestor.get_field(PlayerFields.invited_to_team_id)
+            team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
             team = await self.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
+            team_players = await self.table_team_player.get_team_player_records(
+                team_id=team_id
+            )
+            assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
+            team_invites = await self.table_invite.get_invite_records(team_id=team_id)
+            available_invites = constants.INVITES_TEAM_MAX - len(team_invites)
+            assert available_invites > 0, f"Team has too many pending invites."
+            # Get info about the Player
+            player = await self.table_player.get_player_record(player_name=player_name)
+            assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
+            player_id = await player.get_field(PlayerFields.record_id)
+            existing_team_player = await self.table_team_player.get_team_player_records(
+                player_id=player_id
+            )
+            assert not existing_team_player, f"Player is already on a team."
+            player_invites = await self.table_invite.get_invite_records(
+                invitee_player_id=player_id
+            )
+            available_invites = constants.INVITES_PLAYER_MAX - len(player_invites)
+            assert available_invites > 0, f"Player has too many open invites."
+            for invite in player_invites:
+                team_id_match = await invite.get_field(InviteFields.team_id) == team_id
+                assert not team_id_match, f"Player already has an invite to this team."
+            # Create the invite
+            new_invite = await self.table_invite.create_invite_record(
+                team_id=team_id,
+                inviter_player_id=requestor_id,
+                invitee_player_id=player_id,
+            )
+            assert new_invite, f"Error: Could not create invite."
+            # Success
+            message = f"Player '{player_name}' invited to team '{team_name}'"
+            return await interaction.followup.send(message)
+        except AssertionError as message:
+            await interaction.followup.send(message)
+        except Exception as error:
+            message = f"Error: Something went wrong."
+            await interaction.followup.send(message)
+            raise error
+
+    async def accept_invite(self, interaction: discord.Interaction):
+        """Add the requestor to their new Team"""
+        try:
+            player = await self.table_player.get_player_record(
+                discord_id=interaction.user.id
+            )
+            if not player:
+                message = "You must be registered as a Player to accept an invite."
+                return await interaction.response.send_message(message)
+            player_id = await player.get_field(PlayerFields.record_id)
+            invites = await self.table_invite.get_invite_records(
+                invitee_player_id=player_id
+            )
+            if not invites:
+                return await interaction.response.send_message("No invites found.")
+            options_dict = {}
+            # This could be a lot of calls, so let's get all the teams at once
+            all_teams = await self.table_team.get_table_data()
+            for invite in invites:
+                team_id = await invite.get_field(InviteFields.team_id)
+                for team in all_teams:
+                    if team[TeamFields.record_id] == team_id:
+                        team_name = team[TeamFields.team_name]
+                        options_dict[team_id] = team_name
+            cancel_button = choices.QuestionOptionButton(
+                label="Cancel",
+                style=discord.ButtonStyle.primary,
+                custom_id="cancel",
+            )
+            clearall_button = choices.QuestionOptionButton(
+                label="Clear all invites",
+                style=discord.ButtonStyle.danger,
+                custom_id="clearall",
+            )
+            view = choices.QuestionPromptView(options_dict=options_dict)
+            view.add_item(clearall_button)
+            view.add_item(cancel_button)
+            await interaction.response.send_message(
+                content="Choose a team", view=view, ephemeral=True
+            )
+            await view.wait()
+            choice = view.value
+            if choice == "cancel":
+                return await interaction.followup.send("No team selected.")
+            if choice == "clearall":
+                for invite in invites:
+                    await self.table_invite.delete_invite_record(invite)
+                return await interaction.followup.send("Invites cleared.")
+            team_id = choice
+            team_name = options_dict[team_id]
+            # Get info about the player
+            requestor_team_players = (
+                await self.table_team_player.get_team_player_records(
+                    player_id=player_id
+                )
+            )
+            assert not requestor_team_players, f"You are already on a team."
+            # Get info about the Team
+            team = await self.table_team.get_team_record(record_id=team_id)
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
             )
@@ -175,9 +294,12 @@ class ManageTeams:
             # Add the Player to the Team
             new_team_player = await self.table_team_player.create_team_player_record(
                 team_id=team_id,
-                player_id=requestor_id,
+                player_id=player_id,
             )
             assert new_team_player, f"Error: Could not add Player to Team."
+            # Clear invites
+            for invite in invites:
+                await self.table_invite.delete_invite_record(invite)
             # Update Player's Discord roles
             discord_member = interaction.user
             await ManageTeamsHelpers.member_remove_team_roles(discord_member)
