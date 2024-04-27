@@ -270,7 +270,7 @@ class ManageTeams:
             )
             await view.wait()
             choice = view.value
-            if choice == "cancel":
+            if not choice or choice == "cancel":
                 return await interaction.followup.send("No team selected.")
             if choice == "clearall":
                 for invite in invites:
