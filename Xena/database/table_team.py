@@ -37,7 +37,7 @@ class TeamStatus(StrEnum):
 class TeamRecord(BaseRecord):
     """Record class for this table"""
 
-    _fields: Type[TeamFields]
+    fields: Type[TeamFields]
     _data_dict: dict
 
     def __init__(
@@ -69,7 +69,7 @@ class TeamTable(BaseTable):
 
     def __init__(self, db: Database):
         """Initialize the Team Action class"""
-        super().__init__(db, constants.LEAGUE_DB_TAB_TEAM, TeamRecord)
+        super().__init__(db, constants.LEAGUE_DB_TAB_TEAM, TeamRecord, TeamFields)
 
     async def create_team_record(self, team_name: str) -> TeamRecord:
         """Create a new Team record"""

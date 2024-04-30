@@ -77,7 +77,7 @@ class ButtonExampleUsage:
     bot = commands.Bot(command_prefix=".")
 
     def __init__(self):
-        print("ERROR: ButtonExampleUsage() is for reference only.")
+        raise NotImplementedError("ERROR: ButtonExampleUsage() is for reference only.")
 
     ### Reference Functions ###
 

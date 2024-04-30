@@ -38,7 +38,7 @@ class Regions(StrEnum):
 class PlayerRecord(BaseRecord):
     """Record class for this table"""
 
-    _fields: Type[PlayerFields]
+    fields: Type[PlayerFields]
     _data_dict: dict
 
     def __init__(
@@ -73,7 +73,7 @@ class PlayerTable(BaseTable):
 
     def __init__(self, db: Database):
         """Initialize the Player Action class"""
-        super().__init__(db, constants.LEAGUE_DB_TAB_PLAYER, PlayerRecord)
+        super().__init__(db, constants.LEAGUE_DB_TAB_PLAYER, PlayerRecord, PlayerFields)
 
     async def create_player_record(
         self, discord_id: str, player_name: str, region: str

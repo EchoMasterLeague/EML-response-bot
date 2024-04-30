@@ -29,7 +29,7 @@ class InviteFields(IntEnum):
 class InviteRecord(BaseRecord):
     """Record class for this table"""
 
-    _fields: Type[InviteFields]
+    fields: Type[InviteFields]
     _data_dict: dict
 
     def __init__(
@@ -49,7 +49,7 @@ class InviteTable(BaseTable):
 
     def __init__(self, db: Database):
         """Initialize the Invite Table class"""
-        super().__init__(db, constants.LEAGUE_DB_TAB_INVITE, InviteRecord)
+        super().__init__(db, constants.LEAGUE_DB_TAB_INVITE, InviteRecord, InviteFields)
 
     async def create_invite_record(
         self, team_id: str, inviter_player_id: str, invitee_player_id: str

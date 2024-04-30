@@ -28,7 +28,7 @@ class ExampleFields(IntEnum):
 class ExampleRecord(BaseRecord):
     """Record class for this table"""
 
-    _fields: Type[ExampleFields]
+    fields: Type[ExampleFields]
     _data_dict: dict
 
     def __init__(self, data_list: list[int | float | str | None]):
@@ -44,7 +44,9 @@ class ExmapleTable(BaseTable):
 
     def __init__(self, db: Database):
         """Initialize the Example Action class"""
-        super().__init__(db, constants.LEAGUE_DB_TAB_EXAMPLE, ExampleRecord)
+        super().__init__(
+            db, constants.LEAGUE_DB_TAB_EXAMPLE, ExampleRecord, ExampleFields
+        )
 
     async def create_example(self, example_a: str, example_b: str) -> ExampleRecord:
         """Create a new Example record"""

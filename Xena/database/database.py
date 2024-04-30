@@ -27,6 +27,20 @@ class Database:
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
 
+    def create_db_worksheet(self, title: str) -> gspread.Worksheet:
+        """Create a new worksheet in the DB spreadsheet"""
+        try:
+            worksheet = self.table_spreadsheet.add_worksheet(
+                title,
+                rows=constants.LEAGUE_DB_DEFAULT_ROWS,
+                cols=constants.LEAGUE_DB_DEFAULT_COLS,
+            )
+            worksheet.format("A1:Z1", {"textFormat": {"bold": True}})
+            worksheet.freeze(rows=1)
+        except gspread.WorksheetNotFound as error:
+            raise DbErrors.EmlWorksheetCreateError(f"Worsheet not created: {error}")
+        return worksheet
+
     def get_db_worksheet(self, title: str) -> gspread.Worksheet:
         """Get a worksheet from the DB spreadsheet by title"""
         try:

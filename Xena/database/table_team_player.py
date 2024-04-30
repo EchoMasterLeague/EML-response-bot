@@ -39,7 +39,7 @@ class Bool(StrEnum):
 class TeamPlayerRecord(BaseRecord):
     """Record class for this table"""
 
-    _fields: Type[TeamPlayerFields]
+    fields: Type[TeamPlayerFields]
     _data_dict: dict
 
     def __init__(
@@ -96,7 +96,9 @@ class TeamPlayerTable(BaseTable):
 
     def __init__(self, db: Database):
         """Initialize the TeamPlayer Action class"""
-        super().__init__(db, constants.LEAGUE_DB_TAB_TEAM_PLAYER, TeamPlayerRecord)
+        super().__init__(
+            db, constants.LEAGUE_DB_TAB_TEAM_PLAYER, TeamPlayerRecord, TeamPlayerFields
+        )
 
     async def create_team_player_record(
         self,
