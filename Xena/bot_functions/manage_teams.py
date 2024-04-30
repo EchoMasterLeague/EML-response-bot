@@ -1,5 +1,5 @@
 import utils.general_helpers as bot_helpers
-from utils import discord_helpers
+from utils import discord_helpers, database_helpers
 from database.database import Database
 import constants
 import discord
@@ -12,7 +12,9 @@ from database.table_team_player import (
     TeamPlayerTable,
 )
 from database.table_invite import InviteFields, InviteRecord, InviteTable
+from database.table_cooldown import CooldownFields, CooldownRecord, CooldownTable
 from bot_dialogues import choices
+import datetime
 
 
 class ManageTeams:
@@ -24,6 +26,7 @@ class ManageTeams:
         self.table_player = PlayerTable(database)
         self.table_team_player = TeamPlayerTable(database)
         self.table_invite = InviteTable(database)
+        self.table_cooldown = CooldownTable(database)
 
     async def register_team(self, interaction: discord.Interaction, team_name: str):
         """Create a Team with the given name
@@ -370,6 +373,13 @@ class ManageTeams:
                 discord_id=player_discord_id,
             )
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
+            # Apply cooldown
+            expiration = await database_helpers.next_monday_epoch()
+            new_cooldown = await self.table_cooldown.create_cooldown_record(
+                player_id=player_id,
+                expiration=expiration,
+            )
+            assert new_cooldown, f"Error: Could not apply cooldown."
             # Remove the Player from the Team
             await self.table_team_player.delete_team_player_record(player_team_player)
             # Success
@@ -558,6 +568,13 @@ class ManageTeams:
                 await co_cap.set_field(TeamPlayerFields.is_captain, True)
                 await co_cap.set_field(TeamPlayerFields.is_co_captain, False)
                 await self.table_team_player.update_team_player_record(co_cap)
+            # Apply cooldown
+            expiration = await database_helpers.next_monday_epoch()
+            new_cooldown = await self.table_cooldown.create_cooldown_record(
+                player_id=requestor_player_id,
+                expiration=expiration,
+            )
+            assert new_cooldown, f"Error: Could not apply cooldown."
             # Remove the Player from the Team
             await self.table_team_player.delete_team_player_record(
                 requestor_team_player
@@ -615,6 +632,13 @@ class ManageTeams:
                     discord_id=player_discord_id,
                 )
                 await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
+                # Apply cooldown
+                expiration = await database_helpers.next_monday_epoch()
+                new_cooldown = await self.table_cooldown.create_cooldown_record(
+                    player_id=player_id,
+                    expiration=expiration,
+                )
+                assert new_cooldown, f"Error: Could not apply cooldown."
                 # Remove the Player from the Team
                 await self.table_team_player.delete_team_player_record(team_player)
             # Delete the Team

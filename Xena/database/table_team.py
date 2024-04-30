@@ -5,7 +5,6 @@ from typing import Type
 import constants
 import errors.database_errors as DbErrors
 import gspread
-import utils.database_helpers as helpers
 
 """
 Team Table

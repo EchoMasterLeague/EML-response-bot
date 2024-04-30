@@ -3,7 +3,7 @@ from enum import IntEnum, StrEnum, verify, EnumCheck
 from typing import Type
 import errors.database_errors as DbErrors
 import gspread
-import utils.database_helpers as helpers
+import utils.database_helpers as database_helpers
 import constants
 
 """
@@ -118,9 +118,6 @@ class BaseTable:
         history_tab_name = f"{tab_name}{constants.LEAGUE_DB_HISTORY_TAB_SUFFIX}"
         try:
             self._tab = db.get_db_worksheet(tab_name)
-            self._history_table = HistoryTable(
-                db, history_tab_name, record_type, fields
-            )
         except DbErrors.EmlWorksheetDoesNotExist as error:
             # Create the worksheet if it doesn't exist
             self._tab = db.create_db_worksheet(tab_name)
@@ -130,6 +127,7 @@ class BaseTable:
         except DbErrors.EmlWorksheetCreateError as error:
             message = f"Worksheet '{tab_name}' does not exist and could not be created: {error}"
             raise DbErrors.EmlWorksheetDoesNotExist(message)
+        self._history_table = HistoryTable(db, history_tab_name, record_type, fields)
 
     async def get_table_data(self):
         """Get all the data from the workseet"""
@@ -147,9 +145,9 @@ class BaseTable:
         fields: Type[BaseFields] = BaseFields,
     ):
         """Create a new record"""
-        data_list[BaseFields.record_id] = await helpers.random_id()
-        data_list[BaseFields.created_at] = await helpers.iso_timestamp()
-        data_list[BaseFields.updated_at] = await helpers.iso_timestamp()
+        data_list[BaseFields.record_id] = await database_helpers.random_id()
+        data_list[BaseFields.created_at] = await database_helpers.iso_timestamp()
+        data_list[BaseFields.updated_at] = await database_helpers.iso_timestamp()
         record = self._record_type(data_list=data_list, fields=fields)
         return record
 
@@ -178,7 +176,9 @@ class BaseTable:
     async def update_record(self, record: BaseRecord):
         """Update a record in the table"""
         record_id = await record.get_field(BaseFields.record_id)
-        await record.set_field(BaseFields.updated_at, await helpers.iso_timestamp())
+        await record.set_field(
+            BaseFields.updated_at, await database_helpers.iso_timestamp()
+        )
         table = await self.get_table_data()
         for row in table:
             if row[BaseFields.record_id] == record_id:
@@ -276,13 +276,15 @@ class HistoryTable:
         original_list = await record.to_list()
         # Create the history record list
         history_list = [None] * len(HistoryFields) + original_list
-        history_list[HistoryFields.history_id] = await helpers.random_id()
-        history_list[HistoryFields.history_created_at] = await helpers.iso_timestamp()
+        history_list[HistoryFields.history_id] = await database_helpers.random_id()
+        history_list[HistoryFields.history_created_at] = (
+            await database_helpers.iso_timestamp()
+        )
         history_list[HistoryFields.history_operation] = operation.value
 
         # insert the history record list into the table
         try:
-            self._tab.append_row(history_list)
+            self._tab.append_row(history_list, table_range="A1")
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"
