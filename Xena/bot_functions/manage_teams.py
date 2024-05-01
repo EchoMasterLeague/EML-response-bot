@@ -1,32 +1,19 @@
-import utils.general_helpers as bot_helpers
-from utils import discord_helpers, database_helpers
-from database.database import Database
-import constants
-import discord
-import errors.database_errors as DbErrors
-from database.table_player import PlayerFields, PlayerRecord, PlayerTable
-from database.table_team import TeamFields, TeamRecord, TeamTable
-from database.table_team_player import (
-    TeamPlayerFields,
-    TeamPlayerRecord,
-    TeamPlayerTable,
-)
-from database.table_invite import InviteFields, InviteRecord, InviteTable
-from database.table_cooldown import CooldownFields, CooldownRecord, CooldownTable
 from bot_dialogues import choices
+from database.database_full import FullDatabase
+from database.fields import InviteFields, PlayerFields, TeamPlayerFields, TeamFields
+from database.records import TeamRecord
+from utils import discord_helpers, database_helpers
+import constants
 import datetime
+import discord
+import utils.general_helpers as bot_helpers
 
 
 class ManageTeams:
     """EML Team Management"""
 
-    def __init__(self, database: Database):
-        self.database = database
-        self.table_team = TeamTable(database)
-        self.table_player = PlayerTable(database)
-        self.table_team_player = TeamPlayerTable(database)
-        self.table_invite = InviteTable(database)
-        self.table_cooldown = CooldownTable(database)
+    def __init__(self, database: FullDatabase):
+        self._db = database
 
     async def register_team(self, interaction: discord.Interaction, team_name: str):
         """Create a Team with the given name
@@ -43,27 +30,31 @@ class ManageTeams:
             await interaction.response.defer()
             # Check if the Player is registered
             discord_id = interaction.user.id
-            player = await self.table_player.get_player_record(discord_id=discord_id)
+            player = await self._db.table_player.get_player_record(
+                discord_id=discord_id
+            )
             assert player, f"You must be registered as a player to create a team."
             # Check if the Team already exists
-            existing_team = await self.table_team.get_team_record(team_name=team_name)
+            existing_team = await self._db.table_team.get_team_record(
+                team_name=team_name
+            )
             assert not existing_team, f"Team already exists."
             # Check if the Player is already on a Team
             player_id = await player.get_field(PlayerFields.record_id)
-            existing_team = await self.table_team_player.get_team_player_records(
+            existing_team = await self._db.table_team_player.get_team_player_records(
                 player_id=player_id
             )
             assert not existing_team, f"You are already on a team."
             # Check if the Player is on a cooldown
-            cooldowns = await self.table_cooldown.get_cooldown_records(
+            cooldowns = await self._db.table_cooldown.get_cooldown_records(
                 player_id=player_id, expires_after=datetime.datetime.now().timestamp()
             )
             assert not cooldowns, f"You are on a cooldown."
             # Create the Team and Captain Records
-            new_team = await self.table_team.create_team_record(team_name=team_name)
+            new_team = await self._db.table_team.create_team_record(team_name=team_name)
             assert new_team, f"Error: Could not create team."
             team_id = await new_team.get_field(TeamFields.record_id)
-            team_player = await self.table_team_player.create_team_player_record(
+            team_player = await self._db.table_team_player.create_team_player_record(
                 team_id=team_id,
                 player_id=player_id,
                 is_captain=True,
@@ -93,13 +84,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a Player to add a Player."
             requestor_region = await requestor.get_field(PlayerFields.region)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=await requestor.get_field(PlayerFields.record_id)
                 )
             )
@@ -115,27 +106,33 @@ class ManageTeams:
             assert requestor_is_captain, "You must be a team captain to add a Player."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
-            team = await self.table_team.get_team_record(record_id=team_id)
+            team = await self._db.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
             # Get info about the Player
-            player = await self.table_player.get_player_record(player_name=player_name)
+            player = await self._db.table_player.get_player_record(
+                player_name=player_name
+            )
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_region = await player.get_field(PlayerFields.region)
             assert player_region == requestor_region, f"Player must be in same region."
             player_id = await player.get_field(PlayerFields.record_id)
-            existing_team_player = await self.table_team_player.get_team_player_records(
-                player_id=player_id
+            existing_team_player = (
+                await self._db.table_team_player.get_team_player_records(
+                    player_id=player_id
+                )
             )
             assert not existing_team_player, f"Player is already on a team."
             # Add the Player to the Team
-            new_team_player = await self.table_team_player.create_team_player_record(
-                team_id=team_id,
-                player_id=player_id,
+            new_team_player = (
+                await self._db.table_team_player.create_team_player_record(
+                    team_id=team_id,
+                    player_id=player_id,
+                )
             )
             assert new_team_player, f"Error: Could not add Player to Team."
             # Update Player's Discord roles
@@ -166,13 +163,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a Player to invite Players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
             )
@@ -186,32 +183,38 @@ class ManageTeams:
                 is_captain = await requestor_team_player.get_field(captain_field)
                 requestor_is_captain = True if requestor_is_captain else is_captain
             assert requestor_is_captain, "You must be a team captain to invite Players."
-            requestor_invites = await self.table_invite.get_invite_records(
+            requestor_invites = await self._db.table_invite.get_invite_records(
                 inviter_player_id=requestor_id
             )
             available_invites = constants.INVITES_PLAYER_MAX - len(requestor_invites)
             assert available_invites > 0, f"You have sent too many pending invites."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team = await self.table_team.get_team_record(record_id=team_id)
+            team = await self._db.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
-            team_invites = await self.table_invite.get_invite_records(team_id=team_id)
+            team_invites = await self._db.table_invite.get_invite_records(
+                team_id=team_id
+            )
             available_invites = constants.INVITES_TEAM_MAX - len(team_invites)
             assert available_invites > 0, f"Team has too many pending invites."
             # Get info about the Player
-            player = await self.table_player.get_player_record(player_name=player_name)
+            player = await self._db.table_player.get_player_record(
+                player_name=player_name
+            )
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
-            existing_team_player = await self.table_team_player.get_team_player_records(
-                player_id=player_id
+            existing_team_player = (
+                await self._db.table_team_player.get_team_player_records(
+                    player_id=player_id
+                )
             )
             assert not existing_team_player, f"Player is already on a team."
-            player_invites = await self.table_invite.get_invite_records(
+            player_invites = await self._db.table_invite.get_invite_records(
                 invitee_player_id=player_id
             )
             available_invites = constants.INVITES_PLAYER_MAX - len(player_invites)
@@ -220,7 +223,7 @@ class ManageTeams:
                 team_id_match = await invite.get_field(InviteFields.team_id) == team_id
                 assert not team_id_match, f"Player already has an invite to this team."
             # Create the invite
-            new_invite = await self.table_invite.create_invite_record(
+            new_invite = await self._db.table_invite.create_invite_record(
                 team_id=team_id,
                 inviter_player_id=requestor_id,
                 invitee_player_id=player_id,
@@ -240,19 +243,19 @@ class ManageTeams:
         """Add the requestor to their new Team"""
         try:
             # Get info about the Player
-            player = await self.table_player.get_player_record(
+            player = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert player, f"You must be registered as a Player to accept an invite."
             player_id = await player.get_field(PlayerFields.record_id)
             # Gather Invites
-            invites = await self.table_invite.get_invite_records(
+            invites = await self._db.table_invite.get_invite_records(
                 invitee_player_id=player_id
             )
             assert invites, f"No invites found."
             # Gather Team options
             options_dict = {}
-            all_teams = await self.table_team.get_table_data()
+            all_teams = await self._db.table_team.get_table_data()
             for invite in invites:
                 team_id = await invite.get_field(InviteFields.team_id)
                 for team in all_teams:
@@ -290,37 +293,39 @@ class ManageTeams:
                 return await interaction.followup.send("No team selected.")
             if choice == "clearall":
                 for invite in invites:
-                    await self.table_invite.delete_invite_record(invite)
+                    await self._db.table_invite.delete_invite_record(invite)
                 return await interaction.followup.send("Invites cleared.")
             team_id = choice
             team_name = options_dict[team_id]
             # Check for cooldowns
-            cooldowns = await self.table_cooldown.get_cooldown_records(
+            cooldowns = await self._db.table_cooldown.get_cooldown_records(
                 player_id=player_id, expires_after=datetime.datetime.now().timestamp()
             )
             assert not cooldowns, f"You are on a cooldown."
             # Get info about the player's current Team
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=player_id
                 )
             )
             assert not requestor_team_players, f"You are already on a team."
             # Get info about the player's new Team
-            team = await self.table_team.get_team_record(record_id=team_id)
-            team_players = await self.table_team_player.get_team_player_records(
+            team = await self._db.table_team.get_team_record(record_id=team_id)
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
             # Add the Player to the Team
-            new_team_player = await self.table_team_player.create_team_player_record(
-                team_id=team_id,
-                player_id=player_id,
+            new_team_player = (
+                await self._db.table_team_player.create_team_player_record(
+                    team_id=team_id,
+                    player_id=player_id,
+                )
             )
             assert new_team_player, f"Error: Could not add Player to Team."
             # Clear unnecessary invites
             for invite in invites:
-                await self.table_invite.delete_invite_record(invite)
+                await self._db.table_invite.delete_invite_record(invite)
             # Update Player's Discord roles
             discord_member = interaction.user
             await ManageTeamsHelpers.member_remove_team_roles(discord_member)
@@ -343,13 +348,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must registered to remove players"
             requestor_player_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_player_id
                 )
             )
@@ -365,13 +370,17 @@ class ManageTeams:
             assert requestor_is_captain, "You must be a team captain to remove players."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team: TeamRecord = await self.table_team.get_team_record(record_id=team_id)
+            team: TeamRecord = await self._db.table_team.get_team_record(
+                record_id=team_id
+            )
             team_name = await team.get_field(TeamFields.team_name)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             # Get info about the Player
-            player = await self.table_player.get_player_record(player_name=player_name)
+            player = await self._db.table_player.get_player_record(
+                player_name=player_name
+            )
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
@@ -393,13 +402,15 @@ class ManageTeams:
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
             # Apply cooldown
             expiration = await database_helpers.upcoming_monday()
-            new_cooldown = await self.table_cooldown.create_cooldown_record(
+            new_cooldown = await self._db.table_cooldown.create_cooldown_record(
                 player_id=player_id,
                 expiration=expiration,
             )
             assert new_cooldown, f"Error: Could not apply cooldown."
             # Remove the Player from the Team
-            await self.table_team_player.delete_team_player_record(player_team_player)
+            await self._db.table_team_player.delete_team_player_record(
+                player_team_player
+            )
             # Success
             message = f"Player '{player_name}' removed from team '{team_name}'"
             return await interaction.followup.send(message)
@@ -418,13 +429,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a player to promote players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
             )
@@ -436,7 +447,7 @@ class ManageTeams:
             assert requestor_is_captain, f"You must be team captain to promote players."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             # Get info about co-captain
@@ -448,7 +459,9 @@ class ManageTeams:
                     )
             assert not co_captain_id, f"Team already has a co-captain."
             # Get info about the Player
-            player = await self.table_player.get_player_record(player_name=player_name)
+            player = await self._db.table_player.get_player_record(
+                player_name=player_name
+            )
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
@@ -460,7 +473,9 @@ class ManageTeams:
             assert player_id != requestor_id, f"Cannot promote yourself."
             # Update Player's TeamPlayer record
             await player_team_player.set_field(TeamPlayerFields.is_co_captain, True)
-            await self.table_team_player.update_team_player_record(player_team_player)
+            await self._db.table_team_player.update_team_player_record(
+                player_team_player
+            )
             # Update Player's Discord roles
             region = await requestor.get_field(PlayerFields.region)
             player_discord_id = await player.get_field(PlayerFields.discord_id)
@@ -489,13 +504,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a player to demote players."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
             )
@@ -507,11 +522,13 @@ class ManageTeams:
             assert requestor_is_captain, f"You must be team captain to demote players."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             # Get info about the Player
-            player = await self.table_player.get_player_record(player_name=player_name)
+            player = await self._db.table_player.get_player_record(
+                player_name=player_name
+            )
             assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
@@ -526,7 +543,9 @@ class ManageTeams:
             assert is_co_captain, f"Player is not a co-captain."
             # Update Player's TeamPlayer record
             await player_team_player.set_field(TeamPlayerFields.is_co_captain, False)
-            await self.table_team_player.update_team_player_record(player_team_player)
+            await self._db.table_team_player.update_team_player_record(
+                player_team_player
+            )
             # Update Player's Discord roles
             player_discord_id = await player.get_field(PlayerFields.discord_id)
             player_discord_member = await discord_helpers.member_from_discord_id(
@@ -550,13 +569,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a Player to leave a Team."
             requestor_player_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_player_id
                 )
             )
@@ -567,9 +586,9 @@ class ManageTeams:
             )
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team = await self.table_team.get_team_record(record_id=team_id)
+            team = await self._db.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             if requestor_is_captain:
@@ -585,16 +604,16 @@ class ManageTeams:
                 co_cap = co_captain_team_player
                 await co_cap.set_field(TeamPlayerFields.is_captain, True)
                 await co_cap.set_field(TeamPlayerFields.is_co_captain, False)
-                await self.table_team_player.update_team_player_record(co_cap)
+                await self._db.table_team_player.update_team_player_record(co_cap)
             # Apply cooldown
             expiration = await database_helpers.upcoming_monday()
-            new_cooldown = await self.table_cooldown.create_cooldown_record(
+            new_cooldown = await self._db.table_cooldown.create_cooldown_record(
                 player_id=requestor_player_id,
                 expiration=expiration,
             )
             assert new_cooldown, f"Error: Could not apply cooldown."
             # Remove the Player from the Team
-            await self.table_team_player.delete_team_player_record(
+            await self._db.table_team_player.delete_team_player_record(
                 requestor_team_player
             )
             # Update Player's Discord roles
@@ -616,13 +635,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self.table_player.get_player_record(
+            requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
             assert requestor, f"You must be registered as a player to disband a team."
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
             )
@@ -634,16 +653,18 @@ class ManageTeams:
             assert requestor_is_captain, f"You must be team captain to disband a team."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team = await self.table_team.get_team_record(record_id=team_id)
+            team = await self._db.table_team.get_team_record(record_id=team_id)
             team_name = await team.get_field(TeamFields.team_name)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             # Remove all Players from the Team
             for team_player in team_players:
                 # Remove Player's Discord roles
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
-                player = await self.table_player.get_player_record(record_id=player_id)
+                player = await self._db.table_player.get_player_record(
+                    record_id=player_id
+                )
                 player_discord_id = await player.get_field(PlayerFields.discord_id)
                 player_discord_member = await discord_helpers.member_from_discord_id(
                     guild=interaction.guild,
@@ -652,15 +673,15 @@ class ManageTeams:
                 await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
                 # Apply cooldown
                 expiration = await database_helpers.upcoming_monday()
-                new_cooldown = await self.table_cooldown.create_cooldown_record(
+                new_cooldown = await self._db.table_cooldown.create_cooldown_record(
                     player_id=player_id,
                     expiration=expiration,
                 )
                 assert new_cooldown, f"Error: Could not apply cooldown."
                 # Remove the Player from the Team
-                await self.table_team_player.delete_team_player_record(team_player)
+                await self._db.table_team_player.delete_team_player_record(team_player)
             # Delete the Team
-            await self.table_team.delete_team_record(team)
+            await self._db.table_team.delete_team_record(team)
             # Success
             message = f"Team '{team_name}' has been disbanded"
             return await interaction.followup.send(message)
@@ -681,24 +702,24 @@ class ManageTeams:
             # Determine desired team
             team = None
             if not team_name:
-                requestor = await self.table_player.get_player_record(
+                requestor = await self._db.table_player.get_player_record(
                     discord_id=interaction.user.id
                 )
                 requestor_id = await requestor.get_field(PlayerFields.record_id)
-                team_players = await self.table_team_player.get_team_player_records(
+                team_players = await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
                 )
                 assert team_players, f"No team specified."
                 team_player = team_players[0]
                 team_id = await team_player.get_field(TeamPlayerFields.team_id)
-                team = await self.table_team.get_team_record(record_id=team_id)
+                team = await self._db.table_team.get_team_record(record_id=team_id)
             # Get info about the Team
             if not team:
-                team = await self.table_team.get_team_record(team_name=team_name)
+                team = await self._db.table_team.get_team_record(team_name=team_name)
             assert team, f"Team not found."
             team_name = await team.get_field(TeamFields.team_name)
             team_id = await team.get_field(TeamFields.record_id)
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
             )
             # Get info about the Players
@@ -707,7 +728,9 @@ class ManageTeams:
             player_names = []
             for team_player in team_players:
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
-                player = await self.table_player.get_player_record(record_id=player_id)
+                player = await self._db.table_player.get_player_record(
+                    record_id=player_id
+                )
                 player_name = await player.get_field(PlayerFields.player_name)
                 player_names.append(player_name)
                 if await team_player.get_field(TeamPlayerFields.is_captain):

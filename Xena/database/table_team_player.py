@@ -1,7 +1,7 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, verify, EnumCheck, StrEnum
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import TeamPlayerFields
+from database.records import TeamPlayerRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -12,90 +12,14 @@ TeamPlayer Table
 """
 
 
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class TeamPlayerFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    team_id = 3  # The id of the team
-    player_id = 4  # The id of the player
-    is_captain = 5  # Whether or not the player is the captain of the team
-    is_co_captain = 6  # Whether or not the player is a co-captain of the team
-
-
-@verify(EnumCheck.UNIQUE)
-class Bool(StrEnum):
-    """Lookup for truthy values in the TeamPlayer table"""
-
-    TRUE = "Yes"
-    FALSE = "No"
-
-
-class TeamPlayerRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[TeamPlayerFields]
-    _data_dict: dict
-
-    def __init__(
-        self,
-        data_list: list[int | float | str | None],
-        fields: Type[TeamPlayerFields] = TeamPlayerFields,
-    ):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(data_list, fields)
-        # Conversion / Validation
-        ## Is Captain
-        is_captain = data_list[TeamPlayerFields.is_captain.value]
-        is_captain = (
-            True
-            if (
-                is_captain == True
-                or str(is_captain).casefold() == str(Bool.TRUE).casefold()
-            )
-            else False
-        )
-        self._data_dict[TeamPlayerFields.is_captain.name] = is_captain
-        ## Is Co-Captain
-        is_co_captain = data_list[TeamPlayerFields.is_co_captain.value]
-        is_co_captain = (
-            True
-            if (
-                is_co_captain == True
-                or str(is_co_captain).casefold() == str(Bool.TRUE).casefold()
-            )
-            else False
-        )
-        self._data_dict[TeamPlayerFields.is_co_captain.name] = is_co_captain
-
-    async def to_list(self) -> list[int | float | str | None]:
-        """Return the record as a list of data (e.g. for `gsheets`)"""
-        data_list = await super().to_list()
-        # Conversion
-        is_captain = self._data_dict[TeamPlayerFields.is_captain.name]
-        data_list[TeamPlayerFields.is_captain.value] = (
-            Bool.TRUE if is_captain else Bool.FALSE
-        )
-        is_co_captain = self._data_dict[TeamPlayerFields.is_co_captain.name]
-        data_list[TeamPlayerFields.is_co_captain.value] = (
-            Bool.TRUE if is_co_captain else Bool.FALSE
-        )
-        return data_list
-
-
 class TeamPlayerTable(BaseTable):
     """A class to manipulate the TeamPlayer table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
-        """Initialize the TeamPlayer Action class"""
+    def __init__(self, db: CoreDatabase):
+        """Initialize the TeamPlayer Table class"""
         super().__init__(
             db, constants.LEAGUE_DB_TAB_TEAM_PLAYER, TeamPlayerRecord, TeamPlayerFields
         )

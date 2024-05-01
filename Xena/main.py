@@ -1,6 +1,8 @@
+from bot_functions.manage_commands import ManageCommands
 from bot_functions.manage_players import ManagePlayers
 from bot_functions.manage_teams import ManageTeams
-from database.database import Database
+from database.database_core import CoreDatabase
+from database.database_full import FullDatabase
 import discord
 import discord.ext.commands as commands
 import dotenv
@@ -18,11 +20,13 @@ GUILD_ID = os.environ.get("GUILD_ID")
 
 # Google Sheets "Database"
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
-database = Database(gs_client)
+database_core = CoreDatabase(gs_client)
+database = FullDatabase(database_core)
 
 # Bot Functions
 manage_players = ManagePlayers(database)
 manage_teams = ManageTeams(database)
+manage_commands = ManageCommands(database)
 
 # Discord Intents
 intents = discord.Intents.default()

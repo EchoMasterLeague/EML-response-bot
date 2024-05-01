@@ -1,7 +1,7 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, verify, EnumCheck
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import ExampleFields
+from database.records import BaseRecord, ExampleRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -11,39 +11,14 @@ Example Table
 """
 
 
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class ExampleFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    example_a = 2  # EXAMPLE_A description
-    example_b = 3  # EXAMPLE_B description
-
-
-class ExampleRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[ExampleFields]
-    _data_dict: dict
-
-    def __init__(self, data_list: list[int | float | str | None]):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(ExampleFields, data_list)
-
-
 class ExmapleTable(BaseTable):
     """A class to manipulate the Example table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
-        """Initialize the Example Action class"""
+    def __init__(self, db: CoreDatabase):
+        """Initialize the Example Table class"""
         super().__init__(
             db, constants.LEAGUE_DB_TAB_EXAMPLE, ExampleRecord, ExampleFields
         )

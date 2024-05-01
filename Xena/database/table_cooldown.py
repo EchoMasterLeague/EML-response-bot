@@ -1,54 +1,24 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, verify, EnumCheck, StrEnum
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import CooldownFields
+from database.records import CooldownRecord
 import constants
-import errors.database_errors as DbErrors
 import gspread
 import utils.database_helpers as helpers
 
 """
-Player Table
+Cooldown Table
 """
-
-
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class CooldownFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    player_id = 3  # Record ID of the player
-    expires_at = 4  # Timestamp when the cooldown expires
-
-
-class CooldownRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[CooldownFields]
-    _data_dict: dict
-
-    def __init__(
-        self,
-        data_list: list[int | float | str | None],
-        fields: Type[CooldownFields] = CooldownFields,
-    ):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(data_list, fields)
 
 
 class CooldownTable(BaseTable):
     """A class to manipulate the Cooldown table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
-        """Initialize the Cooldown Action class"""
+    def __init__(self, db: CoreDatabase):
+        """Initialize the Cooldown Table class"""
         super().__init__(
             db, constants.LEAGUE_DB_TAB_COOLDOWN, CooldownRecord, CooldownFields
         )
@@ -76,11 +46,11 @@ class CooldownTable(BaseTable):
         return new_record
 
     async def update_cooldown_record(self, record: CooldownRecord) -> None:
-        """Update an existing Player record"""
+        """Update an existing Cooldown record"""
         await self.update_record(record)
 
     async def delete_cooldown_record(self, record: CooldownRecord) -> None:
-        """Delete an existing Player record"""
+        """Delete an existing Cooldown record"""
         record_id = await record.get_field(CooldownFields.record_id)
         await self.delete_record(record_id)
 

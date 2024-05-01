@@ -1,7 +1,8 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, StrEnum, verify, EnumCheck
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import TeamFields
+from database.records import TeamRecord
+from database.enums import TeamStatus
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -11,63 +12,14 @@ Team Table
 """
 
 
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class TeamFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    team_name = 3  # The name of the team
-    status = 4  # The status of the team
-
-
-@verify(EnumCheck.UNIQUE)
-class TeamStatus(StrEnum):
-    """Lookup for status values in the Team table"""
-
-    ACTIVE = "Active"  # The team is active
-    INACTIVE = "Inactive"  # The team is inactive
-
-
-class TeamRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[TeamFields]
-    _data_dict: dict
-
-    def __init__(
-        self,
-        data_list: list[int | float | str | None],
-        fields: Type[TeamFields] = TeamFields,
-    ):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(data_list, fields)
-        # Conversion / Validaton
-        ## Status
-        status = self._data_dict[TeamFields.status.name]
-        allowed_status_list = [s.value for s in TeamStatus]
-        for allowed_status in allowed_status_list:
-            if str(status).casefold() == str(allowed_status).casefold():
-                self._data_dict[TeamFields.status.name] = allowed_status
-                break
-        if self._data_dict[TeamFields.status.name] not in allowed_status_list:
-            raise ValueError(
-                f"Status '{status}' not available. Available Statuses: {allowed_status_list}"
-            )
-
-
 class TeamTable(BaseTable):
     """A class to manipulate the Team table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
-        """Initialize the Team Action class"""
+    def __init__(self, db: CoreDatabase):
+        """Initialize the Team Table class"""
         super().__init__(db, constants.LEAGUE_DB_TAB_TEAM, TeamRecord, TeamFields)
 
     async def create_team_record(self, team_name: str) -> TeamRecord:

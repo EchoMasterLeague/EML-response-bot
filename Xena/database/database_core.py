@@ -3,7 +3,7 @@ import gspread
 import errors.database_errors as DbErrors
 
 
-class Database:
+class CoreDatabase:
     """Google Sheets (pseudo-) Database
 
     This class is a pseudo-database that uses Google Sheets as a backend. It is

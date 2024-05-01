@@ -1,7 +1,7 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, verify, EnumCheck, StrEnum
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import PlayerFields
+from database.records import PlayerRecord, Regions
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -11,68 +11,14 @@ Player Table
 """
 
 
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class PlayerFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    discord_id = 3  # Numeric Discord ID of the player
-    player_name = 4  # Display Name of the player
-    region = 5  # Region of the player
-
-
-@verify(EnumCheck.UNIQUE)
-class Regions(StrEnum):
-    """Lookup for Region values in the Player table"""
-
-    NA = "NA"  # North America
-    EU = "EU"  # Europe
-    OCE = "OCE"  # Oceanic
-
-
-class PlayerRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[PlayerFields]
-    _data_dict: dict
-
-    def __init__(
-        self,
-        data_list: list[int | float | str | None],
-        fields: Type[PlayerFields] = PlayerFields,
-    ):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(data_list, fields)
-        # Conversion / Validaton
-        ## Discord ID
-        discord_id = self._data_dict[PlayerFields.discord_id.name]
-        self._data_dict[PlayerFields.discord_id.name] = str(discord_id)
-        ## Region
-        region = self._data_dict[PlayerFields.region.name]
-        region_list = [r.value for r in Regions]
-        for allowed_region in region_list:
-            if str(region).casefold() == allowed_region.casefold():
-                self._data_dict[PlayerFields.region.name] = allowed_region
-                break
-        if self._data_dict[PlayerFields.region.name] not in region_list:
-            raise DbErrors.EmlRegionNotFound(
-                f"Region '{region}' not available. Available Regions: {region_list}"
-            )
-
-
 class PlayerTable(BaseTable):
     """A class to manipulate the Player table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
-        """Initialize the Player Action class"""
+    def __init__(self, db: CoreDatabase):
+        """Initialize the Player Table class"""
         super().__init__(db, constants.LEAGUE_DB_TAB_PLAYER, PlayerRecord, PlayerFields)
 
     async def create_player_record(

@@ -1,7 +1,7 @@
-from database.base_table import BaseFields, BaseRecord, BaseTable
-from database.database import Database
-from enum import IntEnum, verify, EnumCheck, StrEnum
-from typing import Type
+from database.base_table import BaseTable
+from database.database_core import CoreDatabase
+from database.fields import InviteFields
+from database.records import InviteRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -12,43 +12,13 @@ Team Table
 """
 
 
-@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
-class InviteFields(IntEnum):
-    """Lookup for column numbers of fields in this table
-
-    note: `gspread` uses 1-based indexes, these are 0-based.
-    """
-
-    record_id = BaseFields.record_id
-    created_at = BaseFields.created_at
-    updated_at = BaseFields.updated_at
-    team_id = 3  # Record ID of the Team
-    inviter_player_id = 4  # Record ID of the Invite sending the invite
-    invitee_player_id = 5  # Record ID of the Invite receiving the invite
-
-
-class InviteRecord(BaseRecord):
-    """Record class for this table"""
-
-    fields: Type[InviteFields]
-    _data_dict: dict
-
-    def __init__(
-        self,
-        data_list: list[int | float | str | None],
-        fields: Type[InviteFields] = InviteFields,
-    ):
-        """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(data_list, fields)
-
-
 class InviteTable(BaseTable):
     """A class to manipulate the Invite table in the database"""
 
-    _db: Database
+    _db: CoreDatabase
     _worksheet: gspread.Worksheet
 
-    def __init__(self, db: Database):
+    def __init__(self, db: CoreDatabase):
         """Initialize the Invite Table class"""
         super().__init__(db, constants.LEAGUE_DB_TAB_INVITE, InviteRecord, InviteFields)
 

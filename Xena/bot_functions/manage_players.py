@@ -1,28 +1,19 @@
-from database.database import Database
-from utils import discord_helpers, general_helpers
-import discord
-from errors import discord_errors, database_errors
-from database.table_player import PlayerFields, PlayerRecord, PlayerTable, Regions
-from database.table_team import TeamFields, TeamRecord, TeamTable
-from database.table_team_player import (
-    TeamPlayerFields,
-    TeamPlayerRecord,
-    TeamPlayerTable,
-)
-from database.table_cooldown import CooldownFields, CooldownRecord, CooldownTable
-import constants
 from bot_dialogues import choices
+from database.database_full import FullDatabase
+from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields
+from database.enums import Regions
+from database.records import CooldownRecord
+from errors import database_errors
+from utils import discord_helpers, general_helpers
+import constants
+import discord
 
 
 class ManagePlayers:
     """EML Player Management"""
 
-    def __init__(self, database: Database):
-        self.database = database
-        self.table_player = PlayerTable(database)
-        self.table_team = TeamTable(database)
-        self.table_team_player = TeamPlayerTable(database)
-        self.table_cooldown = CooldownTable(database)
+    def __init__(self, database: FullDatabase):
+        self._db = database
 
     async def register_player(
         self,
@@ -55,7 +46,7 @@ class ManagePlayers:
             region = await ManagePlayersHelpers.normalize_region(region)
             assert region, f"Region must be in {allowed_regions}"
             # Create Player record
-            await self.table_player.create_player_record(
+            await self._db.table_player.create_player_record(
                 discord_id=discord_id, player_name=player_name, region=region
             )
             # Add Player role
@@ -82,13 +73,13 @@ class ManagePlayers:
             await interaction.response.defer()
             # Get Player info
             discord_id = interaction.user.id
-            existing_player = await self.table_player.get_player_record(
+            existing_player = await self._db.table_player.get_player_record(
                 discord_id=discord_id
             )
             assert existing_player, "You are not registered."
             existing_player_id = await existing_player.get_field(PlayerFields.record_id)
             existing_team_players = (
-                await self.table_team_player.get_team_player_records(
+                await self._db.table_team_player.get_team_player_records(
                     player_id=existing_player_id
                 )
             )
@@ -96,7 +87,7 @@ class ManagePlayers:
             # Remove Player role
             await ManagePlayersHelpers.member_remove_player_role(interaction.user)
             # Delete Player record
-            await self.table_player.delete_player_record(existing_player)
+            await self._db.table_player.delete_player_record(existing_player)
             # Success
             message = f"You are no longer registered as a player"
             return await interaction.followup.send(message)
@@ -120,7 +111,7 @@ class ManagePlayers:
             # Get Player info
             if not discord_id and not player_name:
                 discord_id = interaction.user.id
-            player = await self.table_player.get_player_record(
+            player = await self._db.table_player.get_player_record(
                 discord_id=discord_id, player_name=player_name
             )
             assert player, "Player not found."
@@ -131,7 +122,7 @@ class ManagePlayers:
             message_dict["player"] = player_name
             message_dict["region"] = player_region
             # Get cooldown info
-            cooldowns = await self.table_cooldown.get_cooldown_records(
+            cooldowns = await self._db.table_cooldown.get_cooldown_records(
                 player_id=player_id
             )
             cooldown: CooldownRecord = cooldowns[0] if cooldowns else None
@@ -139,13 +130,13 @@ class ManagePlayers:
                 cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
                 message_dict["cooldown_end"] = cooldown_end
             # Get Team info
-            team_players = await self.table_team_player.get_team_player_records(
+            team_players = await self._db.table_team_player.get_team_player_records(
                 player_id=player_id
             )
             team_player = team_players[0] if team_players else None
             if team_player:
                 team_id = await team_player.get_field(TeamPlayerFields.team_id)
-                team = await self.table_team.get_team_record(record_id=team_id)
+                team = await self._db.table_team.get_team_record(record_id=team_id)
                 team_name = await team.get_field(TeamFields.team_name)
                 is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
                 is_co_cap = await team_player.get_field(TeamPlayerFields.is_co_captain)
