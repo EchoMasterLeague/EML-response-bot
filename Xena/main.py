@@ -77,7 +77,11 @@ async def bot_player_lookup(
 @bot.tree.command(name=f"{BOT_PREFIX}_register_as_player")
 async def bot_player_register(interaction: discord.Interaction, region: str = None):
     """Register to become a Player"""
-    await manage_players.register_player(interaction=interaction, region=region)
+    is_allowed = await manage_commands.is_command_allowed(
+        interaction=interaction, command_name="register_as_player"
+    )
+    if is_allowed:
+        await manage_players.register_player(interaction=interaction, region=region)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}_unregister_as_player")
@@ -100,7 +104,11 @@ async def bot_team_lookup(interaction: discord.Interaction, team_name: str = Non
 @bot.tree.command(name=f"{BOT_PREFIX}_create_team")
 async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
-    await manage_teams.register_team(interaction, team_name)
+    is_allowed = await manage_commands.is_command_allowed(
+        interaction=interaction, command_name="register_as_player"
+    )
+    if is_allowed:
+        await manage_teams.register_team(interaction, team_name)
 
 
 # @bot.tree.command(name=f"{BOT_PREFIX}_add_player")
@@ -118,7 +126,11 @@ async def bot_team_invite_player(interaction: discord.Interaction, player_name: 
 @bot.tree.command(name=f"{BOT_PREFIX}_accept_invite")
 async def bot_team_accept_invite(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
-    await manage_teams.accept_invite(interaction)
+    is_allowed = await manage_commands.is_command_allowed(
+        interaction=interaction, command_name="register_as_player"
+    )
+    if is_allowed:
+        await manage_teams.accept_invite(interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}_remove_player")
