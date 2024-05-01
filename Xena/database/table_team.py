@@ -102,6 +102,8 @@ class TeamTable(BaseTable):
             raise ValueError("At least one of 'record_id' or 'team_name' is required")
         table = await self.get_table_data()
         for row in table:
+            if table.index(row) == 0:
+                continue
             if (
                 not record_id
                 or str(record_id).casefold()

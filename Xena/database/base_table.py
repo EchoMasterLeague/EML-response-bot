@@ -169,6 +169,8 @@ class BaseTable:
         """Get a record by its ID"""
         table = await self.get_table_data()
         for row in table:
+            if table.index(row) == 0:
+                continue
             if row[BaseFields.record_id] == record_id:
                 return self._record_type(row)
         raise DbErrors.EmlRecordNotFound(f"Record '{record_id}' not found")
@@ -181,6 +183,8 @@ class BaseTable:
         )
         table = await self.get_table_data()
         for row in table:
+            if table.index(row) == 0:
+                continue
             if row[BaseFields.record_id] == record_id:
                 # Update History
                 operation = HistoryOperations.UPDATE
@@ -195,6 +199,8 @@ class BaseTable:
         """Delete a record from the table"""
         table = await self.get_table_data()
         for row in table:
+            if table.index(row) == 0:
+                continue
             if row[BaseFields.record_id] == record_id:
                 try:
                     # Update History
@@ -281,7 +287,6 @@ class HistoryTable:
             await database_helpers.iso_timestamp()
         )
         history_list[HistoryFields.history_operation] = operation.value
-
         # insert the history record list into the table
         try:
             self._tab.append_row(history_list, table_range="A1")

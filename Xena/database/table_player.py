@@ -116,6 +116,8 @@ class PlayerTable(BaseTable):
             )
         table = await self.get_table_data()
         for row in table:
+            if table.index(row) == 0:
+                continue
             if (
                 (
                     not record_id
@@ -155,6 +157,8 @@ class PlayerTable(BaseTable):
         table = await self.get_table_data()
         players = []
         for row in table:
+            if table.index(row) == 0:
+                continue
             if region == row[PlayerFields.region]:
                 player = PlayerRecord(row)
                 players.append(player)

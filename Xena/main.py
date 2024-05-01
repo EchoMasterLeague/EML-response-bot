@@ -88,7 +88,7 @@ async def bot_player_unregister(interaction: discord.Interaction):
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}_team_lookup")
-async def bot_team_lookup(interaction: discord.Interaction, team_name: str):
+async def bot_team_lookup(interaction: discord.Interaction, team_name: str = None):
     """Lookup a Team by name"""
     await manage_teams.get_team_details(interaction, team_name)
 
@@ -99,10 +99,10 @@ async def bot_team_register(interaction: discord.Interaction, team_name: str):
     await manage_teams.register_team(interaction, team_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}_add_player")
-async def bot_team_add_player(interaction: discord.Interaction, player_name: str):
-    """Add a new player to your Team"""
-    await manage_teams.add_player_to_team(interaction, player_name)
+# @bot.tree.command(name=f"{BOT_PREFIX}_add_player")
+# async def bot_team_add_player(interaction: discord.Interaction, player_name: str):
+#    """Add a new player to your Team"""
+#    await manage_teams.add_player_to_team(interaction, player_name)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}_invite_player")

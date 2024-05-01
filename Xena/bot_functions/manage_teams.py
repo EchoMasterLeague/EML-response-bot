@@ -54,6 +54,11 @@ class ManageTeams:
                 player_id=player_id
             )
             assert not existing_team, f"You are already on a team."
+            # Check if the Player is on a cooldown
+            cooldowns = await self.table_cooldown.get_cooldown_records(
+                player_id=player_id, expires_after=datetime.datetime.now().timestamp()
+            )
+            assert not cooldowns, f"You are on a cooldown."
             # Create the Team and Captain Records
             new_team = await self.table_team.create_team_record(team_name=team_name)
             assert new_team, f"Error: Could not create team."
@@ -234,20 +239,19 @@ class ManageTeams:
     async def accept_invite(self, interaction: discord.Interaction):
         """Add the requestor to their new Team"""
         try:
+            # Get info about the Player
             player = await self.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
-            if not player:
-                message = "You must be registered as a Player to accept an invite."
-                return await interaction.response.send_message(message)
+            assert player, f"You must be registered as a Player to accept an invite."
             player_id = await player.get_field(PlayerFields.record_id)
+            # Gather Invites
             invites = await self.table_invite.get_invite_records(
                 invitee_player_id=player_id
             )
-            if not invites:
-                return await interaction.response.send_message("No invites found.")
+            assert invites, f"No invites found."
+            # Gather Team options
             options_dict = {}
-            # This could be a lot of calls, so let's get all the teams at once
             all_teams = await self.table_team.get_table_data()
             for invite in invites:
                 team_id = await invite.get_field(InviteFields.team_id)
@@ -255,23 +259,32 @@ class ManageTeams:
                     if team[TeamFields.record_id] == team_id:
                         team_name = team[TeamFields.team_name]
                         options_dict[team_id] = team_name
-            cancel_button = choices.QuestionOptionButton(
-                label="Cancel",
-                style=discord.ButtonStyle.primary,
-                custom_id="cancel",
+            # Create the view to display the options
+            view = choices.QuestionPromptView(
+                options_dict=options_dict,
+                initial_button_style=discord.ButtonStyle.success,
             )
+            # Add option to clear invites
             clearall_button = choices.QuestionOptionButton(
                 label="Clear all invites",
                 style=discord.ButtonStyle.danger,
                 custom_id="clearall",
             )
-            view = choices.QuestionPromptView(options_dict=options_dict)
             view.add_item(clearall_button)
+            # Add option to cancel without making a choice
+            cancel_button = choices.QuestionOptionButton(
+                label="Cancel",
+                style=discord.ButtonStyle.primary,
+                custom_id="cancel",
+            )
             view.add_item(cancel_button)
+            # Send the message with the options
             await interaction.response.send_message(
                 content="Choose a team", view=view, ephemeral=True
             )
+            # Wait for the user to make a choice
             await view.wait()
+            # Process the user's choice
             choice = view.value
             if not choice or choice == "cancel":
                 return await interaction.followup.send("No team selected.")
@@ -281,14 +294,19 @@ class ManageTeams:
                 return await interaction.followup.send("Invites cleared.")
             team_id = choice
             team_name = options_dict[team_id]
-            # Get info about the player
+            # Check for cooldowns
+            cooldowns = await self.table_cooldown.get_cooldown_records(
+                player_id=player_id, expires_after=datetime.datetime.now().timestamp()
+            )
+            assert not cooldowns, f"You are on a cooldown."
+            # Get info about the player's current Team
             requestor_team_players = (
                 await self.table_team_player.get_team_player_records(
                     player_id=player_id
                 )
             )
             assert not requestor_team_players, f"You are already on a team."
-            # Get info about the Team
+            # Get info about the player's new Team
             team = await self.table_team.get_team_record(record_id=team_id)
             team_players = await self.table_team_player.get_team_player_records(
                 team_id=team_id
@@ -300,7 +318,7 @@ class ManageTeams:
                 player_id=player_id,
             )
             assert new_team_player, f"Error: Could not add Player to Team."
-            # Clear invites
+            # Clear unnecessary invites
             for invite in invites:
                 await self.table_invite.delete_invite_record(invite)
             # Update Player's Discord roles
@@ -374,7 +392,7 @@ class ManageTeams:
             )
             await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
             # Apply cooldown
-            expiration = await database_helpers.next_monday_epoch()
+            expiration = await database_helpers.upcoming_monday()
             new_cooldown = await self.table_cooldown.create_cooldown_record(
                 player_id=player_id,
                 expiration=expiration,
@@ -569,7 +587,7 @@ class ManageTeams:
                 await co_cap.set_field(TeamPlayerFields.is_co_captain, False)
                 await self.table_team_player.update_team_player_record(co_cap)
             # Apply cooldown
-            expiration = await database_helpers.next_monday_epoch()
+            expiration = await database_helpers.upcoming_monday()
             new_cooldown = await self.table_cooldown.create_cooldown_record(
                 player_id=requestor_player_id,
                 expiration=expiration,
@@ -633,7 +651,7 @@ class ManageTeams:
                 )
                 await ManageTeamsHelpers.member_remove_team_roles(player_discord_member)
                 # Apply cooldown
-                expiration = await database_helpers.next_monday_epoch()
+                expiration = await database_helpers.upcoming_monday()
                 new_cooldown = await self.table_cooldown.create_cooldown_record(
                     player_id=player_id,
                     expiration=expiration,
@@ -653,13 +671,30 @@ class ManageTeams:
             await interaction.followup.send(message)
             raise error
 
-    async def get_team_details(self, interaction: discord.Interaction, team_name: str):
+    async def get_team_details(
+        self, interaction: discord.Interaction, team_name: str = None
+    ):
         """Get a Team by name"""
         try:
             # This could take a while
             await interaction.response.defer()
+            # Determine desired team
+            team = None
+            if not team_name:
+                requestor = await self.table_player.get_player_record(
+                    discord_id=interaction.user.id
+                )
+                requestor_id = await requestor.get_field(PlayerFields.record_id)
+                team_players = await self.table_team_player.get_team_player_records(
+                    player_id=requestor_id
+                )
+                assert team_players, f"No team specified."
+                team_player = team_players[0]
+                team_id = await team_player.get_field(TeamPlayerFields.team_id)
+                team = await self.table_team.get_team_record(record_id=team_id)
             # Get info about the Team
-            team = await self.table_team.get_team_record(team_name=team_name)
+            if not team:
+                team = await self.table_team.get_team_record(team_name=team_name)
             assert team, f"Team not found."
             team_name = await team.get_field(TeamFields.team_name)
             team_id = await team.get_field(TeamFields.record_id)

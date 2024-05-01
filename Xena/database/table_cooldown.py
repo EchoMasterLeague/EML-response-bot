@@ -58,15 +58,18 @@ class CooldownTable(BaseTable):
     ) -> CooldownRecord:
         """Create a new Cooldown record, or update an existing one"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_cooldown_record(player_id=player_id)
+        existing_records = await self.get_cooldown_records(player_id=player_id)
+        existing_record: CooldownRecord
+        existing_record = existing_records[0] if existing_records else None
         if existing_record:
+            # Update existing record in the database
             existing_record.set_field(CooldownFields.expires_at, expiration)
             await self.update_cooldown_record(existing_record)
             return existing_record
         # Create the new record
         record_list = [None] * len(CooldownFields)
         record_list[CooldownFields.player_id] = player_id
-        record_list[CooldownFields.expires_at] = expiration
+        record_list[CooldownFields.expires_at] = await helpers.iso_timestamp(expiration)
         new_record = await self.create_record(record_list, CooldownFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -81,14 +84,17 @@ class CooldownTable(BaseTable):
         record_id = await record.get_field(CooldownFields.record_id)
         await self.delete_record(record_id)
 
-    async def get_cooldown_record(
+    async def get_cooldown_records(
         self,
         record_id: str = None,
         player_id: str = None,
         expires_before: int = None,
         expires_after: int = None,
     ) -> CooldownRecord:
-        """Get an existing Cooldown record"""
+        """Get an existing Cooldown record
+
+        Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
+        """
         if (
             record_id is None
             and player_id is None
@@ -98,8 +104,22 @@ class CooldownTable(BaseTable):
             raise ValueError(
                 "At least one of 'record_id', 'player_id', 'expires_before', or 'expires_after' is required"
             )
+        now = await helpers.epoch_timestamp()
         table = await self.get_table_data()
+        existing_records: list[CooldownRecord] = []
+        expired_records: list[CooldownRecord] = []
         for row in table:
+            if table.index(row) == 0:
+                continue
+            expiration_epoch = int(
+                await helpers.epoch_timestamp(row[CooldownFields.expires_at])
+            )
+            # Check for expired records
+            if int(now) > expiration_epoch:
+                expired_record = CooldownRecord(row)
+                expired_records.append(expired_record)
+                continue
+            # Check for matching records
             if (
                 (
                     not record_id
@@ -111,17 +131,14 @@ class CooldownTable(BaseTable):
                     or str(player_id).casefold()
                     == str(row[CooldownFields.player_id]).casefold()
                 )
-                and (
-                    not expires_before
-                    or expires_before
-                    > await helpers.epoch_timestamp(row[CooldownFields.expires_at])
-                )
-                and (
-                    not expires_after
-                    or expires_after
-                    < await helpers.epoch_timestamp(row[CooldownFields.expires_at])
-                )
+                and (not expires_before or int(expires_before) > int(expiration_epoch))
+                and (not expires_after or int(expires_after) < int(expiration_epoch))
             ):
+                # Add the matching record to the list
                 existing_record = CooldownRecord(row)
-                return existing_record
-        return None
+                existing_records.append(existing_record)
+        # Remove expired records from the database
+        for record in expired_records:
+            await self.delete_cooldown_record(record)
+        # Return the matched records
+        return existing_records

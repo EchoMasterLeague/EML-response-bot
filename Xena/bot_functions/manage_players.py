@@ -9,6 +9,7 @@ from database.table_team_player import (
     TeamPlayerRecord,
     TeamPlayerTable,
 )
+from database.table_cooldown import CooldownFields, CooldownRecord, CooldownTable
 import constants
 from bot_dialogues import choices
 
@@ -21,6 +22,7 @@ class ManagePlayers:
         self.table_player = PlayerTable(database)
         self.table_team = TeamTable(database)
         self.table_team_player = TeamPlayerTable(database)
+        self.table_cooldown = CooldownTable(database)
 
     async def register_player(
         self,
@@ -116,7 +118,8 @@ class ManagePlayers:
             # This could take a while
             await interaction.response.defer()
             # Get Player info
-            assert player_name or discord_id, "No player_name or discord_id provided."
+            if not discord_id and not player_name:
+                discord_id = interaction.user.id
             player = await self.table_player.get_player_record(
                 discord_id=discord_id, player_name=player_name
             )
@@ -127,6 +130,14 @@ class ManagePlayers:
             message_dict = {}
             message_dict["player"] = player_name
             message_dict["region"] = player_region
+            # Get cooldown info
+            cooldowns = await self.table_cooldown.get_cooldown_records(
+                player_id=player_id
+            )
+            cooldown: CooldownRecord = cooldowns[0] if cooldowns else None
+            if cooldown:
+                cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
+                message_dict["cooldown_end"] = cooldown_end
             # Get Team info
             team_players = await self.table_team_player.get_team_player_records(
                 player_id=player_id
@@ -139,8 +150,10 @@ class ManagePlayers:
                 is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
                 is_co_cap = await team_player.get_field(TeamPlayerFields.is_co_captain)
                 message_dict["team"] = team_name
-                message_dict["is_captain"] = is_captain
-                message_dict["is_co_captain"] = is_co_cap
+                team_role = "member"
+                team_role = "captain" if is_captain else team_role
+                team_role = "co-captain" if is_co_cap else team_role
+                message_dict["team_role"] = team_role
             # Create Response
             message = await general_helpers.format_json(message_dict)
             message = await discord_helpers.code_block(message, language="json")

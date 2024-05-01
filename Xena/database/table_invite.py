@@ -5,6 +5,7 @@ from typing import Type
 import constants
 import errors.database_errors as DbErrors
 import gspread
+import utils.database_helpers as helpers
 
 """
 Team Table
@@ -99,9 +100,21 @@ class InviteTable(BaseTable):
             raise ValueError(
                 "At least one of the following parameters must be provided: record_id, team_id, inviter_player_id, invitee_player_id"
             )
+        now = await helpers.epoch_timestamp()
         table = await self.get_table_data()
         existing_records: list[InviteRecord] = []
+        expired_records: list[InviteRecord] = []
         for row in table:
+            if table.index(row) == 0:
+                continue
+            # Check for expired records
+            creation_epoch = await helpers.epoch_timestamp(row[InviteFields.created_at])
+            duration_seconds = constants.INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+            expiration_epoch = creation_epoch + duration_seconds
+            if now > expiration_epoch:
+                expired_record = InviteRecord(row)
+                expired_records.append(expired_record)
+                continue
             if (
                 (
                     not record_id

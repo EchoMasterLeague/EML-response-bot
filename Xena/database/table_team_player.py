@@ -147,6 +147,8 @@ class TeamPlayerTable(BaseTable):
         table = await self.get_table_data()
         existing_records: list[TeamPlayerRecord] = []
         for row in table:
+            if table.index(row) == 0:
+                continue
             if (
                 (
                     not record_id

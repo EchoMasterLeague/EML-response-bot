@@ -32,8 +32,14 @@ class QuestionPromptViewExampleUsage:
             "option3": "Option 3",
         }
         view = QuestionPromptView(options_dict=options_dict)
+        # optionally add more buttons with specific styles
+        additional_button = QuestionOptionButton(
+            "risky", "Risky Click", style=discord.ButtonStyle.danger
+        )
+        view.add_item(additional_button)
         await interaction.response.send_message("Which option?", view=view)
         await view.wait()
+        # Send a message with the selected option
         await interaction.followup.send(f"You selected: {view.value}")
 
 
@@ -79,6 +85,9 @@ class QuestionPromptView(discord.ui.View):
         timeout (int): The time in seconds before the view times out
         options_dict (dict): A dictionary of options to display
         default_value (str): The default value to return if no option is selected
+        initial_button_style (discord.ButtonStyle): The style of the buttons before selection
+        unselected_button_style (discord.ButtonStyle): The style of the unselected buttons
+
 
     Returns:
         self.value (str): The value of the selected option
@@ -107,31 +116,37 @@ class QuestionPromptView(discord.ui.View):
         timeout=180,
         options_dict: dict = {},
         default_value: str = None,
+        initial_button_style=discord.ButtonStyle.secondary,
+        unselected_button_style=discord.ButtonStyle.secondary,
     ):
         super().__init__(timeout=timeout)
+        self._unselected_button_style = unselected_button_style
         self.label = None
         self.value = default_value
         # Add buttons for each option
         for option_id, option_label in options_dict.items():
-            self.add_item(QuestionOptionButton(custom_id=option_id, label=option_label))
+            new_button = QuestionOptionButton(
+                custom_id=option_id, label=option_label, style=initial_button_style
+            )
+            self.add_item(new_button)
 
     async def select(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Make the name and value of the selected button available
         self.label = button.label
         self.value = button.custom_id if button.custom_id else button.label
         # Update the selected button
-        if button.style not in (
-            discord.ButtonStyle.primary,
-            discord.ButtonStyle.danger,
-        ):
+        if button.style in (discord.ButtonStyle.secondary,):
             button.style = discord.ButtonStyle.success
         # Disable all buttons
         for child in self.children:
+            # Skip non-button items
             if not isinstance(child, discord.ui.Button):
                 continue
+            # Disable the selected button
             child.disabled = True
+            # Change the style of the unselected buttons
             if button is not child:
-                child.style = discord.ButtonStyle.secondary
+                child.style = self._unselected_button_style
         # Update the message view to reflect these changes
         await interaction.response.edit_message(view=self)
         # Stop the view, picked up by `await view.wait()` in the calling function
