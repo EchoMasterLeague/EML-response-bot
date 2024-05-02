@@ -334,7 +334,10 @@ class ManageTeams:
             message = f"You have joined Team '{team_name}'"
             return await interaction.followup.send(message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(message)
+            else:
+                await interaction.followup.send(message)
         except Exception as error:
             message = f"Error: Something went wrong."
             await interaction.followup.send(message)

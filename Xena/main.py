@@ -105,7 +105,7 @@ async def bot_team_lookup(interaction: discord.Interaction, team_name: str = Non
 async def bot_team_register(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     is_allowed = await manage_commands.is_command_allowed(
-        interaction=interaction, command_name="register_as_player"
+        interaction=interaction, command_name="create_team"
     )
     if is_allowed:
         await manage_teams.register_team(interaction, team_name)
@@ -127,7 +127,7 @@ async def bot_team_invite_player(interaction: discord.Interaction, player_name: 
 async def bot_team_accept_invite(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     is_allowed = await manage_commands.is_command_allowed(
-        interaction=interaction, command_name="register_as_player"
+        interaction=interaction, command_name="accept_invite"
     )
     if is_allowed:
         await manage_teams.accept_invite(interaction)
