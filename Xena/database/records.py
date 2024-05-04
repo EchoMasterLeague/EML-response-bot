@@ -4,7 +4,10 @@ from database.fields import (
     CommandLockFields,
     CooldownFields,
     ExampleFields,
-    InviteFields,
+    TeamInviteFields,
+    MatchInviteFields,
+    MatchResultInviteFields,
+    MatchFields,
     PlayerFields,
     TeamFields,
     TeamPlayerFields,
@@ -65,21 +68,23 @@ class BaseRecord:
 
 
 class ExampleRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table Example"""
 
     fields: Type[ExampleFields]
-    _data_dict: dict
 
-    def __init__(self, data_list: list[int | float | str | None]):
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[ExampleFields] = ExampleFields,
+    ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
-        super().__init__(ExampleFields, data_list)
+        super().__init__(data_list, fields)
 
 
 class CommandLockRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table CommandLock"""
 
     fields: Type[CommandLockFields]
-    _data_dict: dict
 
     def __init__(
         self,
@@ -113,10 +118,9 @@ class CommandLockRecord(BaseRecord):
 
 
 class CooldownRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table Cooldown"""
 
     fields: Type[CooldownFields]
-    _data_dict: dict
 
     def __init__(
         self,
@@ -127,26 +131,89 @@ class CooldownRecord(BaseRecord):
         super().__init__(data_list, fields)
 
 
-class InviteRecord(BaseRecord):
-    """Record class for this table"""
+class MatchInviteRecord(BaseRecord):
+    """Record class for table MatchInvite"""
 
-    fields: Type[InviteFields]
-    _data_dict: dict
+    fields: Type[MatchInviteFields]
 
     def __init__(
         self,
         data_list: list[int | float | str | None],
-        fields: Type[InviteFields] = InviteFields,
+        fields: Type[MatchInviteFields] = MatchInviteFields,
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
 
 
+class MatchResultInviteRecord(BaseRecord):
+    """Record class for table MatchResultInvite"""
+
+    fields: Type[MatchResultInviteFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[MatchResultInviteFields] = MatchResultInviteFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+
+class MatchRecord(BaseRecord):
+    """Record class for table Match"""
+
+    fields: Type[MatchFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[MatchFields] = MatchFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+        # Conversion / Validation
+        ## Is Captain
+        is_captain = data_list[MatchFields.is_captain.value]
+        is_captain = (
+            True
+            if (
+                is_captain == True
+                or str(is_captain).casefold() == str(Bool.TRUE).casefold()
+            )
+            else False
+        )
+        self._data_dict[MatchFields.is_captain.name] = is_captain
+        ## Is Co-Captain
+        is_co_captain = data_list[MatchFields.is_co_captain.value]
+        is_co_captain = (
+            True
+            if (
+                is_co_captain == True
+                or str(is_co_captain).casefold() == str(Bool.TRUE).casefold()
+            )
+            else False
+        )
+        self._data_dict[MatchFields.is_co_captain.name] = is_co_captain
+
+    async def to_list(self) -> list[int | float | str | None]:
+        """Return the record as a list of data (e.g. for `gsheets`)"""
+        data_list = await super().to_list()
+        # Conversion
+        is_captain = self._data_dict[MatchFields.is_captain.name]
+        data_list[MatchFields.is_captain.value] = (
+            Bool.TRUE if is_captain else Bool.FALSE
+        )
+        is_co_captain = self._data_dict[MatchFields.is_co_captain.name]
+        data_list[MatchFields.is_co_captain.value] = (
+            Bool.TRUE if is_co_captain else Bool.FALSE
+        )
+        return data_list
+
+
 class PlayerRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table Player"""
 
     fields: Type[PlayerFields]
-    _data_dict: dict
 
     def __init__(
         self,
@@ -172,11 +239,24 @@ class PlayerRecord(BaseRecord):
             )
 
 
+class TeamInviteRecord(BaseRecord):
+    """Record class for table TeamInvite"""
+
+    fields: Type[TeamInviteFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[TeamInviteFields] = TeamInviteFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+
 class TeamPlayerRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table TeamPlayer"""
 
     fields: Type[TeamPlayerFields]
-    _data_dict: dict
 
     def __init__(
         self,
@@ -225,10 +305,9 @@ class TeamPlayerRecord(BaseRecord):
 
 
 class TeamRecord(BaseRecord):
-    """Record class for this table"""
+    """Record class for table Team"""
 
     fields: Type[TeamFields]
-    _data_dict: dict
 
     def __init__(
         self,

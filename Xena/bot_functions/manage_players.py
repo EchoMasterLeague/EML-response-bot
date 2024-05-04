@@ -55,16 +55,14 @@ class ManagePlayers:
             )
             # Success
             message = f"Player '{player_name}' registered for region '{region}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except database_errors.EmlRecordAlreadyExists:
             message = f"Player already registered"
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def unregister_player(self, interaction: discord.Interaction):
         """Unregister a Player"""
@@ -90,13 +88,11 @@ class ManagePlayers:
             await self._db.table_player.delete_player_record(existing_player)
             # Success
             message = f"You are no longer registered as a player"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def get_player_details(
         self,
@@ -148,13 +144,11 @@ class ManagePlayers:
             # Create Response
             message = await general_helpers.format_json(message_dict)
             message = await discord_helpers.code_block(message, language="json")
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
 
 class ManagePlayersHelpers:

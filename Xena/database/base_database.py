@@ -1,9 +1,22 @@
 import constants
 import gspread
 import errors.database_errors as DbErrors
+from database.table_player import PlayerFields, PlayerRecord, PlayerTable, Regions
+from database.table_team import TeamFields, TeamRecord, TeamTable
+from database.table_team_player import (
+    TeamPlayerFields,
+    TeamPlayerRecord,
+    TeamPlayerTable,
+)
+from database.table_cooldown import CooldownFields, CooldownRecord, CooldownTable
+from database.table_command_lock import (
+    CommandLockFields,
+    CommandLockRecord,
+    CommandLockTable,
+)
 
 
-class CoreDatabase:
+class BaseDatabase:
     """Google Sheets (pseudo-) Database
 
     This class is a pseudo-database that uses Google Sheets as a backend. It is

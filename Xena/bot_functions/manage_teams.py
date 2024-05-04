@@ -1,6 +1,6 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
-from database.fields import InviteFields, PlayerFields, TeamPlayerFields, TeamFields
+from database.fields import TeamInviteFields, PlayerFields, TeamPlayerFields, TeamFields
 from database.records import TeamRecord
 from utils import discord_helpers, database_helpers
 import constants
@@ -68,13 +68,11 @@ class ManageTeams:
             await ManageTeamsHelpers.member_add_captain_role(discord_member, region)
             # Success
             message = f"Team created: '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def add_player_to_team(
         self, interaction: discord.Interaction, player_name: str
@@ -147,13 +145,11 @@ class ManageTeams:
             )
             # Success
             message = f"Player '{player_name}' added to team '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def invite_player_to_team(
         self, interaction: discord.Interaction, player_name
@@ -183,10 +179,10 @@ class ManageTeams:
                 is_captain = await requestor_team_player.get_field(captain_field)
                 requestor_is_captain = True if requestor_is_captain else is_captain
             assert requestor_is_captain, "You must be a team captain to invite Players."
-            requestor_invites = await self._db.table_invite.get_invite_records(
+            requestor_invites = await self._db.table_invite.get_team_invite_records(
                 inviter_player_id=requestor_id
             )
-            available_invites = constants.INVITES_PLAYER_MAX - len(requestor_invites)
+            available_invites = constants.TEAM_INVITES_SEND_MAX - len(requestor_invites)
             assert available_invites > 0, f"You have sent too many pending invites."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
@@ -196,10 +192,10 @@ class ManageTeams:
                 team_id=team_id
             )
             assert len(team_players) < constants.TEAM_PLAYERS_MAX, f"Team is full."
-            team_invites = await self._db.table_invite.get_invite_records(
+            team_invites = await self._db.table_invite.get_team_invite_records(
                 team_id=team_id
             )
-            available_invites = constants.INVITES_TEAM_MAX - len(team_invites)
+            available_invites = constants.TEAM_INVITES_SEND_MAX - len(team_invites)
             assert available_invites > 0, f"Team has too many pending invites."
             # Get info about the Player
             player = await self._db.table_player.get_player_record(
@@ -214,16 +210,18 @@ class ManageTeams:
                 )
             )
             assert not existing_team_player, f"Player is already on a team."
-            player_invites = await self._db.table_invite.get_invite_records(
+            player_invites = await self._db.table_invite.get_team_invite_records(
                 invitee_player_id=player_id
             )
-            available_invites = constants.INVITES_PLAYER_MAX - len(player_invites)
+            available_invites = constants.TEAM_INVITES_RECEIVE_MAX - len(player_invites)
             assert available_invites > 0, f"Player has too many open invites."
             for invite in player_invites:
-                team_id_match = await invite.get_field(InviteFields.team_id) == team_id
+                team_id_match = (
+                    await invite.get_field(TeamInviteFields.team_id) == team_id
+                )
                 assert not team_id_match, f"Player already has an invite to this team."
             # Create the invite
-            new_invite = await self._db.table_invite.create_invite_record(
+            new_invite = await self._db.table_invite.create_team_invite_record(
                 team_id=team_id,
                 inviter_player_id=requestor_id,
                 invitee_player_id=player_id,
@@ -231,13 +229,11 @@ class ManageTeams:
             assert new_invite, f"Error: Could not create invite."
             # Success
             message = f"Player '{player_name}' invited to team '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def accept_invite(self, interaction: discord.Interaction):
         """Add the requestor to their new Team"""
@@ -249,7 +245,7 @@ class ManageTeams:
             assert player, f"You must be registered as a Player to accept an invite."
             player_id = await player.get_field(PlayerFields.record_id)
             # Gather Invites
-            invites = await self._db.table_invite.get_invite_records(
+            invites = await self._db.table_invite.get_team_invite_records(
                 invitee_player_id=player_id
             )
             assert invites, f"No invites found."
@@ -257,7 +253,7 @@ class ManageTeams:
             options_dict = {}
             all_teams = await self._db.table_team.get_table_data()
             for invite in invites:
-                team_id = await invite.get_field(InviteFields.team_id)
+                team_id = await invite.get_field(TeamInviteFields.team_id)
                 for team in all_teams:
                     if team[TeamFields.record_id] == team_id:
                         team_name = team[TeamFields.team_name]
@@ -293,7 +289,7 @@ class ManageTeams:
                 return await interaction.followup.send("No team selected.")
             if choice == "clearall":
                 for invite in invites:
-                    await self._db.table_invite.delete_invite_record(invite)
+                    await self._db.table_invite.delete_team_invite_record(invite)
                 return await interaction.followup.send("Invites cleared.")
             team_id = choice
             team_name = options_dict[team_id]
@@ -325,23 +321,18 @@ class ManageTeams:
             assert new_team_player, f"Error: Could not add Player to Team."
             # Clear unnecessary invites
             for invite in invites:
-                await self._db.table_invite.delete_invite_record(invite)
+                await self._db.table_invite.delete_team_invite_record(invite)
             # Update Player's Discord roles
             discord_member = interaction.user
             await ManageTeamsHelpers.member_remove_team_roles(discord_member)
             await ManageTeamsHelpers.member_add_team_role(discord_member, team_name)
             # Success
             message = f"You have joined Team '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            if not interaction.response.is_done():
-                await interaction.response.send_message(message)
-            else:
-                await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def remove_player_from_team(
         self, interaction: discord.Interaction, player_name: str
@@ -416,13 +407,11 @@ class ManageTeams:
             )
             # Success
             message = f"Player '{player_name}' removed from team '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def promote_player_to_co_captain(
         self, interaction: discord.Interaction, player_name
@@ -486,18 +475,16 @@ class ManageTeams:
                 guild=interaction.guild,
                 discord_id=player_discord_id,
             )
-            await ManageTeamsHelpers.member_add_captain_role(
+            await ManageTeamsHelpers.member_add_co_captain_role(
                 player_discord_member, region
             )
             # Success
             message = f"Player '{player_name}' promoted to co-captain"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def demote_player_from_co_captain(
         self, interaction: discord.Interaction, player_name
@@ -558,13 +545,11 @@ class ManageTeams:
             await ManageTeamsHelpers.member_remove_captain_role(player_discord_member)
             # Success
             message = f"Player '{player_name}' demoted from co-captain"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def leave_team(self, interaction: discord.Interaction):
         """Remove the requestor from their Team"""
@@ -624,13 +609,11 @@ class ManageTeams:
             await ManageTeamsHelpers.member_remove_team_roles(member)
             # Success
             message = f"You have left Team '{team_name}'"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def disband_team(self, interaction: discord.Interaction):
         """Disband the requestor's Team"""
@@ -687,13 +670,11 @@ class ManageTeams:
             await self._db.table_team.delete_team_record(team)
             # Success
             message = f"Team '{team_name}' has been disbanded"
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
     async def get_team_details(
         self, interaction: discord.Interaction, team_name: str = None
@@ -750,13 +731,11 @@ class ManageTeams:
             }
             message = await bot_helpers.format_json(message_dict)
             message = await discord_helpers.code_block(message, language="json")
-            return await interaction.followup.send(message)
+            return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
-            await interaction.followup.send(message)
+            await discord_helpers.final_message(interaction, message)
         except Exception as error:
-            message = f"Error: Something went wrong."
-            await interaction.followup.send(message)
-            raise error
+            await discord_helpers.error_message(interaction, error)
 
 
 class ManageTeamsHelpers:
@@ -767,7 +746,11 @@ class ManageTeamsHelpers:
     @staticmethod
     async def member_remove_team_roles(member: discord.Member):
         """Remove all Team roles from a Guild Member"""
-        prefixes = [constants.ROLE_PREFIX_TEAM, constants.ROLE_PREFIX_CAPTAIN]
+        prefixes = [
+            constants.ROLE_PREFIX_TEAM,
+            constants.ROLE_PREFIX_CAPTAIN,
+            constants.ROLE_PREFIX_CO_CAPTAIN,
+        ]
         for role in member.roles:
             if any(role.name.startswith(prefix) for prefix in prefixes):
                 await member.remove_roles(role)
@@ -790,9 +773,17 @@ class ManageTeamsHelpers:
         return True
 
     @staticmethod
+    async def member_add_co_captain_role(member: discord.Member, region: str):
+        """Add a Captain role to a Guild Member"""
+        role_name = f"{constants.ROLE_PREFIX_CO_CAPTAIN}{region}"
+        role = await discord_helpers.guild_role_get_or_create(member.guild, role_name)
+        await member.add_roles(role)
+        return True
+
+    @staticmethod
     async def member_remove_captain_role(member: discord.Member):
         """Remove a Captain role from a Guild Member"""
-        prefixes = [constants.ROLE_PREFIX_CAPTAIN]
+        prefixes = [constants.ROLE_PREFIX_CAPTAIN, constants.ROLE_PREFIX_CO_CAPTAIN]
         for role in member.roles:
             if any(role.name.startswith(prefix) for prefix in prefixes):
                 await member.remove_roles(role)

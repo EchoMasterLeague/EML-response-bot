@@ -24,3 +24,41 @@ class TeamStatus(StrEnum):
 
     ACTIVE = "Active"  # The team is active
     INACTIVE = "Inactive"  # The team is inactive
+
+
+@verify(EnumCheck.UNIQUE)
+class InviteStatus(StrEnum):
+    """Lookup for Invite Status values"""
+
+    PENDING = "Pending"  # The invite has not been accepted or declined
+    ACCEPTED = "Accepted"  # The invite has been accepted
+    DECLINED = "Declined"  # The invite has been declined
+    REVOKED = "Revoked"  # The invite has been revoked
+
+
+@verify(EnumCheck.UNIQUE)
+class MatchType(StrEnum):
+    """Lookup for Match Type values"""
+
+    ASSIGNED = "Assigned"  # Match Assigned by EML
+    POSTPONED = "Postponed"  # Assigned match was delayed
+    CHALLENGE = "Challenge"  # The invite kind, teams do themselves
+
+
+@verify(EnumCheck.UNIQUE)
+class MatchStatus(StrEnum):
+    """Lookup for Match Status values"""
+
+    PENDING = "Pending"  # The match has not been played
+    COMPLETED = "Completed"  # The match was played
+    ABANDONED = "Abandoned"  # The match was not played
+    FORFEITED = "Forfeited"  # One team did not show up
+
+
+@verify(EnumCheck.UNIQUE)
+class MatchResult(StrEnum):
+    """Lookup for Match Result values"""
+
+    WIN = "Win"  # Team A won the match (Team B lost)
+    LOSS = "Loss"  # Team A lost the match (Team B won)
+    DRAW = "Draw"  # The match was a draw

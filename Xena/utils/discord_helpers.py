@@ -1,6 +1,28 @@
 import discord
 
 
+### Messages ###
+async def final_message(interaction: discord.Interaction, message: str):
+    """Send a final message to an interaction"""
+    if not interaction.response.is_done():
+        return await interaction.response.send_message(message)
+    else:
+        return await interaction.followup.send(message)
+
+
+async def error_message(
+    interaction: discord.Interaction,
+    error: Exception,
+    message: str = "Error: Something went wrong.",
+):
+    """Send an error message to an interaction, and raise the error."""
+    await final_message(interaction, message)
+    raise error
+
+
+### Members ###
+
+
 async def member_from_discord_id(guild: discord.Guild, discord_id: str):
     """Get a Guild Member from a Discord ID"""
     member = guild.get_member(discord_id)
