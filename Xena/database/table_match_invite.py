@@ -30,6 +30,7 @@ class MatchInviteTable(BaseTable):
 
     async def create_match_invite_record(
         self,
+        match_type: str,
         inviter_team_id: str,
         inviter_player_id: str,
         invitee_team_id: str,
@@ -60,6 +61,7 @@ class MatchInviteTable(BaseTable):
         record_list[MatchInviteFields.match_date] = match_date
         record_list[MatchInviteFields.match_time_et] = match_time_et
         record_list[MatchInviteFields.display_name] = display_name
+        record_list[MatchInviteFields.match_type] = match_type
         new_record = await self.create_record(record_list, MatchInviteFields)
         # Insert the new record into the database
         await self.insert_record(new_record)

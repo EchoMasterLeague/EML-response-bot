@@ -10,7 +10,7 @@ from database.fields import (
     MatchFields,
 )
 from database.enums import MatchType, MatchResult, MatchStatus, InviteStatus
-from database.records import TeamRecord, MatchRecord
+from database.records import TeamRecord, MatchRecord, MatchResultInviteRecord
 from utils import discord_helpers, database_helpers, general_helpers
 import constants
 import datetime
@@ -28,6 +28,7 @@ class ManageMatches:
     async def send_match_invite(
         self,
         interaction: discord.Interaction,
+        match_type: str,
         opposing_team_name: str,
         date_time: str,
     ):
@@ -35,6 +36,15 @@ class ManageMatches:
         try:
             # this could take a while, so defer the response
             await interaction.response.defer()
+            # Verify match type
+            normalized_match_type = None
+            for match_option in MatchType:
+                if str(match_option.value).casefold() == match_type.casefold():
+                    normalized_match_type = match_option
+                    break
+            assert (
+                normalized_match_type
+            ), f"Match type must be one of: [{', '.join([str(option.value) for option in MatchType])}]"
             # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM" (remove the space between the time and the AM/PM, but keep the one between the date and time)
             datetime_array = date_time.split(" ")
             date = datetime_array[0]
@@ -43,7 +53,6 @@ class ManageMatches:
             # Verify time format (raises ValueError if incorrect format)
             datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
             match_epoch = int(datetime_obj.timestamp())
-
             # Get inviter player details from discord_id
             inviter_player = await database_helpers.get_player_details_from_discord_id(
                 self._db, interaction.user.id
@@ -64,6 +73,7 @@ class ManageMatches:
             invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
             new_match_invite = (
                 await self._db.table_match_invite.create_match_invite_record(
+                    match_type=normalized_match_type,
                     inviter_team_id=inviter_team_id,
                     inviter_player_id=inviter_player_id,
                     invitee_team_id=invitee_team_id,
@@ -197,6 +207,9 @@ class ManageMatches:
                 MatchInviteFields.match_timestamp
             )
             match_epoch = await general_helpers.epoch_timestamp(match_timestamp)
+            match_type = await selected_match_invite.get_field(
+                MatchInviteFields.match_type
+            )
             # create match record
             inviter_team_id = await selected_match_invite.get_field(
                 MatchInviteFields.inviter_team_id
@@ -205,7 +218,7 @@ class ManageMatches:
                 team_a_id=inviter_team_id,
                 team_b_id=invitee_team_id,
                 match_epoch=match_epoch,
-                match_type=MatchType.CHALLENGE.value,
+                match_type=match_type,
             )
             assert new_match, f"Error: Failed to create match record."
             # delete match invite record
@@ -234,6 +247,10 @@ class ManageMatches:
         try:
             # this could take a while, so defer the response
             await interaction.response.defer()
+            # constants
+            message_score_format = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
+            message_outcome_mistmatch = "The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
+            message_warning = "Warning: Once accepted, this cannot be undone."
             # Get inviter player details from discord_id
             inviter_player = await database_helpers.get_player_details_from_discord_id(
                 self._db, interaction.user.id
@@ -292,9 +309,8 @@ class ManageMatches:
             assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
             assert result, assert_message
             # verify scores input matches format "1a:1b,2a:2b,3a:3b" with regex
-            match_pattern = r"^\d{1,2}:\d{1,2}(,\d{1,2}:\d{1,2})*$"
-            re.compile(match_pattern)
-            is_valid_score_inptut = re.match(match_pattern, scores)
+            regex_score_format = r"^\d+:\d+(,\d+:\d+){1,2}$"
+            is_valid_score_inptut = re.match(regex_score_format, scores)
             assert_message = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
             assert is_valid_score_inptut, assert_message
             # parse scores from "1a:1b,2a:2b,3a:3b" to [["1a", "1b"], ["2a", "2b"], ["3a", "3b"]] and ensure they are integers
@@ -313,19 +329,13 @@ class ManageMatches:
                     win += 1
                 elif round[0] < round[1]:
                     loss += 1
-
+            assert_message = f"{message_outcome_mistmatch}\n{message_score_format}"
             if win > loss:
-                assert (
-                    result == MatchResult.WIN
-                ), f"The scores you entered suggest you won, but you did not enter `{MatchResult.WIN.value}` as the outcome."
+                assert result == MatchResult.WIN, assert_message
             if win < loss:
-                assert (
-                    result == MatchResult.LOSS
-                ), f"The scores you entered suggest you lost, but you did not enter `{MatchResult.LOSS.value}` as the outcome."
+                assert result == MatchResult.LOSS, assert_message
             if win == loss:
-                assert (
-                    result == MatchResult.DRAW
-                ), f"The scores you entered suggest a draw, but you did not enter `{MatchResult.DRAW.value}` as the outcome."
+                assert result == MatchResult.DRAW, assert_message
             # find the relevant match record
             match_record: MatchRecord = None
             invitee_team_id = await invitee_team_details.team.get_field(
@@ -351,18 +361,24 @@ class ManageMatches:
             # create match result invite record
             match_id = await match_record.get_field(MatchFields.record_id)
             match_type = await match_record.get_field(MatchFields.match_type)
-            new_result_invite = await self._db.table_match_result_invite.create_match_result_invite_record(
-                match_id=match_id,
-                match_type=match_type,
-                inviter_team_id=inviter_team_id,
-                inviter_player_id=inviter_player_id,
-                invitee_team_id=invitee_team_id,
-                match_outcome=result,
-                scores=scores_list,
+            new_result_invite: MatchResultInviteRecord = (
+                await self._db.table_match_result_invite.create_match_result_invite_record(
+                    match_id=match_id,
+                    match_type=match_type,
+                    inviter_team_id=inviter_team_id,
+                    inviter_player_id=inviter_player_id,
+                    invitee_team_id=invitee_team_id,
+                    match_outcome=result,
+                    scores=scores_list,
+                )
             )
             assert new_result_invite, f"Error: Failed to create match result invite."
             # success
-            message = f"Match Result Invite sent to {opposing_team_name}."
+            invite_code_block = await discord_helpers.code_block(
+                f"{general_helpers.format_json(await new_result_invite.to_dict())}",
+                "json",
+            )
+            message = f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
             await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)

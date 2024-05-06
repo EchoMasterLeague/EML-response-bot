@@ -174,8 +174,9 @@ class MatchInviteFields(IntEnum):
     match_timestamp = 7  # Timestamp of the match
     match_date = 8  # Date of the match
     match_time_et = 9  # Time of the match
-    invite_status = 10  # Status of the match invite
-    display_name = 11  # Display name for buttons
+    match_type = 10  # Type of the matc
+    invite_status = 11  # Status of the match invite
+    display_name = 12  # Display name for buttons
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
