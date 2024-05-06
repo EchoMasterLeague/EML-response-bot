@@ -5,7 +5,7 @@ from database.records import TeamInviteRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
-import utils.database_helpers as helpers
+import utils.general_helpers as general_helpers
 
 """
 Team Invite Table
@@ -72,7 +72,7 @@ class TeamInviteTable(BaseTable):
             raise ValueError(
                 "At least one of the following parameters must be provided: record_id, team_id, inviter_player_id, invitee_player_id"
             )
-        now = await helpers.epoch_timestamp()
+        now = await general_helpers.epoch_timestamp()
         table = await self.get_table_data()
         existing_records: list[TeamInviteRecord] = []
         expired_records: list[TeamInviteRecord] = []
@@ -80,7 +80,7 @@ class TeamInviteTable(BaseTable):
             if table.index(row) == 0:
                 continue
             # Check for expired records
-            creation_epoch = await helpers.epoch_timestamp(
+            creation_epoch = await general_helpers.epoch_timestamp(
                 row[TeamInviteFields.created_at]
             )
             duration_seconds = constants.TEAM_INVITES_EXPIRATION_DAYS * 60 * 60 * 24

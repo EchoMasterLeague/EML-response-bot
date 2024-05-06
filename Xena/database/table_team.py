@@ -31,7 +31,7 @@ class TeamTable(BaseTable):
         # Create the Team record
         record_list = [None] * len(TeamFields)
         record_list[TeamFields.team_name] = team_name
-        record_list[TeamFields.status] = TeamStatus.ACTIVE
+        record_list[TeamFields.status] = TeamStatus.INACTIVE
         new_record = await self.create_record(record_list, TeamFields)
         # Insert the new record into the database
         await self.insert_record(new_record)

@@ -1,12 +1,22 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
-from database.fields import TeamInviteFields, PlayerFields, TeamPlayerFields, TeamFields
-from database.records import TeamRecord
-from utils import discord_helpers, database_helpers
+from database.fields import (
+    TeamInviteFields,
+    PlayerFields,
+    TeamPlayerFields,
+    TeamFields,
+    MatchInviteFields,
+    MatchResultInviteFields,
+    MatchFields,
+)
+from database.enums import MatchType, MatchResult, MatchStatus, InviteStatus
+from database.records import TeamRecord, MatchRecord
+from utils import discord_helpers, database_helpers, general_helpers
 import constants
 import datetime
 import discord
-import utils.general_helpers as bot_helpers
+from errors.database_errors import EmlRecordAlreadyExists
+import re
 
 
 class ManageMatches:
@@ -16,12 +26,200 @@ class ManageMatches:
         self._db = database
 
     async def send_match_invite(
-        self, interaction: discord.Interaction, opposing_team_name: str, date: str
+        self,
+        interaction: discord.Interaction,
+        opposing_team_name: str,
+        date_time: str,
     ):
-        pass
+        """Send a Match Invite to another Team"""
+        try:
+            # this could take a while, so defer the response
+            await interaction.response.defer()
+            # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM" (remove the space between the time and the AM/PM, but keep the one between the date and time)
+            datetime_array = date_time.split(" ")
+            date = datetime_array[0]
+            time = "".join(datetime_array[1:])
+            date_time = f"{date} {time}"
+            # Verify time format (raises ValueError if incorrect format)
+            datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
+            match_epoch = int(datetime_obj.timestamp())
 
-    async def accept_match_invite(self, interaction: discord.Interaction):
-        pass
+            # Get inviter player details from discord_id
+            inviter_player = await database_helpers.get_player_details_from_discord_id(
+                self._db, interaction.user.id
+            )
+            inviter_player_id = await inviter_player.get_field(PlayerFields.record_id)
+            # Get inviter team details from inviter player
+            inviter_details: database_helpers.TeamDetailsOfPlayer
+            inviter_details = await database_helpers.get_team_details_from_player(
+                self._db, player=inviter_player, assert_any_captain=True
+            )
+            inviter_team = inviter_details.team
+            inviter_team_id = await inviter_team.get_field(TeamFields.record_id)
+            inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
+            # Get invitee team from opposing_team_name
+            invitee_team = await self._db.table_team.get_team_record(
+                team_name=opposing_team_name
+            )
+            invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+            new_match_invite = (
+                await self._db.table_match_invite.create_match_invite_record(
+                    inviter_team_id=inviter_team_id,
+                    inviter_player_id=inviter_player_id,
+                    invitee_team_id=invitee_team_id,
+                    match_epoch=match_epoch,
+                    display_name=inviter_team_name,
+                )
+            )
+            assert new_match_invite, f"Error: Failed to create match invite."
+            message = f"Match Invite sent to {opposing_team_name}."
+            await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except EmlRecordAlreadyExists as message:
+            await discord_helpers.final_message(interaction, message)
+        except ValueError as error:
+            message = f"Date/Time format is {constants.TIME_ENTRY_FORMAT}. {constants.TIMEZONE_ENCOURAGEMENT_MESSAGE}"
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
+
+    async def accept_match_invite(
+        self, interaction: discord.Interaction, match_invite_id: str = None
+    ):
+        try:
+            if match_invite_id:
+                # this could take a while, so defer the response
+                await interaction.response.defer()
+            # Get invitee player details from discord_id
+            invitee_player = await database_helpers.get_player_details_from_discord_id(
+                self._db, interaction.user.id
+            )
+            invitee_player_id = await invitee_player.get_field(PlayerFields.record_id)
+            # Get invitee team details from invitee player
+            invitee_details: database_helpers.TeamDetailsOfPlayer
+            invitee_details = await database_helpers.get_team_details_from_player(
+                self._db, player=invitee_player, assert_any_captain=True
+            )
+            invitee_team = invitee_details.team
+            invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+            # Get match invites for invitee team
+            match_invites = await self._db.table_match_invite.get_match_invite_records(
+                invitee_team_id=invitee_team_id
+            )
+            assert match_invites, f"No invites found."
+            if not match_invite_id:
+                # Get Options for the user to select
+                match_offers = {}
+                options_dict = {}
+                option_number = 0
+                for invite in match_invites:
+                    option_number += 1
+                    invite_id = await invite.get_field(MatchInviteFields.record_id)
+                    options_dict[invite_id] = f"Option {option_number}"
+                    match_offers[str(option_number)] = {
+                        "invite_id": invite_id,
+                        "team": await invite.get_field(MatchInviteFields.display_name),
+                        "date": await invite.get_field(MatchInviteFields.match_date),
+                        "time_et": await invite.get_field(
+                            MatchInviteFields.match_time_et
+                        ),
+                    }
+                # Create the view to display the options
+                view = choices.QuestionPromptView(
+                    options_dict=options_dict,
+                    initial_button_style=discord.ButtonStyle.success,
+                )
+                # Add option to clear invites
+                clearall_button = choices.QuestionOptionButton(
+                    label="Clear all invites",
+                    style=discord.ButtonStyle.danger,
+                    custom_id="clearall",
+                )
+                view.add_item(clearall_button)
+                # Add option to cancel without making a choice
+                cancel_button = choices.QuestionOptionButton(
+                    label="Cancel",
+                    style=discord.ButtonStyle.primary,
+                    custom_id="cancel",
+                )
+                view.add_item(cancel_button)
+                # Send the message with the options
+                match_offers_json = await general_helpers.format_json(match_offers)
+                match_offers_block = await discord_helpers.code_block(
+                    match_offers_json, "json"
+                )
+                message = f"Match Invites:\n{match_offers_block}"
+                message += "\nNote: All times in United States Eastern Time (ET)."
+                message += "\n\nWarning: Once accepted, this cannot be undone."
+                message += "\nFailure to show at scheduled time will result in automatic forfeiture."
+                await interaction.response.send_message(content=message, view=view)
+                # Wait for the user to make a choice
+                await view.wait()
+                # Process the user's choice
+                choice = view.value
+                if not choice or choice == "cancel":
+                    message = "No match selected."
+                    return await discord_helpers.final_message(interaction, message)
+                # clear invites
+                if choice == "clearall":
+                    for invite in match_invites:
+                        await self._db.table_match_invite.delete_match_invite_record(
+                            invite
+                        )
+                    message = "Match Invites cleared."
+                    return await discord_helpers.final_message(interaction, message)
+                # set match_invite_id to the user's choice
+                match_invite_id = choice
+            # Get the selected match invite
+            selected_match_invite = None
+            for match_invite in match_invites:
+                invite_id = await match_invite.get_field(MatchInviteFields.record_id)
+                if invite_id == match_invite_id:
+                    selected_match_invite = match_invite
+                    break
+            assert selected_match_invite, f"Match Invite not found."
+            # update match invite record
+            await selected_match_invite.set_field(
+                MatchInviteFields.invite_status, InviteStatus.ACCEPTED
+            )
+            await selected_match_invite.set_field(
+                MatchInviteFields.invitee_player_id, invitee_player_id
+            )
+            await self._db.table_match_invite.update_match_invite_record(
+                selected_match_invite
+            )
+            # get relevant fields from match invite
+            inviter_team_id = await selected_match_invite.get_field(
+                MatchInviteFields.inviter_team_id
+            )
+            match_timestamp = await selected_match_invite.get_field(
+                MatchInviteFields.match_timestamp
+            )
+            match_epoch = await general_helpers.epoch_timestamp(match_timestamp)
+            # create match record
+            inviter_team_id = await selected_match_invite.get_field(
+                MatchInviteFields.inviter_team_id
+            )
+            new_match = await self._db.table_match.create_match_record(
+                team_a_id=inviter_team_id,
+                team_b_id=invitee_team_id,
+                match_epoch=match_epoch,
+                match_type=MatchType.CHALLENGE.value,
+            )
+            assert new_match, f"Error: Failed to create match record."
+            # delete match invite record
+            await self._db.table_match_invite.delete_match_invite_record(
+                selected_match_invite
+            )
+            # success
+            message = f"Match Invite accepted. Match created."
+            message += f"\n\nRemember: This cannot be undone. Failure to show will result in automatic forfeiture."
+            await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
 
     async def revoke_match_invite(self, interaction: discord.Interaction):
         pass
@@ -30,14 +228,369 @@ class ManageMatches:
         self,
         interaction: discord.Interaction,
         opposing_team_name: str,
-        round_one_scores: str,
-        round_two_scores: str,
-        round_three_scores: str = None,
+        scores: str,
+        outcome: str,
     ):
-        pass
+        try:
+            # this could take a while, so defer the response
+            await interaction.response.defer()
+            # Get inviter player details from discord_id
+            inviter_player = await database_helpers.get_player_details_from_discord_id(
+                self._db, interaction.user.id
+            )
+            inviter_player_id = await inviter_player.get_field(PlayerFields.record_id)
+            # Get inviter team details from inviter player
+            inviter_team_details: database_helpers.TeamDetailsOfPlayer
+            inviter_team_details = await database_helpers.get_team_details_from_player(
+                self._db, player=inviter_player, assert_any_captain=True
+            )
+            inviter_team = inviter_team_details.team
+            inviter_team_id = await inviter_team.get_field(TeamFields.record_id)
+            inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
+            # Get invitee team details from opposing_team_name
+            invitee_team = await self._db.table_team.get_team_record(
+                team_name=opposing_team_name
+            )
+            invitee_team_details = await database_helpers.get_team_details_from_team(
+                self._db, team=invitee_team
+            )
+            invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+            invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
+            # parse outcome
+            result: MatchResult = None
+            for outcome_option in MatchResult:
+                if str(outcome_option.value).casefold() == outcome.casefold():
+                    result = outcome_option
+                    break
+            if not result:
+                if outcome.casefold() in [
+                    "tie".casefold(),
+                    "tied".casefold(),
+                    "draw".casefold(),
+                    "drawn".casefold(),
+                    "equal".casefold(),
+                ]:
+                    result = MatchResult.DRAW
+                if outcome.casefold() in [
+                    "win".casefold(),
+                    "won".casefold(),
+                    "winner".casefold(),
+                    "victor".casefold(),
+                    "victory".casefold(),
+                    "victorious".casefold(),
+                ]:
+                    result = MatchResult.WIN
+                if outcome.casefold() in [
+                    "lose".casefold(),
+                    "loss".casefold(),
+                    "lost".casefold(),
+                    "loser".casefold(),
+                    "defeat".casefold(),
+                    "defeated".casefold(),
+                ]:
+                    result = MatchResult.LOSS
+            assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
+            assert result, assert_message
+            # verify scores input matches format "1a:1b,2a:2b,3a:3b" with regex
+            match_pattern = r"^\d{1,2}:\d{1,2}(,\d{1,2}:\d{1,2})*$"
+            re.compile(match_pattern)
+            is_valid_score_inptut = re.match(match_pattern, scores)
+            assert_message = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
+            assert is_valid_score_inptut, assert_message
+            # parse scores from "1a:1b,2a:2b,3a:3b" to [["1a", "1b"], ["2a", "2b"], ["3a", "3b"]] and ensure they are integers
+            rounds_array = scores.split(",")
+            scores_list = []
+            for round in rounds_array:
+                score_array = round.split(":")
+                score_a = int(score_array[0])
+                score_b = int(score_array[1])
+                scores_list.append([score_a, score_b])
+            # validate outcome against scores
+            win = 0
+            loss = 0
+            for round in scores_list:
+                if round[0] > round[1]:
+                    win += 1
+                elif round[0] < round[1]:
+                    loss += 1
+
+            if win > loss:
+                assert (
+                    result == MatchResult.WIN
+                ), f"The scores you entered suggest you won, but you did not enter `{MatchResult.WIN.value}` as the outcome."
+            if win < loss:
+                assert (
+                    result == MatchResult.LOSS
+                ), f"The scores you entered suggest you lost, but you did not enter `{MatchResult.LOSS.value}` as the outcome."
+            if win == loss:
+                assert (
+                    result == MatchResult.DRAW
+                ), f"The scores you entered suggest a draw, but you did not enter `{MatchResult.DRAW.value}` as the outcome."
+            # find the relevant match record
+            match_record: MatchRecord = None
+            invitee_team_id = await invitee_team_details.team.get_field(
+                TeamFields.record_id
+            )
+            matches = await self._db.table_match.get_match_records(
+                team_a_id=inviter_team_id,
+                team_b_id=invitee_team_id,
+                match_status=MatchStatus.PENDING.value,
+            )
+            reverse_matches = await self._db.table_match.get_match_records(
+                team_a_id=invitee_team_id,
+                team_b_id=inviter_team_id,
+                match_status=MatchStatus.PENDING.value,
+            )
+            assert_message = f"No pending match found between `{inviter_team_name}` and `{invitee_team_name}`."
+            assert matches or reverse_matches, assert_message
+            if matches:
+                match_record = matches[0]
+            elif reverse_matches:
+                match_record = reverse_matches[0]
+            assert match_record, f"Error: Failed to find match record."
+            # create match result invite record
+            match_id = await match_record.get_field(MatchFields.record_id)
+            match_type = await match_record.get_field(MatchFields.match_type)
+            new_result_invite = await self._db.table_match_result_invite.create_match_result_invite_record(
+                match_id=match_id,
+                match_type=match_type,
+                inviter_team_id=inviter_team_id,
+                inviter_player_id=inviter_player_id,
+                invitee_team_id=invitee_team_id,
+                match_outcome=result,
+                scores=scores_list,
+            )
+            assert new_result_invite, f"Error: Failed to create match result invite."
+            # success
+            message = f"Match Result Invite sent to {opposing_team_name}."
+            await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
 
     async def accept_result_invite(self, interaction: discord.Interaction):
-        pass
+        """Accept a Match Result Invite"""
+        try:
+            # this could take a while, so defer the response
+            # await interaction.response.defer()
+            # Get invitee player details from discord_id
+            invitee_player = await database_helpers.get_player_details_from_discord_id(
+                self._db, interaction.user.id
+            )
+            invitee_player_id = await invitee_player.get_field(PlayerFields.record_id)
+            # Get invitee team details from invitee player
+            invitee_details: database_helpers.TeamDetailsOfPlayer
+            invitee_details = await database_helpers.get_team_details_from_player(
+                self._db, player=invitee_player, assert_any_captain=True
+            )
+            invitee_team = invitee_details.team
+            invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+            # Get match result invites for invitee team
+            match_result_invites = await self._db.table_match_result_invite.get_match_result_invite_records(
+                invitee_team_id=invitee_team_id
+            )
+            assert (
+                match_result_invites
+            ), f"No match results availavble to confirm. You may want to create a result offer for another team."
+            # Get Options for the user to select
+            match_result_offers = {}
+            options_dict = {}
+            option_number = 0
+            for invite in match_result_invites:
+                option_number += 1
+                invite_id = await invite.get_field(MatchInviteFields.record_id)
+                # reverse scores
+                scores = [
+                    [
+                        await invite.get_field(MatchResultInviteFields.round_1_score_b),
+                        await invite.get_field(MatchResultInviteFields.round_1_score_a),
+                    ],
+                    [
+                        await invite.get_field(MatchResultInviteFields.round_2_score_b),
+                        await invite.get_field(MatchResultInviteFields.round_2_score_a),
+                    ],
+                    [
+                        await invite.get_field(MatchResultInviteFields.round_3_score_b),
+                        await invite.get_field(MatchResultInviteFields.round_3_score_a),
+                    ],
+                ]
+                scores_dict = {
+                    "round_1": f"{scores[0][0]: >3} : {scores[0][1]: >3}",
+                    "round_2": f"{scores[1][0]: >3} : {scores[1][1]: >3}",
+                    "round_3": f"{scores[2][0]: >3} : {scores[2][1]: >3}",
+                }
+                if scores_dict["round_3"] == " : ":
+                    scores_dict["round_3"] = "Not played"
+                # reverse outcome
+                outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
+                team_name = await invite.get_field(MatchResultInviteFields.display_name)
+                if outcome == MatchResult.WIN:
+                    outcome = MatchResult.LOSS
+                elif outcome == MatchResult.LOSS:
+                    outcome = MatchResult.WIN
+                options_dict[invite_id] = f"Option {option_number}"
+                match_result_offers[str(option_number)] = {
+                    "invite_id": invite_id,
+                    "team": team_name,
+                    "scores": scores_dict,
+                    "outcome": outcome,
+                }
+            # Create the view to display the options
+            view = choices.QuestionPromptView(
+                options_dict=options_dict,
+                initial_button_style=discord.ButtonStyle.success,
+            )
+            # Add option to clear invites
+            clearall_button = choices.QuestionOptionButton(
+                label="Clear all invites",
+                style=discord.ButtonStyle.danger,
+                custom_id="clearall",
+            )
+            view.add_item(clearall_button)
+            # Add option to cancel without making a choice
+            cancel_button = choices.QuestionOptionButton(
+                label="Cancel",
+                style=discord.ButtonStyle.primary,
+                custom_id="cancel",
+            )
+            view.add_item(cancel_button)
+            # Send the message with the options
+            match_result_offers_json = await general_helpers.format_json(
+                match_result_offers
+            )
+            match_result_offers_block = await discord_helpers.code_block(
+                match_result_offers_json, "json"
+            )
+            message = f"Match Result Invites:\n{match_result_offers_block}"
+            message += "\n\nWarning: Once accepted, this cannot be undone."
+            await interaction.response.send_message(content=message, view=view)
+            # Wait for the user to make a choice
+            await view.wait()
+            # Process the user's choice
+            choice = view.value
+            if not choice or choice == "cancel":
+                message = "No match result selected."
+                return await discord_helpers.final_message(interaction, message)
+            # clear invites
+            if choice == "clearall":
+                for invite in match_result_invites:
+                    await self._db.table_match_result_invite.delete_match_result_invite_record(
+                        invite
+                    )
+                message = "Match Result Invites cleared."
+                return await discord_helpers.final_message(interaction, message)
+            # Get the selected match result invite
+            selected_invite = None
+            for match_result_invite in match_result_invites:
+                invite_id = await match_result_invite.get_field(
+                    MatchResultInviteFields.record_id
+                )
+                if invite_id == choice:
+                    selected_invite = match_result_invite
+                    break
+            assert selected_invite, f"Match Result Invite not found."
+            # update match result invite record
+            await selected_invite.set_field(
+                MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
+            )
+            await selected_invite.set_field(
+                MatchResultInviteFields.invitee_player_id, invitee_player_id
+            )
+            await self._db.table_match_result_invite.update_match_result_invite_record(
+                selected_invite
+            )
+            # get relevant fields from match record
+            match_id = await selected_invite.get_field(MatchResultInviteFields.match_id)
+            match_records = await self._db.table_match.get_match_records(
+                record_id=match_id
+            )
+            assert match_records, f"Error: Failed to find match record."
+            match_record = match_records[0]
+            team_a_id = await match_record.get_field(MatchFields.team_a_id)
+            team_b_id = await match_record.get_field(MatchFields.team_b_id)
+            # get relevant fields from match results invite record
+            # get relevant fields from match result invite
+            inviter_team_id = await selected_invite.get_field(
+                MatchResultInviteFields.inviter_team_id
+            )
+            invitee_team_id = await selected_invite.get_field(
+                MatchResultInviteFields.invitee_team_id
+            )
+
+            outcome = outcome = await selected_invite.get_field(
+                MatchResultInviteFields.match_outcome
+            )
+            scores = [
+                [
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_1_score_a
+                    ),
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_1_score_b
+                    ),
+                ],
+                [
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_2_score_a
+                    ),
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_2_score_b
+                    ),
+                ],
+                [
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_3_score_a
+                    ),
+                    await selected_invite.get_field(
+                        MatchResultInviteFields.round_3_score_b
+                    ),
+                ],
+            ]
+            # reverse scores and oucome if the teams are listed the other way in the match record
+            if team_a_id == invitee_team_id:
+                scores = [
+                    [scores[0][1], scores[0][0]],
+                    [scores[1][1], scores[1][0]],
+                    [scores[2][1], scores[2][0]],
+                ]
+                if outcome == MatchResult.WIN:
+                    outcome = MatchResult.LOSS
+                elif outcome == MatchResult.LOSS:
+                    outcome = MatchResult.WIN
+            # update match record
+            await match_record.set_field(
+                MatchFields.match_status, MatchStatus.COMPLETED.value
+            )
+            await match_record.set_field(MatchFields.round_1_score_a, scores[0][0])
+            await match_record.set_field(MatchFields.round_1_score_b, scores[0][1])
+            await match_record.set_field(MatchFields.round_2_score_a, scores[1][0])
+            await match_record.set_field(MatchFields.round_2_score_b, scores[1][1])
+            await match_record.set_field(MatchFields.round_3_score_a, scores[2][0])
+            await match_record.set_field(MatchFields.round_3_score_b, scores[2][1])
+            await match_record.set_field(MatchFields.outcome, outcome)
+            await self._db.table_match.update_match_record(match_record)
+            # Update match result invite record
+            await selected_invite.set_field(
+                MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
+            )
+            await selected_invite.set_field(
+                MatchResultInviteFields.invitee_player_id, invitee_player_id
+            )
+            await self._db.table_match_result_invite.update_match_result_invite_record(
+                selected_invite
+            )
+            # delete match result invite record
+            await self._db.table_match_result_invite.delete_match_result_invite_record(
+                selected_invite
+            )
+            # success
+            message = f"Match Result Invite accepted. Match results confirmed."
+            await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
 
     async def revoke_result_invite(self, interaction: discord.Interaction):
         pass

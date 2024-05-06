@@ -4,7 +4,7 @@ from database.fields import CooldownFields
 from database.records import CooldownRecord
 import constants
 import gspread
-import utils.database_helpers as helpers
+import utils.general_helpers as general_helpers
 
 """
 Cooldown Table
@@ -33,13 +33,15 @@ class CooldownTable(BaseTable):
         existing_record = existing_records[0] if existing_records else None
         if existing_record:
             # Update existing record in the database
-            existing_record.set_field(CooldownFields.expires_at, expiration)
+            await existing_record.set_field(CooldownFields.expires_at, expiration)
             await self.update_cooldown_record(existing_record)
             return existing_record
         # Create the new record
         record_list = [None] * len(CooldownFields)
         record_list[CooldownFields.player_id] = player_id
-        record_list[CooldownFields.expires_at] = await helpers.iso_timestamp(expiration)
+        record_list[CooldownFields.expires_at] = await general_helpers.iso_timestamp(
+            expiration
+        )
         new_record = await self.create_record(record_list, CooldownFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -74,7 +76,7 @@ class CooldownTable(BaseTable):
             raise ValueError(
                 "At least one of 'record_id', 'player_id', 'expires_before', or 'expires_after' is required"
             )
-        now = await helpers.epoch_timestamp()
+        now = await general_helpers.epoch_timestamp()
         table = await self.get_table_data()
         existing_records: list[CooldownRecord] = []
         expired_records: list[CooldownRecord] = []
@@ -82,7 +84,7 @@ class CooldownTable(BaseTable):
             if table.index(row) == 0:
                 continue
             expiration_epoch = int(
-                await helpers.epoch_timestamp(row[CooldownFields.expires_at])
+                await general_helpers.epoch_timestamp(row[CooldownFields.expires_at])
             )
             # Check for expired records
             if int(now) > expiration_epoch:

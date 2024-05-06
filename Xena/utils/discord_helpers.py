@@ -1,7 +1,18 @@
 import discord
+import constants
+
+
+### Formatting ###
+
+
+async def code_block(text: str, language: str = "json") -> str:
+    """Format text as a code block"""
+    return f"```{language}\n{text}```"
 
 
 ### Messages ###
+
+
 async def final_message(interaction: discord.Interaction, message: str):
     """Send a final message to an interaction"""
     if not interaction.response.is_done():
@@ -70,9 +81,59 @@ async def member_role_remove_by_prefix(
     return True
 
 
-### Formatting ###
+### Roles for Teams ###
 
 
-async def code_block(text: str, language: str = "") -> str:
-    """Format text as a code block"""
-    return f"```{language}\n{text}```"
+async def member_add_team_role(member: discord.Member, team_name: str):
+    """Add a Team role to a Guild Member"""
+    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    role = await guild_role_get_or_create(member.guild, role_name)
+    await member.add_roles(role)
+    return True
+
+
+async def member_remove_team_roles(member: discord.Member):
+    """Remove all Team roles from a Guild Member"""
+    prefixes = [
+        constants.ROLE_PREFIX_TEAM,
+        constants.ROLE_PREFIX_CAPTAIN,
+        constants.ROLE_PREFIX_CO_CAPTAIN,
+    ]
+    for role in member.roles:
+        if any(role.name.startswith(prefix) for prefix in prefixes):
+            await member.remove_roles(role)
+    return True
+
+
+async def member_add_captain_role(member: discord.Member, region: str):
+    """Add a Captain role to a Guild Member"""
+    role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
+    role = await guild_role_get_or_create(member.guild, role_name)
+    await member.add_roles(role)
+    return True
+
+
+async def member_add_co_captain_role(member: discord.Member, region: str):
+    """Add a Captain role to a Guild Member"""
+    role_name = f"{constants.ROLE_PREFIX_CO_CAPTAIN}{region}"
+    role = await guild_role_get_or_create(member.guild, role_name)
+    await member.add_roles(role)
+    return True
+
+
+async def member_remove_captain_roles(member: discord.Member):
+    """Remove a Captain role from a Guild Member"""
+    prefixes = [constants.ROLE_PREFIX_CAPTAIN, constants.ROLE_PREFIX_CO_CAPTAIN]
+    for role in member.roles:
+        if any(role.name.startswith(prefix) for prefix in prefixes):
+            await member.remove_roles(role)
+    return True
+
+
+async def add_member_to_team(member: discord.Member, team_name: str):
+    """Add a Discord Member to a Team
+
+    Note: This only handles the Discord roles. Database changes are not handled."""
+    await member_remove_team_roles(member)
+    await member_add_team_role(member, team_name)
+    return True

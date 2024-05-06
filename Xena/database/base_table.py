@@ -6,7 +6,7 @@ from typing import Type
 import constants
 import errors.database_errors as DbErrors
 import gspread
-import utils.database_helpers as database_helpers
+import utils.general_helpers as general_helpers
 
 """
 Base Table
@@ -71,9 +71,9 @@ class BaseTable:
         fields: Type[BaseFields] = BaseFields,
     ):
         """Create a new record"""
-        data_list[BaseFields.record_id] = await database_helpers.random_id()
-        data_list[BaseFields.created_at] = await database_helpers.iso_timestamp()
-        data_list[BaseFields.updated_at] = await database_helpers.iso_timestamp()
+        data_list[BaseFields.record_id] = await general_helpers.random_id()
+        data_list[BaseFields.created_at] = await general_helpers.iso_timestamp()
+        data_list[BaseFields.updated_at] = await general_helpers.iso_timestamp()
         record = self._record_type(data_list=data_list, fields=fields)
         return record
 
@@ -105,7 +105,7 @@ class BaseTable:
         """Update a record in the table"""
         record_id = await record.get_field(BaseFields.record_id)
         await record.set_field(
-            BaseFields.updated_at, await database_helpers.iso_timestamp()
+            BaseFields.updated_at, await general_helpers.iso_timestamp()
         )
         table = await self.get_table_data()
         for row in table:
@@ -208,9 +208,9 @@ class HistoryTable:
         original_list = await record.to_list()
         # Create the history record list
         history_list = [None] * len(HistoryFields) + original_list
-        history_list[HistoryFields.history_id] = await database_helpers.random_id()
+        history_list[HistoryFields.history_id] = await general_helpers.random_id()
         history_list[HistoryFields.history_created_at] = (
-            await database_helpers.iso_timestamp()
+            await general_helpers.iso_timestamp()
         )
         history_list[HistoryFields.history_operation] = operation.value
         # insert the history record list into the table

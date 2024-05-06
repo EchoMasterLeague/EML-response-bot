@@ -1,5 +1,7 @@
 from enum import IntEnum, EnumCheck, StrEnum, verify
 
+### Common ###
+
 
 @verify(EnumCheck.UNIQUE)
 class Bool(StrEnum):
@@ -9,21 +11,7 @@ class Bool(StrEnum):
     FALSE = "No"
 
 
-@verify(EnumCheck.UNIQUE)
-class Regions(StrEnum):
-    """Lookup for Region values"""
-
-    NA = "NA"  # North America
-    EU = "EU"  # Europe
-    OCE = "OCE"  # Oceanic
-
-
-@verify(EnumCheck.UNIQUE)
-class TeamStatus(StrEnum):
-    """Lookup for Status values (e.g. in the Team table)"""
-
-    ACTIVE = "Active"  # The team is active
-    INACTIVE = "Inactive"  # The team is inactive
+### Invites ###
 
 
 @verify(EnumCheck.UNIQUE)
@@ -36,13 +24,30 @@ class InviteStatus(StrEnum):
     REVOKED = "Revoked"  # The invite has been revoked
 
 
-@verify(EnumCheck.UNIQUE)
-class MatchType(StrEnum):
-    """Lookup for Match Type values"""
+### Players ###
 
-    ASSIGNED = "Assigned"  # Match Assigned by EML
-    POSTPONED = "Postponed"  # Assigned match was delayed
-    CHALLENGE = "Challenge"  # The invite kind, teams do themselves
+
+@verify(EnumCheck.UNIQUE)
+class Regions(StrEnum):
+    """Lookup for Region values"""
+
+    NA = "NA"  # North America
+    EU = "EU"  # Europe
+    OCE = "OCE"  # Oceanic
+
+
+### Teams ###
+
+
+@verify(EnumCheck.UNIQUE)
+class TeamStatus(StrEnum):
+    """Lookup for Status values (e.g. in the Team table)"""
+
+    ACTIVE = "Active"  # The team is active
+    INACTIVE = "Inactive"  # The team is inactive
+
+
+### Matches ###
 
 
 @verify(EnumCheck.UNIQUE)
@@ -53,6 +58,15 @@ class MatchStatus(StrEnum):
     COMPLETED = "Completed"  # The match was played
     ABANDONED = "Abandoned"  # The match was not played
     FORFEITED = "Forfeited"  # One team did not show up
+
+
+@verify(EnumCheck.UNIQUE)
+class MatchType(StrEnum):
+    """Lookup for Match Type values"""
+
+    ASSIGNED = "Assigned"  # Match Assigned by EML
+    POSTPONED = "Postponed"  # Assigned match was delayed
+    CHALLENGE = "Challenge"  # The invite kind, teams do themselves
 
 
 @verify(EnumCheck.UNIQUE)
