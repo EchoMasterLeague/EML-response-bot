@@ -85,7 +85,7 @@ class ButtonExampleUsage:
     @bot.tree.command(name="button_example_command")
     async def button_example_command(interaction: discord.Interaction):
         await interaction.response.send_message(
-            "This message has buttons!", view=ButtonExample()
+            "This message has buttons!", view=ButtonExample(), ephemeral=True
         )
 
     # URL Button Example
@@ -100,5 +100,4 @@ class ButtonExampleUsage:
             )
         )
         await interaction.response.send_message(
-            "This message has buttons!", view=link_button
-        )
+            "This message has buttons!", view=link_button, ephemeral=True

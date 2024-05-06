@@ -166,7 +166,9 @@ class ManageMatches:
                 message += "\nNote: All times in United States Eastern Time (ET)."
                 message += "\n\nWarning: Once accepted, this cannot be undone."
                 message += "\nFailure to show at scheduled time will result in automatic forfeiture."
-                await interaction.response.send_message(content=message, view=view)
+                await interaction.response.send_message(
+                    content=message, view=view, ephemeral=True
+                )
                 # Wait for the user to make a choice
                 await view.wait()
                 # Process the user's choice
@@ -379,7 +381,7 @@ class ManageMatches:
             assert new_result_invite, f"Error: Failed to create match result invite."
             # success
             invite_code_block = await discord_helpers.code_block(
-                f"{general_helpers.format_json(await new_result_invite.to_dict())}",
+                f"{await general_helpers.format_json(await new_result_invite.to_dict())}",
                 "json",
             )
             message = f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
@@ -484,7 +486,9 @@ class ManageMatches:
             )
             message = f"Match Result Invites:\n{match_result_offers_block}"
             message += "\n\nWarning: Once accepted, this cannot be undone."
-            await interaction.response.send_message(content=message, view=view)
+            await interaction.response.send_message(
+                content=message, view=view, ephemeral=True
+            )
             # Wait for the user to make a choice
             await view.wait()
             # Process the user's choice

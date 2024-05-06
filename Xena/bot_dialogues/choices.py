@@ -37,7 +37,9 @@ class QuestionPromptViewExampleUsage:
             "risky", "Risky Click", style=discord.ButtonStyle.danger
         )
         view.add_item(additional_button)
-        await interaction.response.send_message("Which option?", view=view)
+        await interaction.response.send_message(
+            "Which option?", view=view, ephemeral=True
+        )
         await view.wait()
         # Send a message with the selected option
         await interaction.followup.send(f"You selected: {view.value}")
@@ -101,7 +103,7 @@ class QuestionPromptView(discord.ui.View):
             "option3": "Option 3",
         }
         view = QuestionPromptView(options_dict=options_dict)
-        await interaction.response.send_message("Which option?", view=view)
+        await interaction.response.send_message("Which option?", view=view, ephemneral=True)
         await view.wait()
         await interaction.followup.send(f"You selected: {view.value}")
 
