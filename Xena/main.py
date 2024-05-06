@@ -340,7 +340,7 @@ async def lounge_report(interaction: discord.Interaction):
 async def list_members(
     interaction: discord.Interaction,
     role_input1: str,
-    role_input2: Optional[str] = None,
+    role_input2: str = None,
 ):
     # Get the guild from the interaction
     guild = interaction.guild
