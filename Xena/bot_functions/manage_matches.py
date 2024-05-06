@@ -129,6 +129,9 @@ class ManageMatches:
                     options_dict[invite_id] = f"Option {option_number}"
                     match_offers[str(option_number)] = {
                         "invite_id": invite_id,
+                        "match_type": await invite.get_field(
+                            MatchInviteFields.match_type
+                        ),
                         "team": await invite.get_field(MatchInviteFields.display_name),
                         "date": await invite.get_field(MatchInviteFields.match_date),
                         "time_et": await invite.get_field(
@@ -370,6 +373,7 @@ class ManageMatches:
                     invitee_team_id=invitee_team_id,
                     match_outcome=result,
                     scores=scores_list,
+                    display_name=inviter_team_name,
                 )
             )
             assert new_result_invite, f"Error: Failed to create match result invite."
