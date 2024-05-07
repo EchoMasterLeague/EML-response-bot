@@ -8,7 +8,7 @@ from database.records import (
     TeamInviteRecord,
     TeamPlayerRecord,
 )
-from database.enums import Bool
+from database.enums import Bool, TeamStatus
 from database.fields import (
     PlayerFields,
     TeamFields,
@@ -324,9 +324,9 @@ async def add_player_to_team(
     )
     assert new_team_player, f"Error: Could not add Player to Team."
     # Update team status
-    is_active = await team.get_field(TeamFields.status)
+    is_active = await team.get_field(TeamFields.status) == TeamStatus.ACTIVE
     if not is_active and player_count + 1 >= constants.TEAM_PLAYERS_MIN:
-        await team.set_field(TeamFields.status, True)
+        await team.set_field(TeamFields.status, TeamStatus.ACTIVE)
         await db.table_team.update_team_record(team)
     # Success
     return new_team_player
@@ -366,9 +366,9 @@ async def remove_player_from_team(db: FullDatabase, player_id: str, team_id: str
     # Update team status
     team = await db.table_team.get_team_record(record_id=team_id)
     assert team, f"Team not found."
-    is_active = await team.get_field(TeamFields.status)
+    is_active = await team.get_field(TeamFields.status) == TeamStatus.ACTIVE
     if is_active and player_count - 1 < constants.TEAM_PLAYERS_MIN:
-        await team.set_field(TeamFields.status, False)
+        await team.set_field(TeamFields.status, TeamStatus.INACTIVE)
         await db.table_team.update_team_record(team)
     # Success
     return True

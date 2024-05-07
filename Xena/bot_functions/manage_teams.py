@@ -90,6 +90,11 @@ class ManageTeams:
             )
             assert player, f"You must be registered as a Player to accept an invite."
             player_id = await player.get_field(PlayerFields.record_id)
+            # check cooldown
+            cooldown = await self._db.table_cooldown.get_cooldown_records(
+                player_id=player_id
+            )
+            assert not cooldown, f"You are on a cooldown."
             # Gather Invites
             invites = await self._db.table_team_invite.get_team_invite_records(
                 to_player_id=player_id
@@ -175,6 +180,7 @@ class ManageTeams:
                 player_name=player_name
             )
             assert player, f"Player not found."
+            player_name = await player.get_field(PlayerFields.player_name)
             # Verify requestor is authorized
             requestor = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
@@ -208,7 +214,8 @@ class ManageTeams:
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
-            message = f"Player removed from team."
+            team_name = await requestor_team_player.get_field(TeamPlayerFields.vw_team)
+            message = f"Player `{player_name}` removed from team `{team_name}`."
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
