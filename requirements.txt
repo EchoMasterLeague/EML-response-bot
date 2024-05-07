@@ -3,3 +3,4 @@ sphinx
 discord
 python-dotenv
 gspread
+pytz
