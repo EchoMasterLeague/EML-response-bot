@@ -30,6 +30,8 @@ class MatchTable(BaseTable):
         team_b_id: str,
         match_epoch: int,
         match_type: MatchType,
+        vw_team_a: str,
+        vw_team_b: str,
     ) -> MatchRecord:
         """Create a new Match record"""
         match_week = await general_helpers.season_week(match_epoch)
@@ -38,6 +40,7 @@ class MatchTable(BaseTable):
             team_a_id=team_a_id,
             team_b_id=team_b_id,
             match_week=match_week,
+            match_type=match_type,
             match_status=MatchStatus.PENDING.value,
         )
         if not existing_records:
@@ -45,12 +48,16 @@ class MatchTable(BaseTable):
                 team_a_id=team_b_id,
                 team_b_id=team_a_id,
                 match_week=match_week,
+                match_type=match_type,
                 match_status=MatchStatus.PENDING.value,
             )
         if existing_records:
             raise DbErrors.EmlRecordAlreadyExists(
-                f"Pending Match between '{team_a_id}' and '{team_b_id}' already exists for week '{match_week}'"
+                f"Pending Match of type '{match_type}' between '{vw_team_a}' and '{vw_team_b}' already exists for week '{match_week}'"
             )
+        # Prepare info for new record
+        match_date = await general_helpers.eml_date(match_epoch)
+        match_time = await general_helpers.eml_time(match_epoch)
         # Create the Match record
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         record_list = [None] * len(MatchFields)
@@ -59,13 +66,19 @@ class MatchTable(BaseTable):
         record_list[MatchFields.match_type] = match_type
         record_list[MatchFields.team_a_id] = team_a_id
         record_list[MatchFields.team_b_id] = team_b_id
-        record_list[MatchFields.match_date] = await general_helpers.eml_date(
-            match_epoch
-        )
-        record_list[MatchFields.match_time_et] = await general_helpers.eml_time(
-            match_epoch
-        )
+        record_list[MatchFields.outcome] = None
+        record_list[MatchFields.match_date] = match_date
+        record_list[MatchFields.match_time_et] = match_time
+        record_list[MatchFields.round_1_score_a] = None
+        record_list[MatchFields.round_1_score_b] = None
+        record_list[MatchFields.round_2_score_a] = None
+        record_list[MatchFields.round_2_score_b] = None
+        record_list[MatchFields.round_3_score_a] = None
+        record_list[MatchFields.round_3_score_b] = None
         record_list[MatchFields.match_status] = MatchStatus.PENDING.value
+        record_list[MatchFields.vw_team_a] = vw_team_a
+        record_list[MatchFields.vw_team_b] = vw_team_b
+
         new_record = await self.create_record(record_list, MatchFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -106,8 +119,10 @@ class MatchTable(BaseTable):
         table = await self.get_table_data()
         existing_records: list[MatchRecord] = []
         for row in table:
+            # Skip header row
             if table.index(row) == 0:
                 continue
+            # Check for matching records
             if (
                 (
                     not record_id

@@ -9,70 +9,43 @@ from database.records import (
     TeamPlayerRecord,
 )
 from database.enums import Bool
-from database.fields import PlayerFields, TeamFields, TeamPlayerFields, TeamInviteFields
+from database.fields import (
+    PlayerFields,
+    TeamFields,
+    TeamPlayerFields,
+    TeamInviteFields,
+    VwRosterFields,
+)
 import utils.general_helpers as general_helpers
 
 
 ### Roster ###
 async def update_roster_view(
-    db: FullDatabase,
-    team_id: str = None,
-    team_name: str = None,
+    db: FullDatabase, team_id: str = None, team_name: str = None
 ):
-    """Update Roster for a Team Name"""
-    await rebuild_roster_view(db)
-    return
-    team: TeamRecord = await db.table_team.get_team_record(
-        team_name=team_name, record_id=team_id
-    )
-    if not team:
-        existing_rosters = await db.table_vw_roster.get_vw_roster_records(
-            team_id=team_id, team_name=team_name
-        )
-        for roster in existing_rosters:
-            await db.table_vw_roster.delete_vw_roster_record(roster)
-        return None
-    team_id = await team.get_field(TeamFields.record_id)
-    team_players = await db.table_team_player.get_team_player_records(team_id=team_id)
-    captain_name = None
-    co_captain_name = None
-    player_names = []
-    for team_player in team_players:
-        is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
-        is_co_captain = await team_player.get_field(TeamPlayerFields.is_co_captain)
-        player_id = await team_player.get_field(TeamPlayerFields.player_id)
-        player = await db.table_player.get_player_record(record_id=player_id)
-        player_name = await player.get_field(PlayerFields.player_name)
-        if is_captain:
-            captain_name = player_name
-        if is_co_captain:
-            co_captain_name = player_name
-        player_names.append(player_name)
-    roster = await db.table_vw_roster.create_vw_roster_record(
-        team_id=team_id,
-        team_name=team_name,
-        captain_name=captain_name,
-        co_captain_name=co_captain_name,
-        player_names=player_names,
-    )
-    return roster
+    """Rebuild Roster for all Teams
 
+    Args:
+        db (FullDatabase): The database
+        team_id (str, optional): The team_id to update. Defaults to None.
+        team_name (str, optional): The team_name to update. Defaults to None.
 
-async def rebuild_roster_view(db: FullDatabase):
-    """Rebuild Roster for all Teams"""
+    Note: team_id and team_name are ignored, this rebuilds the full roster ever time it is called.
+    They are kept in case we want to update teams individually in the future.
+    """
     all_teams = await db.table_team.get_table_data()
     all_players = await db.table_player.get_table_data()
     all_team_players = await db.table_team_player.get_table_data()
     roster_table = [
         [
-            "team_name",
-            "captain",
-            "co_cap_or_2",
-            "player_3",
-            "player_4",
-            "player_5",
-            "player_6",
-            "is_active",
+            VwRosterFields.team.name,
+            VwRosterFields.captain.name,
+            VwRosterFields.co_cap_or_2.name,
+            VwRosterFields.player_3.name,
+            VwRosterFields.player_4.name,
+            VwRosterFields.player_5.name,
+            VwRosterFields.player_6.name,
+            VwRosterFields.active.name,
         ]
     ]
 
@@ -171,6 +144,14 @@ class TeamDetailsOfPlayer:
         self.team_players: list[TeamPlayerRecord] = []
 
 
+class TeamDetails:
+    def __init__(self):
+        self.team: TeamRecord = None
+        self.team_captain: PlayerRecord = None
+        self.team_co_captain: PlayerRecord = None
+        self.all_players: list[PlayerRecord] = []
+
+
 async def get_team_details_from_player(
     db: FullDatabase,
     player: PlayerRecord,
@@ -226,14 +207,6 @@ async def get_team_details_from_player(
     return details
 
 
-class TeamDetails:
-    def __init__(self):
-        self.team: TeamRecord = None
-        self.team_captain: PlayerRecord = None
-        self.team_co_captain: PlayerRecord = None
-        self.all_players: list[PlayerRecord] = []
-
-
 async def get_team_details_from_team(
     db: FullDatabase,
     team: TeamRecord,
@@ -284,6 +257,9 @@ async def create_team(
     team_name: str,
 ):
     """Create a Team"""
+    player = await db.table_player.get_player_record(record_id=player_id)
+    assert player, f"Player not found."
+    player_name = await player.get_field(PlayerFields.player_name)
     # Check if team already exists
     team = await db.table_team.get_team_record(team_name=team_name)
     assert not team, f"Team `{team_name}` already exists."
@@ -295,6 +271,7 @@ async def create_team(
     # Check Cooldowns
     cooldowns = await db.table_cooldown.get_cooldown_records(player_id=player_id)
     assert not cooldowns, f"Player is on a cooldown."
+    # Get info about player
     # Create the team
     new_team = await db.table_team.create_team_record(team_name=team_name)
     assert new_team, f"Error: Could not create Team."
@@ -304,6 +281,8 @@ async def create_team(
         team_id=team_id,
         player_id=player_id,
         is_captain=True,
+        team_name=team_name,
+        player_name=player_name,
     )
     assert new_team_player, f"Error: Could not add Captain to Team."
     return new_team
@@ -326,6 +305,9 @@ async def add_player_to_team(
     player_limit = constants.TEAM_PLAYERS_MAX
     assert player_count < player_limit, f"Team `{team_name}` is full."
     # Get info about player
+    player = await db.table_player.get_player_record(record_id=player_id)
+    assert player, f"Player not found."
+    player_name = await player.get_field(PlayerFields.player_name)
     player_team_players = await db.table_team_player.get_team_player_records(
         player_id=player_id
     )
@@ -337,6 +319,8 @@ async def add_player_to_team(
     new_team_player = await db.table_team_player.create_team_player_record(
         team_id=team_id,
         player_id=player_id,
+        team_name=team_name,
+        player_name=player_name,
     )
     assert new_team_player, f"Error: Could not add Player to Team."
     # Update team status
@@ -368,10 +352,13 @@ async def remove_player_from_team(db: FullDatabase, player_id: str, team_id: str
         co_captain_id or player_id != captain_id or player_count == 1
     ), f"Team cannot be without a captain, promote another player first."
     # Apply cooldown
-    expiration = await general_helpers.upcoming_monday()
+    player_name = await this_team_player.get_field(TeamPlayerFields.vw_player)
+    team_name = await this_team_player.get_field(TeamPlayerFields.vw_team)
     new_cooldown = await db.table_cooldown.create_cooldown_record(
         player_id=player_id,
-        expiration=expiration,
+        old_team_id=team_id,
+        player_name=player_name,
+        old_team_name=team_name,
     )
     assert new_cooldown, f"Error: Could not apply cooldown."
     # Remove the player from the team
@@ -519,14 +506,14 @@ async def create_team_invite(
     # Cheak team invites
     team_id = await inviter_team_player.get_field(TeamPlayerFields.team_id)
     team_team_invites = await db.table_team_invite.get_team_invite_records(
-        team_id=team_id
+        from_team_id=team_id
     )
     team_invite_count = len(team_team_invites)
     team_invite_max = constants.TEAM_INVITES_SEND_MAX
     assert team_invite_count < team_invite_max, f"Team has sent too many invites."
     # Verify the inviter has available invites
     inviter_sent_invites = await db.table_team_invite.get_team_invite_records(
-        inviter_player_id=inviter_player_id
+        from_player_id=inviter_player_id
     )
     available_invites = constants.TEAM_INVITES_SEND_MAX - len(inviter_sent_invites)
     assert available_invites > 0, f"You have sent too many pending invites."
@@ -544,20 +531,26 @@ async def create_team_invite(
     # Cheak team invites
     team_id = await inviter_team_player.get_field(TeamPlayerFields.team_id)
     team_team_invites = await db.table_team_invite.get_team_invite_records(
-        team_id=team_id
+        from_team_id=team_id
     )
     team_invite_count = len(team_team_invites)
     team_invite_max = constants.TEAM_INVITES_SEND_MAX
     assert team_invite_count < team_invite_max, f"Team has sent too many invites."
     # Check for existing records to avoid duplication
     for invite in team_team_invites:
-        invitee_id = await invite.get_field(TeamInviteFields.invitee_player_id)
+        invitee_id = await invite.get_field(TeamInviteFields.to_player_id)
         assert not invitee_id == invitee_player_id, f"Invite already sent."
     # Create the team invite
+    team_name = await inviter_team_player.get_field(TeamPlayerFields.vw_team)
+    inviter_player_name = await inviter.get_field(PlayerFields.player_name)
+    invitee_player_name = await invitee.get_field(PlayerFields.player_name)
     new_team_invite = await db.table_team_invite.create_team_invite_record(
-        team_id=team_id,
-        inviter_player_id=inviter_player_id,
-        invitee_player_id=invitee_player_id,
+        from_team_id=team_id,
+        from_player_id=inviter_player_id,
+        to_player_id=invitee_player_id,
+        from_team_name=team_name,
+        from_player_name=inviter_player_name,
+        to_player_name=invitee_player_name,
     )
     assert new_team_invite, f"Error: Could not create Team Invite."
     # Success

@@ -31,37 +31,49 @@ class MatchInviteTable(BaseTable):
     async def create_match_invite_record(
         self,
         match_type: str,
-        inviter_team_id: str,
-        inviter_player_id: str,
-        invitee_team_id: str,
         match_epoch: int,
-        display_name: str = None,
+        from_team_id: str,
+        from_player_id: str,
+        to_team_id: str,
+        vw_from_team: str,
+        vw_to_team: str,
+        vw_from_player: str,
+        expiration: int = None,
     ) -> MatchInviteRecord:
         """Create a new Match Invite record"""
         # Check for existing records to avoid duplication
         existing_record = await self.get_match_invite_records(
-            inviter_team_id=inviter_team_id, invitee_team_id=invitee_team_id
+            from_team_id=from_team_id, to_team_id=to_team_id
         )
         if existing_record:
             raise DbErrors.EmlRecordAlreadyExists(
-                f"Invite for team_id:'{inviter_team_id}' to play team_id:'{invitee_team_id}' already exists"
+                f"Invite for team_id:'{from_team_id}' to play team_id:'{to_team_id}' already exists"
             )
-        # Get relevant data
+        # Prepare info for new record
+        now = await general_helpers.epoch_timestamp()
+        default_invite_duration = constants.MATCH_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+        default_expiration_epoch = now + default_invite_duration
+        expiration = expiration if expiration else default_expiration_epoch
+        expires_at = await general_helpers.iso_timestamp(expiration)
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         match_date = await general_helpers.eml_date(match_epoch)
         match_time_et = await general_helpers.eml_time(match_epoch)
         # Create the Match Invite record
         record_list = [None] * len(MatchInviteFields)
-        record_list[MatchInviteFields.inviter_team_id] = inviter_team_id
-        record_list[MatchInviteFields.invitee_team_id] = invitee_team_id
-        record_list[MatchInviteFields.inviter_player_id] = inviter_player_id
-        record_list[MatchInviteFields.invitee_player_id] = None
+        record_list[MatchInviteFields.from_team_id] = from_team_id
+        record_list[MatchInviteFields.to_team_id] = to_team_id
+        record_list[MatchInviteFields.from_player_id] = from_player_id
+        record_list[MatchInviteFields.to_player_id] = None
         record_list[MatchInviteFields.invite_status] = InviteStatus.PENDING
+        record_list[MatchInviteFields.invite_expires_at] = expires_at
         record_list[MatchInviteFields.match_timestamp] = match_timestamp
         record_list[MatchInviteFields.match_date] = match_date
         record_list[MatchInviteFields.match_time_et] = match_time_et
-        record_list[MatchInviteFields.display_name] = display_name
         record_list[MatchInviteFields.match_type] = match_type
+        record_list[MatchInviteFields.vw_from_team] = vw_from_team
+        record_list[MatchInviteFields.vw_from_player] = vw_from_player
+        record_list[MatchInviteFields.vw_to_team] = vw_to_team
+        record_list[MatchInviteFields.vw_to_player] = None
         new_record = await self.create_record(record_list, MatchInviteFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -79,37 +91,36 @@ class MatchInviteTable(BaseTable):
     async def get_match_invite_records(
         self,
         record_id: str = None,
-        inviter_team_id: str = None,
-        inviter_player_id: str = None,
-        invitee_team_id: str = None,
-        invitee_player_id: str = None,
+        from_team_id: str = None,
+        from_player_id: str = None,
+        to_team_id: str = None,
+        to_player_id: str = None,
         invite_status: str = None,
     ) -> list[MatchInviteRecord]:
         """Get an existing Match Invite records"""
         if (
             record_id is None
-            and inviter_team_id is None
-            and invitee_team_id is None
-            and inviter_player_id is None
-            and invitee_player_id is None
+            and from_team_id is None
+            and to_team_id is None
+            and from_player_id is None
+            and to_player_id is None
             and invite_status is None
         ):
             raise ValueError(
-                "At least one of the following parameters must be provided: record_id, inviter_team_id, invitee_team_id, inviter_player_id, invitee_player_id, invite_status"
+                "At least one of the following parameters must be provided: record_id, from_team_id, to_team_id, from_player_id, to_player_id, invite_status"
             )
         now = await general_helpers.epoch_timestamp()
         table = await self.get_table_data()
         existing_records: list[MatchInviteRecord] = []
         expired_records: list[MatchInviteRecord] = []
         for row in table:
+            # Skip the header row
             if table.index(row) == 0:
                 continue
             # Check for expired records
-            creation_epoch = await general_helpers.epoch_timestamp(
-                row[MatchInviteFields.created_at]
+            expiration_epoch = await general_helpers.epoch_timestamp(
+                row[MatchInviteFields.invite_expires_at]
             )
-            duration_seconds = constants.MATCH_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
-            expiration_epoch = creation_epoch + duration_seconds
             if now > expiration_epoch:
                 expired_record = MatchInviteRecord(row)
                 expired_records.append(expired_record)
@@ -122,24 +133,24 @@ class MatchInviteTable(BaseTable):
                     == str(row[MatchInviteFields.record_id]).casefold()
                 )
                 and (
-                    not inviter_team_id
-                    or str(inviter_team_id).casefold()
-                    == str(row[MatchInviteFields.inviter_team_id]).casefold()
+                    not from_team_id
+                    or str(from_team_id).casefold()
+                    == str(row[MatchInviteFields.from_team_id]).casefold()
                 )
                 and (
-                    not invitee_team_id
-                    or str(invitee_team_id).casefold()
-                    == str(row[MatchInviteFields.invitee_team_id]).casefold()
+                    not to_team_id
+                    or str(to_team_id).casefold()
+                    == str(row[MatchInviteFields.to_team_id]).casefold()
                 )
                 and (
-                    not inviter_player_id
-                    or inviter_player_id.casefold()
-                    == str(row[MatchInviteFields.inviter_player_id]).casefold()
+                    not from_player_id
+                    or from_player_id.casefold()
+                    == str(row[MatchInviteFields.from_player_id]).casefold()
                 )
                 and (
-                    not invitee_player_id
-                    or invitee_player_id.casefold()
-                    == str(row[MatchInviteFields.invitee_player_id]).casefold()
+                    not to_player_id
+                    or to_player_id.casefold()
+                    == str(row[MatchInviteFields.to_player_id]).casefold()
                 )
                 and (
                     not invite_status

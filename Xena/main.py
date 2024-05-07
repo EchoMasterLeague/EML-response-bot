@@ -17,8 +17,11 @@ GOOGLE_CREDENTIALS_FILE = ".secrets/google_credentials.json"
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
 BOT_PREFIX = os.environ.get("BOT_PREFIX")
-BOT_PREFIX = BOT_PREFIX if BOT_PREFIX else "eml"
-BOT_PREFIX = BOT_PREFIX + "_" if BOT_PREFIX[-1] != "_" else BOT_PREFIX
+DEFAULT_BOT_PREFIX = ""
+if BOT_PREFIX:
+    BOT_PREFIX = BOT_PREFIX + "_" if BOT_PREFIX[-1] != "_" else BOT_PREFIX
+else:
+    BOT_PREFIX = DEFAULT_BOT_PREFIX
 
 
 # Google Sheets "Database"
@@ -70,7 +73,7 @@ async def on_ready():
 #######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}lookup_player")
+@bot.tree.command(name=f"{BOT_PREFIX}lookupplayer")
 async def bot_lookup_player(
     interaction: discord.Interaction, player_name: str = None, discord_id: str = None
 ):
@@ -79,14 +82,14 @@ async def bot_lookup_player(
         await manage_players.get_player_details(interaction, player_name, discord_id)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}player_register")
+@bot.tree.command(name=f"{BOT_PREFIX}playerregister")
 async def bot_player_register(interaction: discord.Interaction, region: str = None):
     """Register to become a Player"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_players.register_player(interaction=interaction, region=region)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}player_unregister")
+@bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     if await manage_commands.is_command_enabled(interaction):
@@ -98,28 +101,28 @@ async def bot_player_unregister(interaction: discord.Interaction):
 #####################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}lookup_team")
+@bot.tree.command(name=f"{BOT_PREFIX}lookupteam")
 async def bot_lookup_team(interaction: discord.Interaction, team_name: str = None):
     """Lookup a Team by name"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_teams.get_team_details(interaction, team_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_create")
+@bot.tree.command(name=f"{BOT_PREFIX}teamcreate")
 async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_teams.create_team(interaction, team_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_invite_offer")
+@bot.tree.command(name=f"{BOT_PREFIX}teaminviteoffer")
 async def bot_team_invite_offer(interaction: discord.Interaction, player_name: str):
     """Invite a player to join your Team"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_teams.invite_player_to_team(interaction, player_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_invite_accept")
+@bot.tree.command(name=f"{BOT_PREFIX}teaminviteaccept")
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -127,7 +130,7 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
     # TODO: make team active with at least 4 players
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_player_remove")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerremove")
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -135,21 +138,21 @@ async def bot_team_player_remove(interaction: discord.Interaction, player_name: 
     # TODO: make team inactive under 4 players
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_player_promote")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
 async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
     """Promote a player to Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_teams.promote_player_to_co_captain(interaction, player_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_player_demote")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
 async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
     """Demote a player from Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_teams.demote_player_from_co_captain(interaction, player_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_leave")
+@bot.tree.command(name=f"{BOT_PREFIX}teamleave")
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -157,7 +160,7 @@ async def bot_team_leave(interaction: discord.Interaction):
     # TODO: make team inactive under 4 players
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}team_disband")
+@bot.tree.command(name=f"{BOT_PREFIX}teamdisband")
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -169,7 +172,7 @@ async def bot_team_disband(interaction: discord.Interaction):
 ######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}match_offer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchoffer")
 async def bot_match_propose(
     interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
 ):
@@ -180,7 +183,7 @@ async def bot_match_propose(
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}match_accept")
+@bot.tree.command(name=f"{BOT_PREFIX}matchaccept")
 async def bot_match_accept(
     interaction: discord.Interaction, match_invite_id: str = None
 ):
@@ -189,21 +192,31 @@ async def bot_match_accept(
         await manage_matches.accept_match_invite(interaction, match_invite_id)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}match_result_offer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultoffer")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
     opponent_name: str,
     outcome: str,
-    scores: str,
+    round_1_us: int,
+    round_1_them: int,
+    round_2_us: int,
+    round_2_them: int,
+    round_3_us: int = None,
+    round_3_them: int = None,
 ):
     """Propose a Match Result with another Team"""
     if await manage_commands.is_command_enabled(interaction):
+        scores = [
+            (round_1_us, round_1_them),
+            (round_2_us, round_2_them),
+            (round_3_us, round_3_them),
+        ]
         await manage_matches.send_result_invite(
             interaction, opponent_name, scores, outcome
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}match_result_accept")
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultaccept")
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     if await manage_commands.is_command_enabled(interaction):

@@ -118,7 +118,7 @@ class QuestionPromptView(discord.ui.View):
         timeout=180,
         options_dict: dict = {},
         default_value: str = None,
-        initial_button_style=discord.ButtonStyle.secondary,
+        initial_button_style=discord.ButtonStyle.success,
         unselected_button_style=discord.ButtonStyle.secondary,
     ):
         super().__init__(timeout=timeout)

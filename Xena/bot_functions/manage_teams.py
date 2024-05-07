@@ -87,14 +87,14 @@ class ManageTeams:
             player_id = await player.get_field(PlayerFields.record_id)
             # Gather Invites
             invites = await self._db.table_team_invite.get_team_invite_records(
-                invitee_player_id=player_id
+                to_player_id=player_id
             )
             assert invites, f"No invites found."
             # Gather Team options
             options_dict = {}
             all_teams = await self._db.table_team.get_table_data()
             for invite in invites:
-                team_id = await invite.get_field(TeamInviteFields.team_id)
+                team_id = await invite.get_field(TeamInviteFields.from_team_id)
                 for team in all_teams:
                     if team[TeamFields.record_id] == team_id:
                         team_name = team[TeamFields.team_name]
@@ -386,10 +386,12 @@ class ManageTeams:
                 await co_cap.set_field(TeamPlayerFields.is_co_captain, False)
                 await self._db.table_team_player.update_team_player_record(co_cap)
             # Apply cooldown
-            expiration = await general_helpers.upcoming_monday()
+            player_name = await requestor.get_field(PlayerFields.player_name)
             new_cooldown = await self._db.table_cooldown.create_cooldown_record(
                 player_id=requestor_player_id,
-                expiration=expiration,
+                old_team_id=team_id,
+                player_name=player_name,
+                old_team_name=team_name,
             )
             assert new_cooldown, f"Error: Could not apply cooldown."
             # Remove the Player from the Team
@@ -452,10 +454,12 @@ class ManageTeams:
                 )
                 await discord_helpers.member_remove_team_roles(player_discord_member)
                 # Apply cooldown
-                expiration = await general_helpers.upcoming_monday()
+                player_name = await player.get_field(PlayerFields.player_name)
                 new_cooldown = await self._db.table_cooldown.create_cooldown_record(
                     player_id=player_id,
-                    expiration=expiration,
+                    old_team_id=team_id,
+                    player_name=player_name,
+                    old_team_name=team_name,
                 )
                 assert new_cooldown, f"Error: Could not apply cooldown."
                 # Remove the Player from the Team

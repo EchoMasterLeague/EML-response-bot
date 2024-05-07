@@ -28,6 +28,8 @@ class TeamPlayerTable(BaseTable):
         self,
         team_id: str,
         player_id: str,
+        team_name: str,
+        player_name: str,
         is_captain: bool = False,
         is_co_captain: bool = False,
     ) -> TeamPlayerRecord:
@@ -46,6 +48,8 @@ class TeamPlayerTable(BaseTable):
         record_list[TeamPlayerFields.player_id] = player_id
         record_list[TeamPlayerFields.is_captain] = is_captain
         record_list[TeamPlayerFields.is_co_captain] = is_co_captain
+        record_list[TeamPlayerFields.vw_team] = team_name
+        record_list[TeamPlayerFields.vw_player] = player_name
         new_record = await self.create_record(record_list, TeamPlayerFields)
         # Insert the new record into the database
         await self.insert_record(new_record)

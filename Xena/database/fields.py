@@ -90,7 +90,10 @@ class CooldownFields(IntEnum):
     created_at = BaseFields.created_at
     updated_at = BaseFields.updated_at
     player_id = 3  # Record ID of the player
-    expires_at = 4  # Timestamp when the cooldown expires
+    old_team_id = 4  # Record ID of the team the player was on
+    expires_at = 5  # Timestamp when the cooldown expires
+    vw_player = 6  # The name of the player
+    vw_old_team = 7  # The name of the team the player was on
 
 
 ### Teams ###
@@ -118,6 +121,8 @@ class TeamPlayerFields(IntEnum):
     player_id = 4  # The id of the player
     is_captain = 5  # Whether or not the player is the captain of the team
     is_co_captain = 6  # Whether or not the player is a co-captain of the team
+    vw_team = 7  # The name of the team
+    vw_player = 8  # The name of the player
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
@@ -127,10 +132,14 @@ class TeamInviteFields(IntEnum):
     record_id = BaseFields.record_id
     created_at = BaseFields.created_at
     updated_at = BaseFields.updated_at
-    team_id = 3  # Record ID of the Team
-    inviter_player_id = 4  # Record ID of the Player sending the TeamInvite
-    invitee_player_id = 5  # Record ID of the Player receiving the TeamInvite
-    display_name = 6  # Display name for buttons
+    from_team_id = 3  # Record ID of the Team
+    from_player_id = 4  # Record ID of the Player sending the TeamInvite
+    to_player_id = 5  # Record ID of the Player receiving the TeamInvite
+    invite_status = 6  # Status of the TeamInvite
+    invite_expires_at = 7  # Timestamp when the TeamInvite expires
+    vw_team = 8  # The name of the team
+    vw_from_player = 9  # The name of the player
+    vw_to_player = 10  # The name of the player receiving the invite
 
 
 ### Matches ###
@@ -158,6 +167,8 @@ class MatchFields(IntEnum):
     round_2_score_b = 15  # Score of the second team in the second round
     round_3_score_a = 16  # Score of the first team in the third round
     round_3_score_b = 17  # Score of the second team in the third round
+    vw_team_a = 18  # The name of the first team
+    vw_team_b = 19  # The name of the second team
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
@@ -167,16 +178,20 @@ class MatchInviteFields(IntEnum):
     record_id = BaseFields.record_id
     created_at = BaseFields.created_at
     updated_at = BaseFields.updated_at
-    inviter_team_id = 3  # Record ID of the Team sending the match invite
-    inviter_player_id = 4  # Record ID of the player sending the match invite
-    invitee_team_id = 5  # Record ID of the Team receiving the match invite
-    invitee_player_id = 6  # Record ID of the player responding to the match invite
+    from_team_id = 3  # Record ID of the Team sending the match invite
+    from_player_id = 4  # Record ID of the player sending the match invite
+    to_team_id = 5  # Record ID of the Team receiving the match invite
+    to_player_id = 6  # Record ID of the player responding to the match invite
     match_timestamp = 7  # Timestamp of the match
     match_date = 8  # Date of the match
     match_time_et = 9  # Time of the match
-    match_type = 10  # Type of the matc
+    match_type = 10  # Type of the match
     invite_status = 11  # Status of the match invite
-    display_name = 12  # Display name for buttons
+    invite_expires_at = 12  # Timestamp when the match invite expires
+    vw_from_team = 13  # The name of the team sending the invite
+    vw_from_player = 14  # The name of the player sending the invite
+    vw_to_team = 15  # The name of the team receiving the invite
+    vw_to_player = 16  # The name of the player receiving the invite
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
@@ -187,10 +202,10 @@ class MatchResultInviteFields(IntEnum):
     created_at = BaseFields.created_at
     updated_at = BaseFields.updated_at
     match_id = 3  # Record ID of the Match
-    inviter_team_id = 4  # Record ID of the Team sending the match result invite
-    inviter_player_id = 5  # Record ID of the player sending the match result invite
-    invitee_team_id = 6  # Record ID of the Team receiving the match result invite
-    invitee_player_id = 7  # Record ID of the player responding to the match result
+    from_team_id = 4  # Record ID of the Team sending the match result invite
+    from_player_id = 5  # Record ID of the player sending the match result invite
+    to_team_id = 6  # Record ID of the Team receiving the match result invite
+    to_player_id = 7  # Record ID of the player responding to the match result
     round_1_score_a = 8  # Score of the first team in the first round
     round_1_score_b = 9  # Score of the second team in the first round
     round_2_score_a = 10  # Score of the first team in the second round
@@ -200,4 +215,8 @@ class MatchResultInviteFields(IntEnum):
     match_outcome = 14  # Result of the match
     match_type = 15  # Type of the match
     invite_status = 16  # Status of the match result invite
-    display_name = 17  # Display name for buttons
+    invite_expires_at = 17  # Timestamp when the match result invite expires
+    vw_from_team = 18  # The name of the team sending the invite
+    vw_from_player = 19  # The name of the player sending the invite
+    vw_to_team = 20  # The name of the team receiving the invite
+    vw_to_player = 21  # The name of the player receiving the invite

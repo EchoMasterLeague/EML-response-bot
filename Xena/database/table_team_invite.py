@@ -6,6 +6,7 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 import utils.general_helpers as general_helpers
+from database.enums import InviteStatus
 
 """
 Team Invite Table
@@ -25,22 +26,37 @@ class TeamInviteTable(BaseTable):
         )
 
     async def create_team_invite_record(
-        self, team_id: str, inviter_player_id: str, invitee_player_id: str
+        self,
+        from_team_id: str,
+        from_player_id: str,
+        to_player_id: str,
+        from_team_name: str,
+        from_player_name: str,
+        to_player_name: str,
     ) -> TeamInviteRecord:
         """Create a new Invite record"""
         # Check for existing records to avoid duplication
         existing_record = await self.get_team_invite_records(
-            team_id=team_id, invitee_player_id=invitee_player_id
+            from_team_id=from_team_id, to_player_id=to_player_id
         )
         if existing_record:
             raise DbErrors.EmlRecordAlreadyExists(
-                f"Invite for invite_id:'{invitee_player_id}' to join team_id:'{team_id}' already exists"
+                f"Invite for '{to_player_name}' to join '{from_team_name}' already exists"
             )
+        # prepare info for new record
+        now = await general_helpers.epoch_timestamp()
+        expiration_epoch = now + constants.TEAM_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+        expiration_iso = await general_helpers.iso_timestamp(expiration_epoch)
         # Create the Invite record
         record_list = [None] * len(TeamInviteFields)
-        record_list[TeamInviteFields.team_id] = team_id
-        record_list[TeamInviteFields.inviter_player_id] = inviter_player_id
-        record_list[TeamInviteFields.invitee_player_id] = invitee_player_id
+        record_list[TeamInviteFields.from_team_id] = from_team_id
+        record_list[TeamInviteFields.from_player_id] = from_player_id
+        record_list[TeamInviteFields.to_player_id] = to_player_id
+        record_list[TeamInviteFields.invite_status] = InviteStatus.PENDING
+        record_list[TeamInviteFields.invite_expires_at] = expiration_iso
+        record_list[TeamInviteFields.vw_team] = from_team_name
+        record_list[TeamInviteFields.vw_from_player] = from_player_name
+        record_list[TeamInviteFields.vw_to_player] = to_player_name
         new_record = await self.create_record(record_list, TeamInviteFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -58,33 +74,32 @@ class TeamInviteTable(BaseTable):
     async def get_team_invite_records(
         self,
         record_id: str = None,
-        team_id: str = None,
-        inviter_player_id: str = None,
-        invitee_player_id: str = None,
+        from_team_id: str = None,
+        from_player_id: str = None,
+        to_player_id: str = None,
     ) -> list[TeamInviteRecord]:
         """Get an existing Invite record"""
         if (
             record_id is None
-            and team_id is None
-            and inviter_player_id is None
-            and invitee_player_id is None
+            and from_team_id is None
+            and from_player_id is None
+            and to_player_id is None
         ):
             raise ValueError(
-                "At least one of the following parameters must be provided: record_id, team_id, inviter_player_id, invitee_player_id"
+                "At least one of the following parameters must be provided: record_id, from_team_id, from_player_id, to_player_id"
             )
         now = await general_helpers.epoch_timestamp()
         table = await self.get_table_data()
         existing_records: list[TeamInviteRecord] = []
         expired_records: list[TeamInviteRecord] = []
         for row in table:
+            # Skip the header row
             if table.index(row) == 0:
                 continue
             # Check for expired records
-            creation_epoch = await general_helpers.epoch_timestamp(
-                row[TeamInviteFields.created_at]
+            expiration_epoch = await general_helpers.epoch_timestamp(
+                row[TeamInviteFields.invite_expires_at]
             )
-            duration_seconds = constants.TEAM_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
-            expiration_epoch = creation_epoch + duration_seconds
             if now > expiration_epoch:
                 expired_record = TeamInviteRecord(row)
                 expired_records.append(expired_record)
@@ -97,19 +112,19 @@ class TeamInviteTable(BaseTable):
                     == str(row[TeamInviteFields.record_id]).casefold()
                 )
                 and (
-                    not team_id
-                    or str(team_id).casefold()
-                    == str(row[TeamInviteFields.team_id]).casefold()
+                    not from_team_id
+                    or str(from_team_id).casefold()
+                    == str(row[TeamInviteFields.from_team_id]).casefold()
                 )
                 and (
-                    not inviter_player_id
-                    or inviter_player_id.casefold()
-                    == str(row[TeamInviteFields.inviter_player_id]).casefold()
+                    not from_player_id
+                    or from_player_id.casefold()
+                    == str(row[TeamInviteFields.from_player_id]).casefold()
                 )
                 and (
-                    not invitee_player_id
-                    or invitee_player_id.casefold()
-                    == str(row[TeamInviteFields.invitee_player_id]).casefold()
+                    not to_player_id
+                    or to_player_id.casefold()
+                    == str(row[TeamInviteFields.to_player_id]).casefold()
                 )
             ):
                 existing_record = TeamInviteRecord(row)

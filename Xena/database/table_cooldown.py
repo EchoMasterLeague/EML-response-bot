@@ -24,24 +24,37 @@ class CooldownTable(BaseTable):
         )
 
     async def create_cooldown_record(
-        self, player_id: str, expiration: int
+        self,
+        player_id: str,
+        old_team_id: str,
+        player_name: str,
+        old_team_name: str,
+        expiration: int = None,
     ) -> CooldownRecord:
         """Create a new Cooldown record, or update an existing one"""
+        # prepare info for new (or existing) record
+        expiration_epoch = await general_helpers.upcoming_monday()
+        expiration = expiration if expiration else expiration_epoch
+        expires_at = await general_helpers.iso_timestamp(expiration)
         # Check for existing records to avoid duplication
         existing_records = await self.get_cooldown_records(player_id=player_id)
         existing_record: CooldownRecord
         existing_record = existing_records[0] if existing_records else None
         if existing_record:
             # Update existing record in the database
-            await existing_record.set_field(CooldownFields.expires_at, expiration)
+            await existing_record.set_field(CooldownFields.expires_at, expires_at)
+            await existing_record.set_field(CooldownFields.old_team_id, old_team_id)
+            await existing_record.set_field(CooldownFields.vw_player, player_name)
+            await existing_record.set_field(CooldownFields.vw_old_team, old_team_name)
             await self.update_cooldown_record(existing_record)
             return existing_record
         # Create the new record
         record_list = [None] * len(CooldownFields)
         record_list[CooldownFields.player_id] = player_id
-        record_list[CooldownFields.expires_at] = await general_helpers.iso_timestamp(
-            expiration
-        )
+        record_list[CooldownFields.old_team_id] = old_team_id
+        record_list[CooldownFields.expires_at] = expires_at
+        record_list[CooldownFields.vw_player] = player_name
+        record_list[CooldownFields.vw_old_team] = old_team_name
         new_record = await self.create_record(record_list, CooldownFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
@@ -81,12 +94,13 @@ class CooldownTable(BaseTable):
         existing_records: list[CooldownRecord] = []
         expired_records: list[CooldownRecord] = []
         for row in table:
+            # Skip header row
             if table.index(row) == 0:
                 continue
+            # Check for expired records
             expiration_epoch = int(
                 await general_helpers.epoch_timestamp(row[CooldownFields.expires_at])
             )
-            # Check for expired records
             if int(now) > expiration_epoch:
                 expired_record = CooldownRecord(row)
                 expired_records.append(expired_record)

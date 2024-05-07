@@ -70,15 +70,20 @@ class ManageMatches:
             invitee_team = await self._db.table_team.get_team_record(
                 team_name=opposing_team_name
             )
+            inviter_player_name = await inviter_player.get_field(
+                PlayerFields.player_name
+            )
             invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
             new_match_invite = (
                 await self._db.table_match_invite.create_match_invite_record(
                     match_type=normalized_match_type,
-                    inviter_team_id=inviter_team_id,
-                    inviter_player_id=inviter_player_id,
-                    invitee_team_id=invitee_team_id,
                     match_epoch=match_epoch,
-                    display_name=inviter_team_name,
+                    from_player_id=inviter_player_id,
+                    from_team_id=inviter_team_id,
+                    to_team_id=invitee_team_id,
+                    vw_from_player=inviter_player_name,
+                    vw_from_team=inviter_team_name,
+                    vw_to_team=opposing_team_name,
                 )
             )
             assert new_match_invite, f"Error: Failed to create match invite."
@@ -115,7 +120,7 @@ class ManageMatches:
             invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
             # Get match invites for invitee team
             match_invites = await self._db.table_match_invite.get_match_invite_records(
-                invitee_team_id=invitee_team_id
+                to_team_id=invitee_team_id
             )
             assert match_invites, f"No invites found."
             if not match_invite_id:
@@ -199,14 +204,14 @@ class ManageMatches:
                 MatchInviteFields.invite_status, InviteStatus.ACCEPTED
             )
             await selected_match_invite.set_field(
-                MatchInviteFields.invitee_player_id, invitee_player_id
+                MatchInviteFields.to_player_id, invitee_player_id
             )
             await self._db.table_match_invite.update_match_invite_record(
                 selected_match_invite
             )
             # get relevant fields from match invite
             inviter_team_id = await selected_match_invite.get_field(
-                MatchInviteFields.inviter_team_id
+                MatchInviteFields.from_team_id
             )
             match_timestamp = await selected_match_invite.get_field(
                 MatchInviteFields.match_timestamp
@@ -217,13 +222,23 @@ class ManageMatches:
             )
             # create match record
             inviter_team_id = await selected_match_invite.get_field(
-                MatchInviteFields.inviter_team_id
+                MatchInviteFields.from_team_id
             )
+            inviter_team = await self._db.table_team.get_team_record(
+                record_id=inviter_team_id
+            )
+            inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
+            invitee_team = await self._db.table_team.get_team_record(
+                record_id=invitee_team_id
+            )
+            invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
             new_match = await self._db.table_match.create_match_record(
                 team_a_id=inviter_team_id,
                 team_b_id=invitee_team_id,
                 match_epoch=match_epoch,
                 match_type=match_type,
+                vw_team_a=inviter_team_name,
+                vw_team_b=invitee_team_name,
             )
             assert new_match, f"Error: Failed to create match record."
             # delete match invite record
@@ -246,14 +261,15 @@ class ManageMatches:
         self,
         interaction: discord.Interaction,
         opposing_team_name: str,
-        scores: str,
+        # scores: str,
+        scores: list[tuple[int, int]],
         outcome: str,
     ):
         try:
             # this could take a while, so defer the response
             await interaction.response.defer()
             # constants
-            message_score_format = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
+            # message_score_format = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
             message_outcome_mistmatch = "The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
             message_warning = "Warning: Once accepted, this cannot be undone."
             # Get inviter player details from discord_id
@@ -314,27 +330,31 @@ class ManageMatches:
             assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
             assert result, assert_message
             # verify scores input matches format "1a:1b,2a:2b,3a:3b" with regex
-            regex_score_format = r"^\d+:\d+(,\d+:\d+){1,2}$"
-            is_valid_score_inptut = re.match(regex_score_format, scores)
-            assert_message = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
-            assert is_valid_score_inptut, assert_message
+            # regex_score_format = r"^\d+:\d+(,\d+:\d+){1,2}$"
+            # is_valid_score_inptut = re.match(regex_score_format, scores)
+            # assert_message = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
+            # assert is_valid_score_inptut, assert_message
             # parse scores from "1a:1b,2a:2b,3a:3b" to [["1a", "1b"], ["2a", "2b"], ["3a", "3b"]] and ensure they are integers
-            rounds_array = scores.split(",")
-            scores_list = []
-            for round in rounds_array:
-                score_array = round.split(":")
-                score_a = int(score_array[0])
-                score_b = int(score_array[1])
-                scores_list.append([score_a, score_b])
+            # rounds_array = scores.split(",")
+            # scores_list = []
+            # for round in rounds_array:
+            #    score_array = round.split(":")
+            #    score_a = int(score_array[0])
+            #    score_b = int(score_array[1])
+            #    scores_list.append([score_a, score_b])
             # validate outcome against scores
+            scores_list = scores
             win = 0
             loss = 0
-            for round in scores_list:
-                if round[0] > round[1]:
+            for round_scores in scores_list:
+                if round_scores[0] is None or round_scores[1] is None:
+                    continue
+                if round_scores[0] > round_scores[1]:
                     win += 1
-                elif round[0] < round[1]:
+                elif round_scores[0] < round_scores[1]:
                     loss += 1
-            assert_message = f"{message_outcome_mistmatch}\n{message_score_format}"
+            # assert_message = f"{message_outcome_mistmatch}\n{message_score_format}"
+            assert_message = f"{message_outcome_mistmatch}"
             if win > loss:
                 assert result == MatchResult.WIN, assert_message
             if win < loss:
@@ -366,16 +386,21 @@ class ManageMatches:
             # create match result invite record
             match_id = await match_record.get_field(MatchFields.record_id)
             match_type = await match_record.get_field(MatchFields.match_type)
+            inviter_player_name = await inviter_player.get_field(
+                PlayerFields.player_name
+            )
             new_result_invite: MatchResultInviteRecord = (
                 await self._db.table_match_result_invite.create_match_result_invite_record(
                     match_id=match_id,
                     match_type=match_type,
-                    inviter_team_id=inviter_team_id,
-                    inviter_player_id=inviter_player_id,
-                    invitee_team_id=invitee_team_id,
+                    from_team_id=inviter_team_id,
+                    from_player_id=inviter_player_id,
+                    to_team_id=invitee_team_id,
                     match_outcome=result,
                     scores=scores_list,
-                    display_name=inviter_team_name,
+                    vw_from_team=inviter_team_name,
+                    vw_to_team=opposing_team_name,
+                    vw_from_player=inviter_player_name,
                 )
             )
             assert new_result_invite, f"Error: Failed to create match result invite."
@@ -410,7 +435,7 @@ class ManageMatches:
             invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
             # Get match result invites for invitee team
             match_result_invites = await self._db.table_match_result_invite.get_match_result_invite_records(
-                invitee_team_id=invitee_team_id
+                to_team_id=invitee_team_id
             )
             assert (
                 match_result_invites
@@ -424,18 +449,18 @@ class ManageMatches:
                 invite_id = await invite.get_field(MatchInviteFields.record_id)
                 # reverse scores
                 scores = [
-                    [
+                    (
                         await invite.get_field(MatchResultInviteFields.round_1_score_b),
                         await invite.get_field(MatchResultInviteFields.round_1_score_a),
-                    ],
-                    [
+                    ),
+                    (
                         await invite.get_field(MatchResultInviteFields.round_2_score_b),
                         await invite.get_field(MatchResultInviteFields.round_2_score_a),
-                    ],
-                    [
+                    ),
+                    (
                         await invite.get_field(MatchResultInviteFields.round_3_score_b),
                         await invite.get_field(MatchResultInviteFields.round_3_score_a),
-                    ],
+                    ),
                 ]
                 scores_dict = {
                     "round_1": f"{scores[0][0]: >3} : {scores[0][1]: >3}",
@@ -455,8 +480,8 @@ class ManageMatches:
                 match_result_offers[str(option_number)] = {
                     "invite_id": invite_id,
                     "team": team_name,
-                    "scores": scores_dict,
                     "outcome": outcome,
+                    "scores": scores_dict,
                 }
             # Create the view to display the options
             view = choices.QuestionPromptView(
@@ -519,7 +544,7 @@ class ManageMatches:
                 MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
             )
             await selected_invite.set_field(
-                MatchResultInviteFields.invitee_player_id, invitee_player_id
+                MatchResultInviteFields.to_player_id, invitee_player_id
             )
             await self._db.table_match_result_invite.update_match_result_invite_record(
                 selected_invite
@@ -536,10 +561,10 @@ class ManageMatches:
             # get relevant fields from match results invite record
             # get relevant fields from match result invite
             inviter_team_id = await selected_invite.get_field(
-                MatchResultInviteFields.inviter_team_id
+                MatchResultInviteFields.from_team_id
             )
             invitee_team_id = await selected_invite.get_field(
-                MatchResultInviteFields.invitee_team_id
+                MatchResultInviteFields.to_team_id
             )
 
             outcome = outcome = await selected_invite.get_field(
@@ -599,7 +624,7 @@ class ManageMatches:
                 MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
             )
             await selected_invite.set_field(
-                MatchResultInviteFields.invitee_player_id, invitee_player_id
+                MatchResultInviteFields.to_player_id, invitee_player_id
             )
             await self._db.table_match_result_invite.update_match_result_invite_record(
                 selected_invite
