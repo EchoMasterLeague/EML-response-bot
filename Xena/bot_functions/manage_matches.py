@@ -246,7 +246,11 @@ class ManageMatches:
                 selected_match_invite
             )
             # success
-            message = f"Match Invite accepted. Match created."
+            new_match_dict = await new_match.to_dict()
+            match_code_block = await discord_helpers.code_block(
+                await general_helpers.format_json(new_match_dict), "json"
+            )
+            message = f"Match Invite accepted. Match created.\n{match_code_block}"
             message += f"\n\nRemember: This cannot be undone. Failure to show will result in automatic forfeiture."
             await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
@@ -412,6 +416,8 @@ class ManageMatches:
             message = f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
             await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except EmlRecordAlreadyExists as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
@@ -636,7 +642,10 @@ class ManageMatches:
                 selected_invite
             )
             # success
-            message = f"Match Result Invite accepted. Match results confirmed."
+            match_code_block = await discord_helpers.code_block(
+                await general_helpers.format_json(await match_record.to_dict()), "json"
+            )
+            message = f"Match Result Invite accepted.\n{match_code_block}\nMatch results confirmed."
             await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)

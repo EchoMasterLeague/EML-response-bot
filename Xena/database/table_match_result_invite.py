@@ -53,11 +53,11 @@ class MatchResultInviteTable(BaseTable):
         """
         # Check for existing records to avoid duplication
         existing_record = await self.get_match_result_invite_records(
-            from_team_id=from_team_id, to_team_id=to_team_id
+            from_team_id=from_team_id, to_team_id=to_team_id, match_type=match_type
         )
         if existing_record:
             raise DbErrors.EmlRecordAlreadyExists(
-                f"Invite from team_id:'{from_team_id}' for team_id:'{to_team_id}' to confirm results already exists"
+                f"Invite from team '{vw_from_team}' for team '{vw_to_team}' to confirm results already exists for match type '{match_type}'"
             )
         # Prepare info for new record
         now = await general_helpers.epoch_timestamp()
