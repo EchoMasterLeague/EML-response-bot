@@ -1,12 +1,12 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
+from database.enums import InviteStatus
 from database.fields import TeamInviteFields, PlayerFields, TeamPlayerFields, TeamFields
 from database.records import TeamRecord, PlayerRecord
 from utils import discord_helpers, database_helpers, general_helpers
 import constants
 import datetime
 import discord
-import utils.general_helpers as bot_helpers
 
 
 class ManageTeams:
@@ -67,9 +67,14 @@ class ManageTeams:
                 player_name=player_name
             )
             # Create Invite record
-            await database_helpers.create_team_invite(self._db, inviter, invitee)
+            new_invite = await database_helpers.create_team_invite(
+                self._db, inviter, invitee
+            )
             # Success
-            message = f"Team invite sent."
+            new_invite_dict = await new_invite.to_dict()
+            new_invite_json = await general_helpers.format_json(new_invite_dict)
+            new_invite_block = await discord_helpers.code_block(new_invite_json, "json")
+            message = f"Team invite sent.\n{new_invite_block}"
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
@@ -106,7 +111,7 @@ class ManageTeams:
             )
             # Add option to clear invites
             clearall_button = choices.QuestionOptionButton(
-                label="Clear all invites",
+                label="Decline All",
                 style=discord.ButtonStyle.danger,
                 custom_id="clearall",
             )
@@ -130,6 +135,15 @@ class ManageTeams:
                 return await interaction.followup.send("No team selected.")
             # clear invites
             for invite in invites:
+                if await invite.get_field(TeamInviteFields.from_team_id) != choice:
+                    await invite.set_field(
+                        TeamInviteFields.invite_status, InviteStatus.DECLINED
+                    )
+                else:
+                    await invite.set_field(
+                        TeamInviteFields.invite_status, InviteStatus.ACCEPTED
+                    )
+                await self._db.table_team_invite.update_team_invite_record(invite)
                 await self._db.table_team_invite.delete_team_invite_record(invite)
             if choice == "clearall":
                 # We are done here if no team was selected
@@ -137,7 +151,7 @@ class ManageTeams:
             # Add player to the team
             team_id = choice
             team_name = options_dict[team_id]
-            await database_helpers.add_player_to_team(player, team_name)
+            await database_helpers.add_player_to_team(self._db, player_id, team_name)
             await discord_helpers.add_member_to_team(interaction.user, team_id)
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
@@ -529,7 +543,7 @@ class ManageTeams:
                 "co_captain": co_captain_name,
                 "players": player_names,
             }
-            message = await bot_helpers.format_json(message_dict)
+            message = await general_helpers.format_json(message_dict)
             message = await discord_helpers.code_block(message, language="json")
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:

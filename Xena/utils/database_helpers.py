@@ -524,7 +524,7 @@ async def create_team_invite(
     assert not invitee_team_players, f"Player is already on a team."
     # Check player invites
     invitee_team_invites = await db.table_team_invite.get_team_invite_records(
-        player_id=invitee_player_id
+        to_player_id=invitee_player_id
     )
     available_invites = constants.TEAM_INVITES_RECEIVE_MAX - len(invitee_team_invites)
     assert available_invites > 0, f"Player has received too many invites."

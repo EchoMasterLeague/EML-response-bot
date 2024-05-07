@@ -131,17 +131,17 @@ class ManageMatches:
                 for invite in match_invites:
                     option_number += 1
                     invite_id = await invite.get_field(MatchInviteFields.record_id)
-                    options_dict[invite_id] = f"Option {option_number}"
+                    match_type = await invite.get_field(MatchInviteFields.match_type)
+                    team_name = await invite.get_field(MatchInviteFields.vw_from_team)
+                    match_date = await invite.get_field(MatchInviteFields.match_date)
+                    match_time = await invite.get_field(MatchInviteFields.match_time_et)
+                    options_dict[invite_id] = f"Accept ({option_number})"
                     match_offers[str(option_number)] = {
                         "invite_id": invite_id,
-                        "match_type": await invite.get_field(
-                            MatchInviteFields.match_type
-                        ),
-                        "team": await invite.get_field(MatchInviteFields.display_name),
-                        "date": await invite.get_field(MatchInviteFields.match_date),
-                        "time_et": await invite.get_field(
-                            MatchInviteFields.match_time_et
-                        ),
+                        "match_type": match_type,
+                        "team": team_name,
+                        "date": match_date,
+                        "time_et": match_time,
                     }
                 # Create the view to display the options
                 view = choices.QuestionPromptView(
@@ -471,14 +471,16 @@ class ManageMatches:
                     scores_dict["round_3"] = "Not played"
                 # reverse outcome
                 outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
-                team_name = await invite.get_field(MatchResultInviteFields.display_name)
+                match_type = await invite.get_field(MatchResultInviteFields.match_type)
+                team_name = await invite.get_field(MatchResultInviteFields.vw_from_team)
                 if outcome == MatchResult.WIN:
                     outcome = MatchResult.LOSS
                 elif outcome == MatchResult.LOSS:
                     outcome = MatchResult.WIN
-                options_dict[invite_id] = f"Option {option_number}"
+                options_dict[invite_id] = f"Accept ({option_number})"
                 match_result_offers[str(option_number)] = {
                     "invite_id": invite_id,
+                    "match_type": match_type,
                     "team": team_name,
                     "outcome": outcome,
                     "scores": scores_dict,
