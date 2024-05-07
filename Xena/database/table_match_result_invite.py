@@ -109,6 +109,7 @@ class MatchResultInviteTable(BaseTable):
     async def get_match_result_invite_records(
         self,
         record_id: str = None,
+        match_type: str = None,
         from_team_id: str = None,
         from_player_id: str = None,
         to_team_id: str = None,
@@ -118,6 +119,7 @@ class MatchResultInviteTable(BaseTable):
         """Get an existing Match Result Invite record"""
         if (
             record_id is None
+            and match_type is None
             and from_team_id is None
             and to_team_id is None
             and from_player_id is None
@@ -125,7 +127,7 @@ class MatchResultInviteTable(BaseTable):
             and invite_status is None
         ):
             raise ValueError(
-                f"At least one of the following parameters must be provided: record_id, from_team_id, to_team_id, from_player_id, to_player_id, invite_status"
+                f"At least one of the following parameters must be provided: 'record_id', 'match_type', 'from_team_id', 'to_team_id', 'from_player_id', 'to_player_id', 'invite_status'"
             )
         now = await general_helpers.epoch_timestamp()
         table = await self.get_table_data()
@@ -149,6 +151,11 @@ class MatchResultInviteTable(BaseTable):
                     not record_id
                     or str(record_id).casefold()
                     == str(row[MatchResultInviteFields.record_id]).casefold()
+                )
+                and (
+                    not match_type
+                    or match_type.casefold()
+                    == str(row[MatchResultInviteFields.match_type]).casefold()
                 )
                 and (
                     not from_team_id

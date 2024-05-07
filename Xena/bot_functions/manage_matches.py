@@ -87,7 +87,13 @@ class ManageMatches:
                 )
             )
             assert new_match_invite, f"Error: Failed to create match invite."
-            message = f"Match Invite sent to {opposing_team_name}."
+            match_invite_dict = await new_match_invite.to_dict()
+            match_invite_code_block = await discord_helpers.code_block(
+                await general_helpers.format_json(match_invite_dict), "json"
+            )
+            message = (
+                f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
+            )
             await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
@@ -265,9 +271,9 @@ class ManageMatches:
         self,
         interaction: discord.Interaction,
         opposing_team_name: str,
-        # scores: str,
         scores: list[tuple[int, int]],
         outcome: str,
+        match_type: str = MatchType.ASSIGNED.value,
     ):
         try:
             # this could take a while, so defer the response
@@ -373,14 +379,16 @@ class ManageMatches:
             matches = await self._db.table_match.get_match_records(
                 team_a_id=inviter_team_id,
                 team_b_id=invitee_team_id,
+                match_type=match_type,
                 match_status=MatchStatus.PENDING.value,
             )
             reverse_matches = await self._db.table_match.get_match_records(
                 team_a_id=invitee_team_id,
                 team_b_id=inviter_team_id,
+                match_type=match_type,
                 match_status=MatchStatus.PENDING.value,
             )
-            assert_message = f"No pending match found between `{inviter_team_name}` and `{invitee_team_name}`."
+            assert_message = f"No pending match found between `{inviter_team_name}` and `{invitee_team_name}` of type `{match_type}`."
             assert matches or reverse_matches, assert_message
             if matches:
                 match_record = matches[0]
@@ -626,6 +634,7 @@ class ManageMatches:
             await match_record.set_field(MatchFields.round_3_score_a, scores[2][0])
             await match_record.set_field(MatchFields.round_3_score_b, scores[2][1])
             await match_record.set_field(MatchFields.outcome, outcome)
+            match_record = MatchRecord(await match_record.to_list())  # normalize
             await self._db.table_match.update_match_record(match_record)
             # Update match result invite record
             await selected_invite.set_field(

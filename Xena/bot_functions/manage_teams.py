@@ -157,7 +157,7 @@ class ManageTeams:
             team_id = choice
             team_name = options_dict[team_id]
             await database_helpers.add_player_to_team(self._db, player_id, team_name)
-            await discord_helpers.add_member_to_team(interaction.user, team_id)
+            await discord_helpers.add_member_to_team(interaction.user, team_name)
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success

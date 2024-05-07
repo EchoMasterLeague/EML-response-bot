@@ -195,6 +195,7 @@ async def bot_match_accept(
 @bot.tree.command(name=f"{BOT_PREFIX}matchresultoffer")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
+    match_type: str,
     opponent_name: str,
     outcome: str,
     round_1_us: int,
@@ -212,7 +213,11 @@ async def bot_match_result_offer(
             (round_3_us, round_3_them),
         ]
         await manage_matches.send_result_invite(
-            interaction, opponent_name, scores, outcome
+            interaction=interaction,
+            match_type=match_type,
+            opposing_team_name=opponent_name,
+            scores=scores,
+            outcome=outcome,
         )
 
 

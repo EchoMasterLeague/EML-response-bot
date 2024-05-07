@@ -313,6 +313,54 @@ class MatchRecord(BaseRecord):
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
+        # Conversion / Validation
+        # ensure rounds are integers or null
+        score_list = [
+            data_list[MatchFields.round_1_score_a.value],
+            data_list[MatchFields.round_1_score_b.value],
+            data_list[MatchFields.round_2_score_a.value],
+            data_list[MatchFields.round_2_score_b.value],
+            data_list[MatchFields.round_3_score_a.value],
+            data_list[MatchFields.round_3_score_b.value],
+        ]
+        new_score_list = []
+        for score in score_list:
+            if score == "" or score is None:
+                new_score_list.append(None)
+            else:
+                new_score_list.append(int(score))
+        self._data_dict[MatchFields.round_1_score_a.name] = new_score_list[0]
+        self._data_dict[MatchFields.round_1_score_b.name] = new_score_list[1]
+        self._data_dict[MatchFields.round_2_score_a.name] = new_score_list[2]
+        self._data_dict[MatchFields.round_2_score_b.name] = new_score_list[3]
+        self._data_dict[MatchFields.round_3_score_a.name] = new_score_list[4]
+        self._data_dict[MatchFields.round_3_score_b.name] = new_score_list[5]
+
+    async def to_list(self) -> list[int | float | str | None]:
+        """Return the record as a list of data (e.g. for `gsheets`)"""
+        data_list = await super().to_list()
+        # Conversion
+        score_list = [
+            data_list[MatchFields.round_1_score_a.value],
+            data_list[MatchFields.round_1_score_b.value],
+            data_list[MatchFields.round_2_score_a.value],
+            data_list[MatchFields.round_2_score_b.value],
+            data_list[MatchFields.round_3_score_a.value],
+            data_list[MatchFields.round_3_score_b.value],
+        ]
+        new_score_list = []
+        for score in score_list:
+            if score == "" or score is None:
+                new_score_list.append(None)
+            else:
+                new_score_list.append(int(score))
+        data_list[MatchFields.round_1_score_a.value] = new_score_list[0]
+        data_list[MatchFields.round_1_score_b.value] = new_score_list[1]
+        data_list[MatchFields.round_2_score_a.value] = new_score_list[2]
+        data_list[MatchFields.round_2_score_b.value] = new_score_list[3]
+        data_list[MatchFields.round_3_score_a.value] = new_score_list[4]
+        data_list[MatchFields.round_3_score_b.value] = new_score_list[5]
+        return data_list
 
 
 class MatchInviteRecord(BaseRecord):

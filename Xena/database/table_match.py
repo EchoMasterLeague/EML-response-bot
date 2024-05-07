@@ -78,7 +78,6 @@ class MatchTable(BaseTable):
         record_list[MatchFields.match_status] = MatchStatus.PENDING.value
         record_list[MatchFields.vw_team_a] = vw_team_a
         record_list[MatchFields.vw_team_b] = vw_team_b
-
         new_record = await self.create_record(record_list, MatchFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
