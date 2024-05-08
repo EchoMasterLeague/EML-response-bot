@@ -165,7 +165,7 @@ async def get_team_details_from_player(
     details = TeamDetailsOfPlayer()
     # Get player from discord_id
     if assert_player:
-        assert player, f"Player is not registered"
+        assert player, f"Player is not registered, cannot get their team details."
     if not player:
         return details
     details.player = player
