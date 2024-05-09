@@ -47,7 +47,7 @@ class MatchInviteTable(BaseTable):
         )
         if existing_record:
             raise DbErrors.EmlRecordAlreadyExists(
-                f"Invite for team_id:'{from_team_id}' to play team_id:'{to_team_id}' already exists"
+                f"Invite from team `{vw_from_team}` to play team `{vw_to_team}` already exists"
             )
         # Prepare info for new record
         now = await general_helpers.epoch_timestamp()

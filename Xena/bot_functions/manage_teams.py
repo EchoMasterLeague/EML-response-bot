@@ -59,13 +59,23 @@ class ManageTeams:
         try:
             # This could take a while
             await interaction.response.defer()
-            # Get Player Records for inviter and invitee
+            # Get Player Record for inviter
             inviter = await self._db.table_player.get_player_record(
                 discord_id=interaction.user.id
             )
+            assert_message = f"You must be registered as a player to invite players."
+            assert inviter, assert_message
+            # check permissions
+            team_details = await database_helpers.get_team_details_from_player(
+                self._db, inviter, assert_captain=True
+            )
+            assert team_details, f"You must be a captain to invite players."
+            # Get player record for invitee
             invitee = await self._db.table_player.get_player_record(
                 player_name=player_name
             )
+            assert_message = f"Player `{player_name}` not found. Please check the spelling, and verify the player is registered."
+            assert invitee, assert_message
             # Create Invite record
             new_invite = await database_helpers.create_team_invite(
                 self._db, inviter, invitee
@@ -175,35 +185,28 @@ class ManageTeams:
         try:
             # This could take a while
             await interaction.response.defer()
+            # Get requestor's Team Details
+            requestor = await self._db.table_player.get_player_record(
+                discord_id=interaction.user.id
+            )
+            assert_message = f"You register as a player, and be cpatin of a team to remove players from it."
+            assert requestor, assert_message
+            team_details = await database_helpers.get_team_details_from_player(
+                self._db, requestor, assert_captain=True
+            )
+            assert (
+                team_details
+            ), f"You must be the captain of a team to remove players from it."
             # Verify Player exists
             player = await self._db.table_player.get_player_record(
                 player_name=player_name
             )
-            assert player, f"Player not found."
             player_name = await player.get_field(PlayerFields.player_name)
-            # Verify requestor is authorized
-            requestor = await self._db.table_player.get_player_record(
-                discord_id=interaction.user.id
-            )
-            assert requestor, f"You must registered to remove players"
-            requestor_player_id = await requestor.get_field(PlayerFields.record_id)
-            requestor_team_players = (
-                await self._db.table_team_player.get_team_player_records(
-                    player_id=requestor_player_id
-                )
-            )
-            assert requestor_team_players, f"You must be on a team to remove players."
-            requestor_team_player = requestor_team_players[0]
-            is_captain = await requestor_team_player.get_field(
-                TeamPlayerFields.is_captain
-            )
-            is_co_cap = await requestor_team_player.get_field(
-                TeamPlayerFields.is_co_captain
-            )
-            assert is_captain or is_co_cap, "You must be a captain to remove players."
+            assert_message = f"Player `{player_name}` not found. Please check the spelling, and verify the player is registered."
+            assert player, assert_message
             # Remove Player from Team
-            team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
             player_id = await player.get_field(PlayerFields.record_id)
+            team_id = await team_details.team.get_field(TeamFields.record_id)
             await database_helpers.remove_player_from_team(self._db, player_id, team_id)
             # Update Player's Discord roles
             player_discord_member = await discord_helpers.member_from_discord_id(
@@ -214,7 +217,7 @@ class ManageTeams:
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
-            team_name = await requestor_team_player.get_field(TeamPlayerFields.vw_team)
+            team_name = await team_details.team.get_field(TeamFields.team_name)
             message = f"Player `{player_name}` removed from team `{team_name}`."
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
