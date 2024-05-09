@@ -39,6 +39,9 @@ class PlayerTable(BaseTable):
         record_list[PlayerFields.player_name] = player_name
         record_list[PlayerFields.region] = region
         new_record = await self.create_record(record_list, PlayerFields)
+        # Use Discord ID as the record ID
+        disrcord_id = await new_record.get_field(PlayerFields.discord_id)
+        await new_record.set_field(PlayerFields.record_id, "discord-id-" + disrcord_id)
         # Insert the new record into the database
         await self.insert_record(new_record)
         return new_record
