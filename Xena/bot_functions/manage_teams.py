@@ -192,7 +192,7 @@ class ManageTeams:
             assert_message = f"You register as a player, and be cpatin of a team to remove players from it."
             assert requestor, assert_message
             team_details = await database_helpers.get_team_details_from_player(
-                self._db, player, assert_captain=True
+                self._db, requestor, assert_captain=True
             )
             assert (
                 team_details
