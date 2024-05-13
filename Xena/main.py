@@ -115,7 +115,7 @@ async def bot_team_create(interaction: discord.Interaction, team_name: str):
         await manage_teams.create_team(interaction, team_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teaminviteoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
 async def bot_team_invite_offer(interaction: discord.Interaction, player_name: str):
     """Invite a player to join your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -130,7 +130,7 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
     # TODO: make team active with at least 4 players
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerremove")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -172,7 +172,7 @@ async def bot_team_disband(interaction: discord.Interaction):
 ######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchdatepropose")
 async def bot_match_propose(
     interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
 ):
@@ -183,7 +183,7 @@ async def bot_match_propose(
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchaccept")
+@bot.tree.command(name=f"{BOT_PREFIX}matchdateaccept")
 async def bot_match_accept(
     interaction: discord.Interaction, match_invite_id: str = None
 ):
@@ -192,7 +192,7 @@ async def bot_match_accept(
         await manage_matches.accept_match_invite(interaction, match_invite_id)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
     match_type: str,
