@@ -12,8 +12,8 @@ import os
 
 
 # Configuration
-dotenv.load_dotenv(".secrets/.env")
-GOOGLE_CREDENTIALS_FILE = ".secrets/google_credentials.json"
+dotenv.load_dotenv("Xena\.secrets\.env")
+GOOGLE_CREDENTIALS_FILE = "Xena\.secrets\google_credentials.json"
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
 BOT_PREFIX = os.environ.get("BOT_PREFIX")
@@ -418,7 +418,6 @@ async def list_members(
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###
 ###                                          Bot Commands End                                                       ###
 #######################################################################################################################
-
 
 ### Run Bot ###
 bot.run(DISCORD_TOKEN)
