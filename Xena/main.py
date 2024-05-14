@@ -279,13 +279,6 @@ async def rosters(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="registration")
-async def registration(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/registrations/"
-    )
-
-
 @bot.tree.command(name="website")
 async def website(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/")
@@ -329,7 +322,7 @@ async def staff_app(interaction: discord.Interaction):
 @bot.tree.command(name="calendar")
 async def staff_app(interaction: discord.Interaction):
     await interaction.response.send_message(
-        f"https://cdn.discordapp.com/attachments/1182380149468045354/1195235539289391114/Untitled401_20240111221722.png?ex=65b340d6&is=65a0cbd6&hm=d3d4ca3e5c16c9ef471c47782a4449698609cbb1ef1faf5ec70b9a1f570e98a8&"
+        f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
     )
 
 
