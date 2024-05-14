@@ -268,9 +268,6 @@ async def create_team(
         player_id=player_id
     )
     assert not player_team_players, f"Player is already on a team."
-    # Check Cooldowns
-    cooldowns = await db.table_cooldown.get_cooldown_records(player_id=player_id)
-    assert not cooldowns, f"Player is on a cooldown."
     # Get info about player
     # Create the team
 
@@ -316,9 +313,6 @@ async def add_player_to_team(
         player_id=player_id
     )
     assert not player_team_players, f"Player is already on a team."
-    # Check Cooldowns
-    cooldowns = await db.table_cooldown.get_cooldown_records(player_id=player_id)
-    assert not cooldowns, f"Player is on a cooldown."
     # Add the player to the team
     new_team_player = await db.table_team_player.create_team_player_record(
         team_id=team_id,
