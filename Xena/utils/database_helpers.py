@@ -273,7 +273,11 @@ async def create_team(
     assert not cooldowns, f"Player is on a cooldown."
     # Get info about player
     # Create the team
-    new_team = await db.table_team.create_team_record(team_name=team_name)
+
+    new_team = await db.table_team.create_team_record(
+        team_name=team_name, player=player
+    )
+
     assert new_team, f"Error: Could not create Team."
     # Add the captain to the team
     team_id = await new_team.get_field(TeamFields.record_id)
