@@ -1,7 +1,7 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
 from database.fields import VwRosterFields
-from database.records import VwRosterRecord
+from database.records import CooldownRecord, VwRosterRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -14,7 +14,7 @@ VwRoster Table
 """
 
 
-class VwRosterTable(BaseTable):
+class VwRosterTable(BaseTable):  # TODO
     """A class to manipulate the Match table in the database"""
 
     _db: CoreDatabase
