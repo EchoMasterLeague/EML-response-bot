@@ -1,0 +1,14 @@
+services:
+  bot:
+    image: ${DOCKER_REPO}/eml-discord-bot
+    container_name: eml-discord-bot
+    volumes:
+      - ${SECRETS_FOLDER}:/app/Xena/.secrets
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+  watchtower:
+    image: containrrr/watchtowner
+    container_name: watchtower_eml-discord-bot
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 eml-discord-bot
