@@ -99,6 +99,8 @@ async def upcoming_monday() -> int:
     """
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     days_until_monday = (0 - now.weekday()) % 7
+    if days_until_monday == 0:
+        days_until_monday = 7
     next_monday = now + datetime.timedelta(days=days_until_monday)
     next_monday_midnight = datetime.datetime.combine(
         next_monday, datetime.time.min.replace(tzinfo=datetime.timezone.utc)
