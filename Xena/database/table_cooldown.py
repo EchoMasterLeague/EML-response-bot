@@ -75,7 +75,7 @@ class CooldownTable(BaseTable):
         player_id: str = None,
         expires_before: int = None,
         expires_after: int = None,
-    ) -> CooldownRecord:
+    ) -> list[CooldownRecord]:
         """Get an existing Cooldown record
 
         Note: Since this has to walk the whole table anyway, this is also used to clean up expired records

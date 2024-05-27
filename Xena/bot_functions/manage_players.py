@@ -1,3 +1,4 @@
+import datetime
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields
@@ -143,6 +144,34 @@ class ManagePlayers:
                 message_dict["team_role"] = team_role
             # Create Response
             message = await general_helpers.format_json(message_dict)
+            message = await discord_helpers.code_block(message, language="json")
+            return await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
+
+    async def get_cooldown_players(self, interaction: discord.Interaction):
+        """Get all Players on cooldown"""
+        try:
+            # This could take a while
+            await interaction.response.defer()
+            # Get Cooldown info
+            cooldowns = await self._db.table_cooldown.get_cooldown_records(
+                expires_after=datetime.datetime.now().timestamp()
+            )
+            assert cooldowns, "No players on cooldown."
+            cooldown_players = []
+            for cooldown in cooldowns:
+                player_id = await cooldown.get_field(CooldownFields.player_id)
+                player = await self._db.table_player.get_player_record(
+                    record_id=player_id
+                )
+                player_name = await player.get_field(PlayerFields.player_name)
+                cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
+                cooldown_players.append((player_name, cooldown_end))
+            # Create Response
+            message = await general_helpers.format_json(cooldown_players)
             message = await discord_helpers.code_block(message, language="json")
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:

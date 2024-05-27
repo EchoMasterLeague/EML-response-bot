@@ -96,6 +96,13 @@ async def bot_player_unregister(interaction: discord.Interaction):
         await manage_players.unregister_player(interaction)
 
 
+@bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
+async def bot_lookup_cooldown_players(interaction: discord.Interaction):
+    """List players on cooldown"""
+    if await manage_commands.is_command_enabled(interaction):
+        await manage_players.get_cooldown_players(interaction)
+
+
 #####################
 ### Team Commands ###
 #####################
