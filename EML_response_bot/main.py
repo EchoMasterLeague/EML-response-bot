@@ -154,6 +154,7 @@ async def rolelookup(
     role_input1: str,
     role_input2: Optional[str] = None,
 ):
+
     # Get the guild from the interaction
     guild = interaction.guild
 

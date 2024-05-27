@@ -118,9 +118,9 @@ class ManagePlayers:
             message_dict["player"] = player_name
             message_dict["region"] = player_region
             # Get cooldown info
-            cooldowns = await self._db.table_cooldown.get_cooldown_records(
-                player_id=player_id
-            )
+            cooldowns = (
+                await self._db.table_cooldown.get_cooldown_records()
+            )  # Cooldown Check?
             cooldown: CooldownRecord = cooldowns[0] if cooldowns else None
             if cooldown:
                 cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
