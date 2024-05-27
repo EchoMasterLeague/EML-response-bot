@@ -115,7 +115,7 @@ async def bot_team_create(interaction: discord.Interaction, team_name: str):
         await manage_teams.create_team(interaction, team_name)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teaminviteoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
 async def bot_team_invite_offer(interaction: discord.Interaction, player_name: str):
     """Invite a player to join your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -130,7 +130,7 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
     # TODO: make team active with at least 4 players
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerremove")
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
@@ -172,7 +172,7 @@ async def bot_team_disband(interaction: discord.Interaction):
 ######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchdatepropose")
 async def bot_match_propose(
     interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
 ):
@@ -183,7 +183,7 @@ async def bot_match_propose(
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchaccept")
+@bot.tree.command(name=f"{BOT_PREFIX}matchdateaccept")
 async def bot_match_accept(
     interaction: discord.Interaction, match_invite_id: str = None
 ):
@@ -192,7 +192,7 @@ async def bot_match_accept(
         await manage_matches.accept_match_invite(interaction, match_invite_id)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultoffer")
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
     match_type: str,
@@ -245,14 +245,14 @@ async def help(interaction: discord.Interaction):
         "`/rosters`: Display team rosters.\n"
         "`/registration`: Display registration information.\n"
         "`/website`: Display the league website.\n"
-        "`/leaguerules`: Display league rules.\n"
+        "`/league_rules`: Display league rules.\n"
         "`/server_coc`: Display server Code of Conduct.\n"
         "`/ticket`: Display ticket information.\n"
         "`/support`: Display support information.\n"
-        "`/staffapp`: Display staff application link.\n"
+        "`/staff_app`: Display staff application link.\n"
         "`/calendar`: Display the league calendar.\n"
-        "`/actionlist`: Display the EML action list.\n"
-        "`/rolelookup <role>`: List members with a specific role."
+        "`/eml_action_list`: Display the EML action list.\n"
+        "`/list_members <role>`: List members with a specific role."
     )
 
     await interaction.response.send_message(help_message)
@@ -284,7 +284,7 @@ async def website(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/")
 
 
-@bot.tree.command(name="leaguerules")
+@bot.tree.command(name="league_rules")
 async def leaguerules(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/eml-league-rules/"
@@ -312,8 +312,8 @@ async def support(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="staffapp")
-async def staffapp(interaction: discord.Interaction):
+@bot.tree.command(name="staff_app")
+async def staff_app(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/staff-application/"
     )
@@ -333,15 +333,15 @@ async def ap(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="actionlist")
-async def actionlist(interaction: discord.Interaction):
+@bot.tree.command(name="action_list")
+async def action_list(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
     )
 
 
-@bot.tree.command(name="loungereport")
-async def loungereport(interaction: discord.Interaction):
+@bot.tree.command(name="lounge_report")
+async def lounge_report(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system. https://discord.gg/echo-combat-lounge-779349159852769310"
     )
