@@ -49,7 +49,9 @@ class ManageMatches:
             try:
                 datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
             except ValueError:
-                datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M %p")
+                datetime_obj = datetime.datetime.strptime(
+                    date_time, "%Y-%m-%d %I:%M %p"
+                )
             match_epoch = int(datetime_obj.timestamp())
             # Get inviter player details from discord_id
             inviter_player = await database_helpers.get_player_details_from_discord_id(
