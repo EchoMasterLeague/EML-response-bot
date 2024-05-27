@@ -45,13 +45,13 @@ class ManageMatches:
             assert (
                 normalized_match_type
             ), f"Match type must be one of: [{', '.join([str(option.value) for option in MatchType])}]"
-            # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM" (remove the space between the time and the AM/PM, but keep the one between the date and time)
-            datetime_array = date_time.split(" ")
-            date = datetime_array[0]
-            time = "".join(datetime_array[1:])
-            date_time = f"{date} {time}"
             # Verify time format (raises ValueError if incorrect format)
-            datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
+            try:
+                datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
+            except ValueError:
+                datetime_obj = datetime.datetime.strptime(
+                    date_time, "%Y-%m-%d %I:%M %p"
+                )
             match_epoch = int(datetime_obj.timestamp())
             # Get inviter player details from discord_id
             inviter_player = await database_helpers.get_player_details_from_discord_id(
