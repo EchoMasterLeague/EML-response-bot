@@ -1,2 +1,4 @@
 *
 !/.gitignore
+!/example_.env
+!/example_google_credentials.json

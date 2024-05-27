@@ -285,7 +285,7 @@ async def website(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="league_rules")
-async def league_rules(interaction: discord.Interaction):
+async def leaguerules(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/eml-league-rules/"
     )
@@ -320,7 +320,7 @@ async def staff_app(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="calendar")
-async def staff_app(interaction: discord.Interaction):
+async def calendar(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
     )
@@ -347,8 +347,8 @@ async def lounge_report(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name="list_members")
-async def list_members(
+@bot.tree.command(name="rolelookup")
+async def rolelookup(
     interaction: discord.Interaction,
     role_input1: str,
     role_input2: str = None,
