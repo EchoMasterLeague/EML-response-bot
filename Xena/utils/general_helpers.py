@@ -86,7 +86,9 @@ async def eml_time(epoch_timestamp: int) -> str:
     # get time in tz
     tz = pytz.timezone("America/New_York")
     eastern_time = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
-    time_eastern = eastern_time.strftime("%-I:%M %p")
+    time_eastern = eastern_time.strftime("%I:%M %p")
+    if time_eastern.startswith("0"):
+        time_eastern = time_eastern[1:]
     return time_eastern
 
 
