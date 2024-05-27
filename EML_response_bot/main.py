@@ -85,13 +85,6 @@ async def website(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/")
 
 
-@bot.tree.command(name="registration")
-async def registration(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/registrations/"
-    )
-
-
 @bot.tree.command(name="leaguerules")
 async def leaguerules(interaction: discord.Interaction):
     await interaction.response.send_message(
