@@ -161,7 +161,7 @@ class ManagePlayers:
                 expires_after=datetime.datetime.now().timestamp()
             )
             assert cooldowns, "No players on cooldown."
-            cooldown_players = []
+            cooldown_players = {}
             for cooldown in cooldowns:
                 player_id = await cooldown.get_field(CooldownFields.player_id)
                 player = await self._db.table_player.get_player_record(
@@ -169,7 +169,8 @@ class ManagePlayers:
                 )
                 player_name = await player.get_field(PlayerFields.player_name)
                 cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
-                cooldown_players.append((player_name, cooldown_end))
+                cooldown_end_date = cooldown_end.split("T")[0] if cooldown_end else None
+                cooldown_players[player_name] = cooldown_end_date
             # Create Response
             message = await general_helpers.format_json(cooldown_players)
             message = await discord_helpers.code_block(message, language="json")

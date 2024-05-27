@@ -82,7 +82,6 @@ async def eml_date(epoch_timestamp: int) -> str:
 
 async def eml_time(epoch_timestamp: int) -> str:
     """Return the time in Eastern Time from the epoch timestamp (e.g. 1:31 PM)"""
-
     # get time in tz
     tz = pytz.timezone("America/New_York")
     eastern_time = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
