@@ -108,7 +108,7 @@ class TeamFields(IntEnum):
     updated_at = BaseFields.updated_at
     team_name = 3  # The name of the team
     status = 4  # The status of the team
-
+    team_region = 5  # The region of the teams captain
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class TeamPlayerFields(IntEnum):
