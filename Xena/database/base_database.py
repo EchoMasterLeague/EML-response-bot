@@ -1,7 +1,7 @@
 import constants
 import gspread
 import errors.database_errors as DbErrors
-from database.table_player import PlayerFields, PlayerRecord, PlayerTable, Region
+from database.table_player import PlayerFields, PlayerRecord, PlayerTable, Regions
 from database.table_team import TeamFields, TeamRecord, TeamTable
 from database.table_team_player import (
     TeamPlayerFields,

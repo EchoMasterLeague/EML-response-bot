@@ -1,7 +1,7 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
 from database.fields import PlayerFields
-from database.records import PlayerRecord, Region
+from database.records import PlayerRecord, Regions
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -92,7 +92,7 @@ class PlayerTable(BaseTable):
         """Get all players from a specific region"""
         # Validate the region
         is_region_allowed = False
-        allowed_region_list = [r.value for r in Region]
+        allowed_region_list = [r.value for r in Regions]
         for allowed_region in allowed_region_list:
             if region.casefold() == allowed_region.casefold():
                 region = allowed_region

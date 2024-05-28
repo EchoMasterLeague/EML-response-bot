@@ -28,7 +28,7 @@ class InviteStatus(StrEnum):
 
 
 @verify(EnumCheck.UNIQUE)
-class Region(StrEnum):
+class Regions(StrEnum):
     """Lookup for Region values"""
 
     NA = "NA"  # North America
