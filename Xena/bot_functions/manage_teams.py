@@ -100,11 +100,6 @@ class ManageTeams:
             )
             assert player, f"You must be registered as a Player to accept an invite."
             player_id = await player.get_field(PlayerFields.record_id)
-            # check cooldown
-            cooldown = await self._db.table_cooldown.get_cooldown_records(
-                player_id=player_id
-            )
-            assert not cooldown, f"You are on a cooldown."
             # Gather Invites
             invites = await self._db.table_team_invite.get_team_invite_records(
                 to_player_id=player_id

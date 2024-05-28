@@ -1,3 +1,4 @@
+import datetime
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields
@@ -144,6 +145,32 @@ class ManagePlayers:
             # Create Response
             message = await general_helpers.format_json(message_dict)
             message = await discord_helpers.code_block(message, language="json")
+            return await discord_helpers.final_message(interaction, message)
+        except AssertionError as message:
+            await discord_helpers.final_message(interaction, message)
+        except Exception as error:
+            await discord_helpers.error_message(interaction, error)
+
+    async def get_cooldown_players(self, interaction: discord.Interaction):
+        """Get all Players on cooldown"""
+        try:
+            # This could take a while
+            await interaction.response.defer()
+            # Get Cooldown info
+            cooldowns = await self._db.table_cooldown.get_cooldown_records(
+                expires_after=datetime.datetime.now().timestamp()
+            )
+            assert cooldowns, "No players on cooldown."
+            cooldown_players = {}
+            for cooldown in cooldowns:
+                player_name = await cooldown.get_field(CooldownFields.vw_player)
+                cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
+                cooldown_end_date = cooldown_end.split("T")[0] if cooldown_end else None
+                cooldown_players[player_name] = cooldown_end_date
+            # Create Response
+            message = await general_helpers.format_json(cooldown_players)
+            message = await discord_helpers.code_block(message, language="json")
+            message = f"Players on cooldown:\n{message}"
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)

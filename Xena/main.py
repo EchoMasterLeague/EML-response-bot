@@ -10,19 +10,19 @@ import dotenv
 import gspread
 import os
 
-
 # Configuration
-dotenv.load_dotenv(".secrets/.env")
-GOOGLE_CREDENTIALS_FILE = ".secrets/google_credentials.json"
+THIS_DIR = os.path.dirname(__file__)
+SECRETS_DIR = os.environ.get("SECRETS_DIR")
+SECRETS_DIR = SECRETS_DIR if SECRETS_DIR else os.path.join(THIS_DIR, ".secrets")
+dotenv.load_dotenv()
+dotenv.load_dotenv(os.path.join(SECRETS_DIR, ".env"))
+GOOGLE_CREDENTIALS_FILE = os.path.join(SECRETS_DIR, "google_credentials.json")
+
+# Environment Variables
+BOT_PREFIX = os.environ.get("BOT_PREFIX")
+BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
-BOT_PREFIX = os.environ.get("BOT_PREFIX")
-DEFAULT_BOT_PREFIX = ""
-if BOT_PREFIX:
-    BOT_PREFIX = BOT_PREFIX + "_" if BOT_PREFIX[-1] != "_" else BOT_PREFIX
-else:
-    BOT_PREFIX = DEFAULT_BOT_PREFIX
-
 
 # Google Sheets "Database"
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
@@ -94,6 +94,13 @@ async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     if await manage_commands.is_command_enabled(interaction):
         await manage_players.unregister_player(interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
+async def bot_lookup_cooldown_players(interaction: discord.Interaction):
+    """List players on cooldown"""
+    if await manage_commands.is_command_enabled(interaction):
+        await manage_players.get_cooldown_players(interaction)
 
 
 #####################
@@ -233,7 +240,7 @@ async def bot_match_result_accept(interaction: discord.Interaction):
 #########################
 
 
-@bot.tree.command(name="help")
+@bot.tree.command(name=f"{BOT_PREFIX}help")
 async def help(interaction: discord.Interaction):
     """
     Displays information about available commands.
@@ -258,96 +265,96 @@ async def help(interaction: discord.Interaction):
     await interaction.response.send_message(help_message)
 
 
-@bot.tree.command(name="ranks")
+@bot.tree.command(name=f"{BOT_PREFIX}ranks")
 async def ranks(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/team-rankings-2/"
     )
 
 
-@bot.tree.command(name="matches")
+@bot.tree.command(name=f"{BOT_PREFIX}matches")
 async def matches(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/current-week-matches-and-results/"
     )
 
 
-@bot.tree.command(name="rosters")
+@bot.tree.command(name=f"{BOT_PREFIX}rosters")
 async def rosters(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://docs.google.com/spreadsheets/d/13vcfXkCejl9I4dtlA9ZI19dHGYh7aWIQXUU5MWhpYt0/edit?usp=sharing"
     )
 
 
-@bot.tree.command(name="website")
+@bot.tree.command(name=f"{BOT_PREFIX}website")
 async def website(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/")
 
 
-@bot.tree.command(name="league_rules")
+@bot.tree.command(name=f"{BOT_PREFIX}league_rules")
 async def leaguerules(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/eml-league-rules/"
     )
 
 
-@bot.tree.command(name="coc")
+@bot.tree.command(name=f"{BOT_PREFIX}coc")
 async def coc(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://discord.com/channels/1182380144887865406/1182380146506866823"
     )
 
 
-@bot.tree.command(name="ticket")
+@bot.tree.command(name=f"{BOT_PREFIX}ticket")
 async def ticket(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://discord.com/channels/1182380144887865406/1182380148436242475"
     )
 
 
-@bot.tree.command(name="support")
+@bot.tree.command(name=f"{BOT_PREFIX}support")
 async def support(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://discord.com/channels/1182380144887865406/1182380148436242476"
     )
 
 
-@bot.tree.command(name="staff_app")
+@bot.tree.command(name=f"{BOT_PREFIX}staff_app")
 async def staff_app(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://echomasterleague.com/staff-application/"
     )
 
 
-@bot.tree.command(name="calendar")
+@bot.tree.command(name=f"{BOT_PREFIX}calendar")
 async def calendar(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
     )
 
 
-@bot.tree.command(name="ap")
+@bot.tree.command(name=f"{BOT_PREFIX}ap")
 async def ap(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml"
     )
 
 
-@bot.tree.command(name="action_list")
+@bot.tree.command(name=f"{BOT_PREFIX}action_list")
 async def action_list(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
     )
 
 
-@bot.tree.command(name="lounge_report")
+@bot.tree.command(name=f"{BOT_PREFIX}lounge_report")
 async def lounge_report(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system. https://discord.gg/echo-combat-lounge-779349159852769310"
     )
 
 
-@bot.tree.command(name="rolelookup")
+@bot.tree.command(name=f"{BOT_PREFIX}rolelookup")
 async def rolelookup(
     interaction: discord.Interaction,
     role_input1: str,
