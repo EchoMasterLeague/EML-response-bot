@@ -30,7 +30,7 @@ For hosting versions for a beta testing group. A balance between quick iteration
 ### Production Setup
 For final hosting, where high uptime is critical and there are long times between updates. Using the same stack as the beta, but with monitor-only Watchtower. *Ideally this would use Kubernetes for redundancy, increasing uptime. However, this solution still has good uptime, plenty for a project of this scale.*
 4. Get the Watchtower image by running `docker pull containrrr/watchtower`
-5. Add `WATCHTOWER_ARGS=--interval 86400 --notification-url "discord://**TOKEN**@**CHANNEL ID**" --monitor-only` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds) and the values in ** with their respective values.
+5. Add `WATCHTOWER_ARGS=--interval 86400 --notification-url "discord://**WebhookToken**@**WebhookId**" --monitor-only` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds) and the values in ** with their respective values. To get the WebhookId and WebhookToken, please reference the documentation [here](https://containrrr.dev/shoutrrr/v0.8/services/discord/).
 5. Start the bot using `docker compose up`. Everything needed should start with this command.
 ###
 ***This code is created by the Echo Master League, found at https://echomasterleague.com/. Other use cases are not supported and will not receive assistance. Use at own risk.***
