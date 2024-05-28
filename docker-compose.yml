@@ -7,7 +7,7 @@ services:
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
   watchtower:
-    image: containrrr/watchtowner
+    image: containrrr/watchtower
     container_name: watchtower_eml-discord-bot
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
