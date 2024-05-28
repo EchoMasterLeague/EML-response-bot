@@ -96,6 +96,7 @@ async def update_roster_view(
     roster_dict = dict(sorted(roster_dict.items()))
     # Build the table
     for team_name, sub_dict_team in roster_dict.items():
+        region = sub_dict_team.get("region", None)
         captain = sub_dict_team.get("captain", None)
         co_captain = sub_dict_team.get("co_captain", None)
         players: list = sub_dict_team.get("players", [])
@@ -116,6 +117,7 @@ async def update_roster_view(
                 players[4] if len(players) > 4 else None,
                 players[5] if len(players) > 5 else None,
                 is_active,
+                region,
             ]
         )
     await db.table_vw_roster.write_all_vw_roster_records(roster_table)
