@@ -10,19 +10,19 @@ import dotenv
 import gspread
 import os
 
-
 # Configuration
-dotenv.load_dotenv(".secrets/.env")
-GOOGLE_CREDENTIALS_FILE = ".secrets/google_credentials.json"
+THIS_DIR = os.path.dirname(__file__)
+SECRETS_DIR = os.environ.get("SECRETS_DIR")
+SECRETS_DIR = SECRETS_DIR if SECRETS_DIR else os.path.join(THIS_DIR, ".secrets")
+dotenv.load_dotenv()
+dotenv.load_dotenv(os.path.join(SECRETS_DIR, ".env"))
+GOOGLE_CREDENTIALS_FILE = os.path.join(SECRETS_DIR, "google_credentials.json")
+
+# Environment Variables
+BOT_PREFIX = os.environ.get("BOT_PREFIX")
+BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
-BOT_PREFIX = os.environ.get("BOT_PREFIX")
-DEFAULT_BOT_PREFIX = ""
-if BOT_PREFIX:
-    BOT_PREFIX = BOT_PREFIX + "_" if BOT_PREFIX[-1] != "_" else BOT_PREFIX
-else:
-    BOT_PREFIX = DEFAULT_BOT_PREFIX
-
 
 # Google Sheets "Database"
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)

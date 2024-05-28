@@ -1,6 +1,6 @@
-nose
-sphinx
 discord
-python-dotenv
 gspread
+nose
+python-dotenv
 pytz
+sphinx
