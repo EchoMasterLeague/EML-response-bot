@@ -59,18 +59,13 @@ async def update_roster_view(
         player_name_dict[player_id] = player_name
 
     team_name_dict = {}
+    team_region_dict = {}
     for team in all_teams:
         if all_teams.index(team) == 0:
             continue
         team_id = team[TeamFields.record_id]
         team_name = team[TeamFields.team_name]
         team_name_dict[team_id] = team_name
-
-    team_region_dict = {}
-    for team in all_teams:
-        if all_teams.index(team) == 0:
-            continue
-        team_id = team[TeamFields.record_id]
         team_region = team[TeamFields.vw_region]
         team_region_dict[team_id] = team_region
 
