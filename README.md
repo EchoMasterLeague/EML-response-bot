@@ -19,7 +19,7 @@ SECRETS_FOLDER=
 
 ### Local:
 For developers setting up their local environments for quickly iterating and testing, using [Docker Desktop](https://www.docker.com/products/docker-desktop/) locally.
-4. Start the bot building the image `docker build -t eml-discord-bot .` then running it `docker run -e ${DISCORD_TOKEN}`. Repeat on each change to restart the bot with your new changes.
+4. Start the bot building the image `docker build -t eml-discord-bot .` then running it `docker compose up bot`. Repeat on each change to restart the bot with your new changes.
 
 ### Beta/Early Version Setup
 For hosting versions for a beta testing group. A balance between quick iteration and organization using [GitHub Actions](https://github.com/features/actions), [Docker Hub](https://hub.docker.com), and [Watchtower](https://github.com/containrrr/watchtowner)
