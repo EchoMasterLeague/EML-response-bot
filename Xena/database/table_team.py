@@ -2,7 +2,6 @@ from database.base_table import BaseTable
 from database.database_core import CoreDatabase
 from database.fields import TeamFields
 from database.records import TeamRecord
-from database.fields import PlayerFields
 from database.enums import TeamStatus
 import constants
 import errors.database_errors as DbErrors
@@ -23,7 +22,7 @@ class TeamTable(BaseTable):
         """Initialize the Team Table class"""
         super().__init__(db, constants.LEAGUE_DB_TAB_TEAM, TeamRecord, TeamFields)
 
-    async def create_team_record(self, team_name: str, player: str) -> TeamRecord:
+    async def create_team_record(self, team_name: str, vw_region: str) -> TeamRecord:
         """Create a new Team record"""
         # Check for existing records to avoid duplication
         existing_record = await self.get_team_record(team_name=team_name)
@@ -33,9 +32,7 @@ class TeamTable(BaseTable):
         record_list = [None] * len(TeamFields)
         record_list[TeamFields.team_name] = team_name
         record_list[TeamFields.status] = TeamStatus.INACTIVE
-        record_list[TeamFields.team_region] = await player.get_field(
-            PlayerFields.region
-        )
+        record_list[TeamFields.vw_region] = vw_region
         new_record = await self.create_record(record_list, TeamFields)
         # Insert the new record into the database
         await self.insert_record(new_record)

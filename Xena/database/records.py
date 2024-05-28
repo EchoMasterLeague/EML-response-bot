@@ -1,4 +1,4 @@
-from database.enums import Bool, Regions, TeamStatus
+from database.enums import Bool, Region, TeamStatus
 from database.fields import (
     BaseFields,
     CommandLockFields,
@@ -179,7 +179,7 @@ class PlayerRecord(BaseRecord):
         self._data_dict[PlayerFields.discord_id.name] = str(discord_id)
         ## Region
         region = self._data_dict[PlayerFields.region.name]
-        region_list = [r.value for r in Regions]
+        region_list = [r.value for r in Region]
         for allowed_region in region_list:
             if str(region).casefold() == allowed_region.casefold():
                 self._data_dict[PlayerFields.region.name] = allowed_region

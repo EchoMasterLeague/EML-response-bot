@@ -2,7 +2,7 @@ import datetime
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields
-from database.enums import Regions
+from database.enums import Region
 from database.records import CooldownRecord
 from errors import database_errors
 from utils import discord_helpers, general_helpers
@@ -30,9 +30,9 @@ class ManagePlayers:
                 await interaction.response.defer()
             else:
                 options_dict = {
-                    Regions.EU.value: "Europe",
-                    Regions.NA.value: "North America",
-                    Regions.OCE.value: "Oceania",
+                    Region.EU.value: "Europe",
+                    Region.NA.value: "North America",
+                    Region.OCE.value: "Oceania",
                 }
                 view = choices.QuestionPromptView(options_dict=options_dict)
                 await interaction.response.send_message(
@@ -43,7 +43,7 @@ class ManagePlayers:
             # Get player info
             discord_id = interaction.user.id
             player_name = interaction.user.display_name
-            allowed_regions = [r.value for r in Regions]
+            allowed_regions = [r.value for r in Region]
             region = await ManagePlayersHelpers.normalize_region(region)
             assert region, f"Region must be in {allowed_regions}"
             # Create Player record
@@ -201,7 +201,7 @@ class ManagePlayersHelpers:
     @staticmethod
     async def normalize_region(region: str):
         """Normalize a region string"""
-        allowed_regions = [r.value for r in Regions]
+        allowed_regions = [r.value for r in Region]
         for allowed_region in allowed_regions:
             if str(region).casefold() == str(allowed_region).casefold():
                 return allowed_region

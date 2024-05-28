@@ -65,6 +65,7 @@ class VwRosterFields(IntEnum):
     player_5 = 8  # The fifth player on the team
     player_6 = 9  # The sixth player on the team
     active = 10  # Whether or not the team is active
+    region = 11  # The region of the team
 
 
 ### Players ###
@@ -108,7 +109,8 @@ class TeamFields(IntEnum):
     updated_at = BaseFields.updated_at
     team_name = 3  # The name of the team
     status = 4  # The status of the team
-    team_region = 5  # The region of the teams captain
+    vw_region = 5  # The region of the teams captain
+
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
 class TeamPlayerFields(IntEnum):
