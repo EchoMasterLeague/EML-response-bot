@@ -28,7 +28,7 @@ For hosting versions for a beta testing group. A balance between quick iteration
 5. Start the bot using `docker compose up`. Everything needed should start with this command.
 
 ### Production Setup
-For final hosting, where high uptime is critical and there long times between updates. Using the same stack as the beta, but with monitor-only Watchtower. *Ideally this would use Kubernetes for redundancy, increasing uptime. However, this solution still has good uptime, plenty for a project of this scale.*
+For final hosting, where high uptime is critical and there are long times between updates. Using the same stack as the beta, but with monitor-only Watchtower. *Ideally this would use Kubernetes for redundancy, increasing uptime. However, this solution still has good uptime, plenty for a project of this scale.*
 4. Get the Watchtower image by running `docker pull containrrr/watchtower`
 5. Add `WATCHTOWER_ARGS=--interval 86400 --notification-url "discord://**TOKEN**@**CHANNEL ID**" --monitor-only` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds) and the values in ** with their respective values.
 5. Start the bot using `docker compose up`. Everything needed should start with this command.
