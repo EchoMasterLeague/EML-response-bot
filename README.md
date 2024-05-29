@@ -19,18 +19,22 @@ SECRETS_FOLDER=
 
 ### Local:
 For developers setting up their local environments for quickly iterating and testing, using [Docker Desktop](https://www.docker.com/products/docker-desktop/) locally.
-4. Start the bot building the image `docker build -t eml-discord-bot .` then running it `docker compose up bot`. Repeat on each change to restart the bot with your new changes.
+
+1. Start the bot building the image `docker build -t eml-discord-bot .` then running it `docker compose up bot`. Repeat on each change to restart the bot with your new changes.
 
 ### Beta/Early Version Setup
 For hosting versions for a beta testing group. A balance between quick iteration and organization using [GitHub Actions](https://github.com/features/actions), [Docker Hub](https://hub.docker.com), and [Watchtower](https://github.com/containrrr/watchtowner)
-4. Get the Watchtower image by running `docker pull containrrr/watchtower`
-5. Add `WATCHTOWER_ARGS=--interval 86400` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds).
-5. Start the bot using `docker compose up`. Everything needed should start with this command.
+
+1. Get the Watchtower image by running `docker pull containrrr/watchtower`
+2. Add `WATCHTOWER_ARGS=--interval 86400` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds).
+3. Start the bot using `docker compose up`. Everything needed should start with this command.
 
 ### Production Setup
 For final hosting, where high uptime is critical and there are long times between updates. Using the same stack as the beta, but with monitor-only Watchtower. *Ideally this would use Kubernetes for redundancy, increasing uptime. However, this solution still has good uptime, plenty for a project of this scale.*
-4. Get the Watchtower image by running `docker pull containrrr/watchtower`
-5. Add `WATCHTOWER_ARGS=--interval 86400 --notification-url "discord://**WebhookToken**@**WebhookId**" --monitor-only` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds) and the values in ** with their respective values. To get the WebhookId and WebhookToken, please reference the documentation [here](https://containrrr.dev/shoutrrr/v0.8/services/discord/).
-5. Start the bot using `docker compose up`. Everything needed should start with this command.
+
+1. Get the Watchtower image by running `docker pull containrrr/watchtower`
+2. Add `WATCHTOWER_ARGS=--interval 86400 --notification-url "discord://**WebhookToken**@**WebhookId**" --monitor-only` to the `.env` file, replacing `86400` value with how often Watchtower should check for updates (in seconds) and the values in ** with their respective values. To get the WebhookId and WebhookToken, please reference the documentation [here](https://containrrr.dev/shoutrrr/v0.8/services/discord/).
+3. Start the bot using `docker compose up`. Everything needed should start with this command.
+
 ###
 ***This code is created by the Echo Master League, found at https://echomasterleague.com/. Other use cases are not supported and will not receive assistance. Use at own risk.***
