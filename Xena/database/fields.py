@@ -66,6 +66,7 @@ class VwRosterFields(IntEnum):
     player_6 = 9  # The sixth player on the team
     active = 10  # Whether or not the team is active
     region = 11  # The region of the team
+    is_2_co_cap = 12  # Whether or not the second player is a co-captain
 
 
 ### Players ###
