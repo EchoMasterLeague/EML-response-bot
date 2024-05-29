@@ -33,6 +33,7 @@ class VwRosterTable(BaseTable):
         captain_name: str,
         co_captain_name: str,
         player_names: list[str],
+        region: str,
     ) -> VwRosterRecord:
         """Create a new Match record"""
         # Sort player names and remove captains
@@ -75,6 +76,7 @@ class VwRosterTable(BaseTable):
                 VwRosterFields.player_6, player_names.pop(0) if player_names else None
             )
             await existing_record.set_field(VwRosterFields.active, is_active)
+            await existing_record.set_field(VwRosterFields.region, region)
             await self.update_vw_roster_record(existing_record)
             return existing_record
         # Create a new record
@@ -95,6 +97,7 @@ class VwRosterTable(BaseTable):
             player_names.pop(0) if player_names else None
         )
         record_list[VwRosterFields.active] = is_active
+        record_list[VwRosterFields.region] = region
         new_record = await self.create_record(record_list, VwRosterFields)
         await new_record.set_field(VwRosterFields.record_id, team_id)
         # Insert the new record into the database
@@ -114,22 +117,34 @@ class VwRosterTable(BaseTable):
         self,
         record_id: str = None,
         team_name: str = None,
+        region: str = None,
     ) -> list[VwRosterRecord]:
         """Get existing VwRoster records"""
         if record_id is None and team_name is None:
-            raise ValueError("Must provide either record_id or team_name")
+            raise ValueError(
+                "At least one of 'record_id', 'team_name', or 'region' is required"
+            )
         table = await self.get_table_data()
         existing_records: list[VwRosterRecord] = []
         for row in table:
             if table.index(row) == 0:
                 continue
             if (
-                not record_id
-                or str(record_id).casefold()
-                == str(row[VwRosterFields.record_id]).casefold()
-            ) and (
-                not team_name
-                or str(team_name).casefold() == str(row[VwRosterFields.team]).casefold()
+                (
+                    not record_id
+                    or str(record_id).casefold()
+                    == str(row[VwRosterFields.record_id]).casefold()
+                )
+                and (
+                    not team_name
+                    or str(team_name).casefold()
+                    == str(row[VwRosterFields.team]).casefold()
+                )
+                and (
+                    not region
+                    or str(region).casefold()
+                    == str(row[VwRosterFields.region]).casefold()
+                )
             ):
                 existing_records.append(VwRosterRecord(row))
         return existing_records

@@ -46,24 +46,28 @@ async def update_roster_view(
             VwRosterFields.player_5.name,
             VwRosterFields.player_6.name,
             VwRosterFields.active.name,
+            VwRosterFields.region.name,
         ]
     ]
 
-    player_dict = {}
+    player_name_dict = {}
     for player in all_players:
         if all_players.index(player) == 0:
             continue
         player_id = player[PlayerFields.record_id]
         player_name = player[PlayerFields.player_name]
-        player_dict[player_id] = player_name
+        player_name_dict[player_id] = player_name
 
-    team_dict = {}
+    team_name_dict = {}
+    team_region_dict = {}
     for team in all_teams:
         if all_teams.index(team) == 0:
             continue
         team_id = team[TeamFields.record_id]
         team_name = team[TeamFields.team_name]
-        team_dict[team_id] = team_name
+        team_name_dict[team_id] = team_name
+        team_region = team[TeamFields.vw_region]
+        team_region_dict[team_id] = team_region
 
     roster_dict = {}
     for team_player in all_team_players:
@@ -74,13 +78,14 @@ async def update_roster_view(
         player_id = team_player[TeamPlayerFields.player_id]
         is_captain = team_player[TeamPlayerFields.is_captain] == Bool.TRUE
         is_co_captain = team_player[TeamPlayerFields.is_co_captain] == Bool.TRUE
-        team_name = team_dict.get(team_id)
-        player_name = player_dict.get(player_id)
+        team_name = team_name_dict.get(team_id)
+        player_name = player_name_dict.get(player_id)
         # Update the roster dictionary
         sub_dict_team: dict = roster_dict.get(team_name, {})
         is_any_captain = is_captain or is_co_captain
         if is_captain:
             sub_dict_team["captain"] = player_name
+            sub_dict_team["region"] = team_region_dict.get(team_id)
         if is_co_captain:
             sub_dict_team["co_captain"] = player_name
         if not is_any_captain:
@@ -91,6 +96,7 @@ async def update_roster_view(
     roster_dict = dict(sorted(roster_dict.items()))
     # Build the table
     for team_name, sub_dict_team in roster_dict.items():
+        region = sub_dict_team.get("region", None)
         captain = sub_dict_team.get("captain", None)
         co_captain = sub_dict_team.get("co_captain", None)
         players: list = sub_dict_team.get("players", [])
@@ -111,6 +117,7 @@ async def update_roster_view(
                 players[4] if len(players) > 4 else None,
                 players[5] if len(players) > 5 else None,
                 is_active,
+                region,
             ]
         )
     await db.table_vw_roster.write_all_vw_roster_records(roster_table)
@@ -269,7 +276,11 @@ async def create_team(
     )
     assert not player_team_players, f"Player is already on a team."
     # Create the team
-    new_team = await db.table_team.create_team_record(team_name=team_name)
+    player_region = await player.get_field(PlayerFields.region)
+    new_team = await db.table_team.create_team_record(
+        team_name=team_name, vw_region=player_region
+    )
+
     assert new_team, f"Error: Could not create Team."
     # Add the captain to the team
     team_id = await new_team.get_field(TeamFields.record_id)
