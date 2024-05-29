@@ -1,0 +1,7 @@
+venv/
+Xena/.secrets
+
+**.DS_store
+.git*
+.venv
+.vscode
