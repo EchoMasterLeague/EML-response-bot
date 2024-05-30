@@ -105,6 +105,12 @@ async def member_remove_team_roles(member: discord.Member):
     return True
 
 
+async def guild_remove_team_role(guild: discord.Guild, team_name: str):
+    """Remove a Team role from a Guild"""
+    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    return await guild_role_remove_if_exists(guild, role_name)
+
+
 async def member_add_captain_role(member: discord.Member, region: str):
     """Add a Captain role to a Guild Member"""
     role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
