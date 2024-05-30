@@ -485,6 +485,7 @@ class ManageTeams:
                 await self._db.table_team_player.delete_team_player_record(team_player)
             # Delete the Team
             await self._db.table_team.delete_team_record(team)
+            await discord_helpers.guild_remove_team_role(interaction.guild, team_name)
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
