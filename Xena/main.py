@@ -83,10 +83,10 @@ async def bot_lookup_player(
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}playerregister")
-async def bot_player_register(interaction: discord.Interaction, region: str = None):
+async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_players.register_player(interaction=interaction, region=region)
+        await manage_players.register_player(interaction=interaction, region=None)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
