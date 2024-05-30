@@ -47,6 +47,7 @@ async def update_roster_view(
             VwRosterFields.player_6.name,
             VwRosterFields.active.name,
             VwRosterFields.region.name,
+            VwRosterFields.is_2_co_cap.name,
         ]
     ]
 
@@ -93,14 +94,15 @@ async def update_roster_view(
             sub_dict_team["players"] = sub_dict_players
         roster_dict[team_name] = sub_dict_team
     # Sort the teams
-    roster_dict = dict(sorted(roster_dict.items()))
+    roster_dict = dict(sorted(roster_dict.items(), key=str.casefold))
     # Build the table
     for team_name, sub_dict_team in roster_dict.items():
         region = sub_dict_team.get("region", None)
         captain = sub_dict_team.get("captain", None)
         co_captain = sub_dict_team.get("co_captain", None)
+        is_2_co_cap = Bool.TRUE if co_captain else Bool.FALSE
         players: list = sub_dict_team.get("players", [])
-        players.sort()
+        players.sort(key=str.casefold)
         if co_captain:
             players = [co_captain] + players
         if captain:
@@ -118,6 +120,7 @@ async def update_roster_view(
                 players[5] if len(players) > 5 else None,
                 is_active,
                 region,
+                is_2_co_cap,
             ]
         )
     await db.table_vw_roster.write_all_vw_roster_records(roster_table)

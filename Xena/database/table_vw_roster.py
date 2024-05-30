@@ -6,7 +6,7 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 import utils.general_helpers as general_helpers
-from database.enums import MatchType, MatchStatus
+from database.enums import MatchType, MatchStatus, Bool
 
 
 """
@@ -36,10 +36,10 @@ class VwRosterTable(BaseTable):
         region: str,
     ) -> VwRosterRecord:
         """Create a new Match record"""
+        is_2_co_cap = Bool.TRUE if co_captain_name else Bool.FALSE
         # Sort player names and remove captains
         player_names = sorted(player_names)
         # Remove captains from the list if they exist
-
         if captain_name in player_names:
             player_names.remove(captain_name)
         if co_captain_name in player_names:
@@ -77,6 +77,7 @@ class VwRosterTable(BaseTable):
             )
             await existing_record.set_field(VwRosterFields.active, is_active)
             await existing_record.set_field(VwRosterFields.region, region)
+            await existing_record.set_field(VwRosterFields.is_2_co_cap, is_2_co_cap)
             await self.update_vw_roster_record(existing_record)
             return existing_record
         # Create a new record
@@ -98,6 +99,7 @@ class VwRosterTable(BaseTable):
         )
         record_list[VwRosterFields.active] = is_active
         record_list[VwRosterFields.region] = region
+        record_list[VwRosterFields.is_2_co_cap] = is_2_co_cap
         new_record = await self.create_record(record_list, VwRosterFields)
         await new_record.set_field(VwRosterFields.record_id, team_id)
         # Insert the new record into the database
