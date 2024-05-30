@@ -94,7 +94,7 @@ async def update_roster_view(
             sub_dict_team["players"] = sub_dict_players
         roster_dict[team_name] = sub_dict_team
     # Sort the teams
-    roster_dict = dict(sorted(roster_dict.items(), key=str.casefold))
+    roster_dict = dict(sorted(roster_dict.items()))
     # Build the table
     for team_name, sub_dict_team in roster_dict.items():
         region = sub_dict_team.get("region", None)
@@ -102,7 +102,7 @@ async def update_roster_view(
         co_captain = sub_dict_team.get("co_captain", None)
         is_2_co_cap = Bool.TRUE if co_captain else Bool.FALSE
         players: list = sub_dict_team.get("players", [])
-        players.sort(key=str.casefold)
+        players.sort()
         if co_captain:
             players = [co_captain] + players
         if captain:
