@@ -12,7 +12,7 @@ class ManageSystem:
     async def list_pending_writes(self, interaction: discord.Interaction):
         """List pending write operations"""
         try:
-            interaction.response.defer()  # This could take a while
+            await interaction.response.defer()  # This could take a while
             pending_writes = await self._db.core_database.get_pending_writes()
             pending_writes_json = await general_helpers.format_json(pending_writes)
             code_block = await discord_helpers.code_block(
@@ -26,7 +26,7 @@ class ManageSystem:
     async def list_local_cache(self, interaction: discord.Interaction):
         """List local cache"""
         try:
-            interaction.response.defer()  # This could take a while
+            await interaction.response.defer()  # This could take a while
             cache_times = await self._db.core_database.get_cache_times()
             cache_times_json = await general_helpers.format_json(cache_times)
             code_block = await discord_helpers.code_block(
