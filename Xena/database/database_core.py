@@ -21,6 +21,7 @@ class CoreDatabase:
     def __init__(self, gs_client: gspread.Client):
         """Initialize the Database class"""
         self._gs_client = gs_client
+        self._worksheets: dict[str, gspread.Worksheet] = {}
         self._db_local_cache: dict[list[list[int | float | str | None]]] = {}
         self._db_write_queue: dict[list[list[int | float | str | None]]] = {}
         try:
@@ -47,10 +48,14 @@ class CoreDatabase:
     def get_table_worksheet(self, table_name: str) -> gspread.Worksheet:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
-            worksheet = self._db_spreadsheet.worksheet(table_name)
+            if table_name not in self._worksheets:
+                print(f"Getting Worksheet: {table_name} (not cached)")
+                self._worksheets[table_name] = self._db_spreadsheet.worksheet(
+                    table_name
+                )
         except gspread.WorksheetNotFound as error:
             raise DbErrors.EmlWorksheetDoesNotExist(f"Worksheet not found: {error}")
-        return worksheet
+        return self._worksheets[table_name]
 
     async def get_table_data(
         self, table_name: str
@@ -60,6 +65,7 @@ class CoreDatabase:
         await self.commit_all_writes()
         # get the data from the worksheet if needed
         if table_name not in self._db_local_cache:
+            print(f"Getting Table: {table_name} (not cached)")
             worksheet = self.get_table_worksheet(table_name)
             self._db_local_cache[table_name] = worksheet.get_all_values()
         return self._db_local_cache[table_name]
@@ -123,11 +129,14 @@ class CoreDatabase:
     ) -> None:
         """Commit a single write operation to the worksheet"""
         if operation == WriteOperations.INSERT:
+            print(f"Insert in {worksheet.title} (write)")
             worksheet.append_row(row_data, table_range="A1")
         elif operation == WriteOperations.UPDATE:
+            print(f"Update in {worksheet.title} (read and write)")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.update(f"A{cell.row}", [row_data])
         elif operation == WriteOperations.DELETE:
+            print(f"Delete in {worksheet.title} (read and write)")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.delete_rows(cell.row)
 
