@@ -1,6 +1,8 @@
+from database.enums import WriteOperations
 import constants
-import gspread
 import errors.database_errors as DbErrors
+import gspread
+import time
 
 
 class CoreDatabase:
@@ -10,27 +12,29 @@ class CoreDatabase:
     designed to be used with the `gspread` library.
 
     Attributes:
-        gs_client (gspread.Client): The Google Sheets client to use
-        spreadsheet (gspread.Spreadsheet): The Google Sheets spreadsheet to use
+        _gs_client (gspread.Client): The Google Sheets client to use
+        _db_spreadsheet (gspread.Spreadsheet): The Google Sheets spreadsheet to use as a database
+        _db_local_cache (dict): A cache of worksheets to reduce API calls
+        _db_write_queue (dict): A queue of write operations to commit to the database
     """
 
     def __init__(self, gs_client: gspread.Client):
         """Initialize the Database class"""
-        self.gs_client = gs_client
+        self._gs_client = gs_client
+        self._worksheets: dict[str, gspread.Worksheet] = {}
+        self._db_local_cache: dict[list[list[int | float | str | None]]] = {}
+        self._db_write_queue: dict[list[list[int | float | str | None]]] = {}
         try:
-            self.table_spreadsheet = gs_client.open_by_url(
+            self._db_spreadsheet = gs_client.open_by_url(
                 constants.LEAGUE_DB_SPREADSHEET_URL
-            )
-            self.view_spreadsheet = gs_client.open_by_url(
-                constants.LEAGUE_VIEW_SPREADSHEET_URL
             )
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
 
-    def create_db_worksheet(self, title: str) -> gspread.Worksheet:
+    def create_table_worksheet(self, title: str) -> gspread.Worksheet:
         """Create a new worksheet in the DB spreadsheet"""
         try:
-            worksheet = self.table_spreadsheet.add_worksheet(
+            worksheet = self._db_spreadsheet.add_worksheet(
                 title,
                 rows=constants.LEAGUE_DB_SPREADSHEET_DEFAULT_ROWS,
                 cols=constants.LEAGUE_DB_SPREADSHEET_DEFAULT_COLS,
@@ -41,19 +45,117 @@ class CoreDatabase:
             raise DbErrors.EmlWorksheetCreateError(f"Worsheet not created: {error}")
         return worksheet
 
-    def get_db_worksheet(self, title: str) -> gspread.Worksheet:
+    def get_table_worksheet(self, table_name: str) -> gspread.Worksheet:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
-            worksheet = self.table_spreadsheet.worksheet(title)
+            if table_name not in self._worksheets:
+                print(f"Getting Worksheet: {table_name} (not cached)")
+                self._worksheets[table_name] = self._db_spreadsheet.worksheet(
+                    table_name
+                )
         except gspread.WorksheetNotFound as error:
             raise DbErrors.EmlWorksheetDoesNotExist(f"Worksheet not found: {error}")
-        return worksheet
+        return self._worksheets[table_name]
 
-    def get_view_worksheet(self, title: str) -> gspread.Worksheet:
-        """Get a worksheet from the View spreadsheet by title"""
-        try:
-            worksheet = self.view_spreadsheet.worksheet(title)
+    async def get_table_data(
+        self, table_name: str
+    ) -> list[list[int | float | str | None]]:
+        """Get all the data from a worksheet"""
+        # write any pending changes to the spreadsheet
+        await self.commit_all_writes()
+        # get the data from the worksheet if needed
+        if table_name not in self._db_local_cache:
+            print(f"Getting Table: {table_name} (not cached)")
+            worksheet = self.get_table_worksheet(table_name)
+            self._db_local_cache[table_name] = worksheet.get_all_values()
+        return self._db_local_cache[table_name]
 
-        except gspread.WorksheetNotFound as error:
-            raise DbErrors.EmlWorksheetDoesNotExist(f"Worksheet not found: {error}")
-        return worksheet
+    async def append_row(
+        self, table_name: str, row_data: list[int | float | str | None]
+    ) -> None:
+        """Insert a record into a worksheet"""
+        # Add the write operation to the queue
+        if table_name not in self._db_write_queue:
+            self._db_write_queue[table_name] = []
+        queued_write = [WriteOperations.INSERT] + row_data
+        self._db_write_queue[table_name] += [queued_write]
+        # Update the local cache
+        if table_name in self._db_local_cache:
+            self._db_local_cache[table_name] += [row_data]
+        # write any pending changes to the spreadsheet
+        await self.commit_all_writes()
+
+    async def update_row(
+        self, table_name: str, row_data: list[int | float | str | None]
+    ) -> None:
+        """Update a record in a worksheet"""
+        # Add the write operation to the queue
+        if table_name not in self._db_write_queue:
+            self._db_write_queue[table_name] = []
+        queued_write = [WriteOperations.UPDATE] + row_data
+        self._db_write_queue[table_name] += [queued_write]
+        # Update the local cache
+        id = row_data[0]
+        if table_name in self._db_local_cache:
+            for i, row in enumerate(self._db_local_cache[table_name]):
+                if row[0] == id:
+                    self._db_local_cache[table_name][i] = row_data
+                    break
+        # write any pending changes to the spreadsheet
+        await self.commit_all_writes()
+
+    async def delete_row(self, table_name: str, record_id: str) -> None:
+        """Delete a record from a worksheet"""
+        # Add the write operation to the write queue
+        if table_name not in self._db_write_queue:
+            self._db_write_queue[table_name] = []
+        queued_write = [WriteOperations.DELETE, record_id]
+        self._db_write_queue[table_name] += [queued_write]
+        # Update the local cache
+        if table_name in self._db_local_cache:
+            for i, row in enumerate(self._db_local_cache[table_name]):
+                if row[0] == record_id:
+                    del self._db_local_cache[table_name][i]
+                    break
+        # write any pending changes to the spreadsheet
+        await self.commit_all_writes()
+
+    async def commit_single_write(
+        self,
+        worksheet: gspread.Worksheet,
+        operation: WriteOperations,
+        record_id: str,
+        row_data: list[int | float | str | None] = None,
+    ) -> None:
+        """Commit a single write operation to the worksheet"""
+        if operation == WriteOperations.INSERT:
+            print(f"Insert in {worksheet.title} (write)")
+            worksheet.append_row(row_data, table_range="A1")
+        elif operation == WriteOperations.UPDATE:
+            print(f"Update in {worksheet.title} (read and write)")
+            cell = worksheet.find(record_id, in_column=1)
+            worksheet.update(f"A{cell.row}", [row_data])
+        elif operation == WriteOperations.DELETE:
+            print(f"Delete in {worksheet.title} (read and write)")
+            cell = worksheet.find(record_id, in_column=1)
+            worksheet.delete_rows(cell.row)
+
+    async def commit_all_writes(self) -> None:
+        """Commit the write queue to the database"""
+        table_name: str
+        writes: list[list[int | float | str | None]]
+        for table_name, writes in self._db_write_queue.items():
+            worksheet = self.get_table_worksheet(table_name)
+            while writes:
+                write = writes[0]
+                operation = write[0]
+                record_id = write[1]
+                row_data = write[1:]
+                try:
+                    await self.commit_single_write(
+                        worksheet, operation, record_id, row_data
+                    )
+                    writes.pop(0)
+                except Exception as error:
+                    print(f"Failed to commit write: {error}")
+                    time.sleep(1)

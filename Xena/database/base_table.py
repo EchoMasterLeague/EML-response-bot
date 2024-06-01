@@ -32,33 +32,34 @@ class BaseTable:
     def __init__(
         self,
         db: CoreDatabase,
-        tab_name: str,
+        table_name: str,
         record_type: Type[BaseRecord],
         fields: Type[BaseFields],
     ):
+        self.table_name: str = table_name
         self._db: CoreDatabase = db
         self._record_type: Type[BaseRecord] = record_type
         self._fields: Type[BaseFields] = fields
-        self._tab: gspread.worksheet.Worksheet
         self._history_table: HistoryTable
-        history_tab_name = f"{tab_name}{constants.LEAGUE_DB_TAB_SUFFIX_HISTORY}"
         try:
-            self._tab = db.get_db_worksheet(tab_name)
+            table_worksheet: gspread.worksheet.Worksheet
+            table_worksheet = db.get_table_worksheet(table_name)
         except DbErrors.EmlWorksheetDoesNotExist as error:
             # Create the worksheet if it doesn't exist
-            self._tab = db.create_db_worksheet(tab_name)
+            table_worksheet = db.create_table_worksheet(table_name)
             # Add the fields to the worksheet
             field_list = [field.name for field in fields]
-            self._tab.update(f"A1", [field_list])
+            table_worksheet.update(f"A1", [field_list])
         except DbErrors.EmlWorksheetCreateError as error:
-            message = f"Worksheet '{tab_name}' does not exist and could not be created: {error}"
+            message = f"Worksheet '{table_name}' does not exist and could not be created: {error}"
             raise DbErrors.EmlWorksheetDoesNotExist(message)
-        self._history_table = HistoryTable(db, history_tab_name, record_type, fields)
+        history_table_name = f"{table_name}{constants.LEAGUE_DB_TAB_SUFFIX_HISTORY}"
+        self._history_table = HistoryTable(db, history_table_name, record_type, fields)
 
     async def get_table_data(self):
         """Get all the data from the workseet"""
         try:
-            table = self._tab.get_all_values()
+            table = await self._db.get_table_data(self.table_name)
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetReadError(
                 f"Error reading worksheet: {error.response.text}"
@@ -85,21 +86,11 @@ class BaseTable:
             await self._history_table.create_history_record(record, operation)
             # Insert Record
             record_list = await record.to_list()
-            self._tab.append_row(record_list, table_range="A1")
+            await self._db.append_row(table_name=self.table_name, row_data=record_list)
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"
             )
-
-    async def get_record(self, record_id: str):
-        """Get a record by its ID"""
-        table = await self.get_table_data()
-        for row in table:
-            if table.index(row) == 0:
-                continue
-            if row[BaseFields.record_id] == record_id:
-                return self._record_type(row)
-        raise DbErrors.EmlRecordNotFound(f"Record '{record_id}' not found")
 
     async def update_record(self, record: BaseRecord):
         """Update a record in the table"""
@@ -117,7 +108,9 @@ class BaseTable:
                 await self._history_table.create_history_record(record, operation)
                 # Update Records
                 record_list = await record.to_list()
-                self._tab.update(f"A{table.index(row) + 1}", [record_list])
+                await self._db.update_row(
+                    table_name=self.table_name, row_data=record_list
+                )
                 return
         raise DbErrors.EmlRecordNotFound(f"Record '{record_id}' not found")
 
@@ -134,7 +127,9 @@ class BaseTable:
                     operation = HistoryOperations.DELETE
                     await self._history_table.create_history_record(record, operation)
                     # Delete Record
-                    self._tab.delete_rows(table.index(row) + 1)
+                    await self._db.delete_row(
+                        table_name=self.table_name, record_id=record_id
+                    )
                 except gspread.exceptions.APIError as error:
                     raise DbErrors.EmlWorksheetWriteError(
                         f"Error writing to worksheet: {error.response.text}"
@@ -177,27 +172,28 @@ class HistoryTable:
     def __init__(
         self,
         db: CoreDatabase,
-        tab_name: str,
+        table_name: str,
         record_type: Type[BaseRecord] = BaseRecord,
         fields: Type[BaseFields] = BaseFields,
     ):
+        self.table_name: str = table_name
         self._db: CoreDatabase = db
         self._record_type: Type[BaseRecord] = record_type
         self._record_fields: Type[BaseFields] = fields
-        self._tab: gspread.worksheet.Worksheet
         try:
-            self._tab = db.get_db_worksheet(tab_name)
+            history_worksheet: gspread.worksheet.Worksheet
+            history_worksheet = db.get_table_worksheet(table_name)
         except DbErrors.EmlWorksheetDoesNotExist as error:
             # Create the worksheet if it doesn't exist
-            self._tab = db.create_db_worksheet(tab_name)
+            history_worksheet = db.create_table_worksheet(table_name)
             # Add the fields to the worksheet
             fields: Type[IntEnum] = self._record_fields
             original_field_list = [field.name for field in fields]
             history_field_list = [field.name for field in HistoryFields]
             field_list = history_field_list + original_field_list
-            self._tab.update(f"A1", [field_list])
+            history_worksheet.update(f"A1", [field_list])
         except DbErrors.EmlWorksheetCreateError as error:
-            message = f"Worksheet '{tab_name}' does not exist and could not be created: {error}"
+            message = f"Worksheet '{table_name}' does not exist and could not be created: {error}"
             raise DbErrors.EmlWorksheetDoesNotExist(message)
 
     async def create_history_record(
@@ -215,7 +211,7 @@ class HistoryTable:
         history_list[HistoryFields.history_operation] = operation.value
         # insert the history record list into the table
         try:
-            self._tab.append_row(history_list, table_range="A1")
+            await self._db.append_row(table_name=self.table_name, row_data=history_list)
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"

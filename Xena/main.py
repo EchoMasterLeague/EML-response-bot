@@ -25,7 +25,9 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
 
 # Google Sheets "Database"
-gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
+gs_client = gspread.service_account(
+    GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient
+)
 database_core = CoreDatabase(gs_client)
 database = FullDatabase(database_core)
 
@@ -257,7 +259,8 @@ async def help(interaction: discord.Interaction):
         "`/ticket`: Display ticket information.\n"
         "`/support`: Display support information.\n"
         "`/staff_app`: Display staff application link.\n"
-        "`/calendar`: Display the league calendar.\n"
+        "`/calendar_na`: Display the na league calendar.\n"
+        "`/calendar_eu`: Display the eu league calendar.\n"
         "`/eml_action_list`: Display the EML action list.\n"
         "`/list_members <role>`: List members with a specific role."
     )
@@ -326,11 +329,14 @@ async def staff_app(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}calendar")
-async def calendar(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
-    )
+@bot.tree.command(name='calendar_na')
+async def staff_app(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&")
+
+
+@bot.tree.command(name='calendar_eu')
+async def staff_app(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}ap")
