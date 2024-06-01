@@ -350,14 +350,18 @@ async def staff_app(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name='calendar_na')
+@bot.tree.command(name=f"{BOT_PREFIX}calendar_na")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&")
+    await interaction.response.send_message(
+        f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
+    )
 
 
-@bot.tree.command(name='calendar_eu')
+@bot.tree.command(name=f"{BOT_PREFIX}calendar_eu")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&")
+    await interaction.response.send_message(
+        f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&"
+    )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}ap")
