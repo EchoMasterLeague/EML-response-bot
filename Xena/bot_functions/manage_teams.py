@@ -15,7 +15,12 @@ class ManageTeams:
     def __init__(self, database: FullDatabase):
         self._db = database
 
-    async def create_team(self, interaction: discord.Interaction, team_name: str):
+    async def create_team(
+        self,
+        interaction: discord.Interaction,
+        team_name: str,
+        log_channel: discord.TextChannel = None,
+    ):
         """Create a Team with the given name
 
         Process:
@@ -45,8 +50,14 @@ class ManageTeams:
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_name=team_name)
             # Success
-            message = f"Team created: '{team_name}'"
-            return await discord_helpers.final_message(interaction, message)
+            user_message = f"Team created: '{team_name}'"
+            await discord_helpers.final_message(interaction, user_message)
+            guild = interaction.guild
+            team_role = await discord_helpers.get_team_role(guild, team_name)
+            await discord_helpers.log_to_channel(
+                log_channel,
+                f"{team_role.mention} has been created by {discord_member.mention}",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:

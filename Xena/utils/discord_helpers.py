@@ -111,6 +111,12 @@ async def member_role_remove_by_prefix(
 ### Roles for Teams ###
 
 
+async def get_team_role(guild: discord.Guild, team_name: str):
+    """Get a Team role from a Guild"""
+    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    return discord.utils.get(guild.roles, name=role_name)
+
+
 async def member_add_team_role(member: discord.Member, team_name: str):
     """Add a Team role to a Guild Member"""
     role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"

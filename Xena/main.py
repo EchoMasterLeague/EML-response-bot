@@ -131,7 +131,10 @@ async def bot_lookup_team(interaction: discord.Interaction, team_name: str = Non
 async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.create_team(interaction, team_name)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.create_team(
+            interaction=interaction, team_name=team_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
