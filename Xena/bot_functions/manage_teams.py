@@ -52,11 +52,9 @@ class ManageTeams:
             # Success
             user_message = f"Team created: '{team_name}'"
             await discord_helpers.final_message(interaction, user_message)
-            guild = interaction.guild
-            team_role = await discord_helpers.get_team_role(guild, team_name)
             await discord_helpers.log_to_channel(
                 log_channel,
-                f"{team_role.mention} has been created by {discord_member.mention}",
+                f"`{team_name}` has been created by {discord_member.mention}",
             )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
@@ -441,7 +439,9 @@ class ManageTeams:
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
-    async def disband_team(self, interaction: discord.Interaction):
+    async def disband_team(
+        self, interaction: discord.Interaction, log_channel: discord.TextChannel = None
+    ):
         """Disband the requestor's Team"""
         try:
             # This could take a while
@@ -471,6 +471,7 @@ class ManageTeams:
                 team_id=team_id
             )
             # Remove all Players from the Team
+            discord_members: list[discord.Member] = []
             for team_player in team_players:
                 # Remove Player's Discord roles
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
@@ -482,6 +483,7 @@ class ManageTeams:
                     guild=interaction.guild,
                     discord_id=player_discord_id,
                 )
+                discord_members.append(player_discord_member)
                 await discord_helpers.member_remove_team_roles(player_discord_member)
                 # Apply cooldown
                 player_name = await player.get_field(PlayerFields.player_name)
@@ -500,8 +502,15 @@ class ManageTeams:
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
-            message = f"Team '{team_name}' has been disbanded"
-            return await discord_helpers.final_message(interaction, message)
+            user_message = f"Team '{team_name}' has been disbanded"
+            await discord_helpers.final_message(interaction, user_message)
+            captain_discord = interaction.user
+            discord_members.remove(captain_discord)
+            players = ", ".join([member.mention for member in discord_members])
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"`{team_name}` has been disbanded by {captain_discord.mention}, removing [{players}]",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:

@@ -186,7 +186,10 @@ async def bot_team_leave(interaction: discord.Interaction):
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.disband_team(interaction)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.disband_team(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 ######################
