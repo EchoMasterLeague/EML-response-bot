@@ -2,6 +2,7 @@ from bot_functions.manage_commands import ManageCommands
 from bot_functions.manage_players import ManagePlayers
 from bot_functions.manage_teams import ManageTeams
 from bot_functions.manage_matches import ManageMatches
+from bot_functions.manage_system import ManageSystem
 from database.database_core import CoreDatabase
 from database.database_full import FullDatabase
 import discord
@@ -36,6 +37,7 @@ manage_players = ManagePlayers(database)
 manage_teams = ManageTeams(database)
 manage_commands = ManageCommands(database)
 manage_matches = ManageMatches(database)
+manage_system = ManageSystem(database)
 
 # Discord Intents
 intents = discord.Intents.default()
@@ -69,6 +71,25 @@ async def on_ready():
 #######################################################################################################################
 ###                                          Bot Commands Begin                                                     ###
 ###vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv###
+
+#######################
+### System Commands ###
+#######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbqueue")
+async def bot_z_debug_db_queue(interaction: discord.Interaction):
+    """Debug the pending writes"""
+    if await manage_commands.is_command_enabled(interaction):
+        await manage_system.list_pending_writes(interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbcache")
+async def bot_z_debug_db_cache(interaction: discord.Interaction):
+    """Debug the local cache"""
+    if await manage_commands.is_command_enabled(interaction):
+        await manage_system.list_local_cache(interaction)
+
 
 #######################
 ### Player Commands ###
