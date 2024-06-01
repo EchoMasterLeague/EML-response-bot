@@ -25,7 +25,9 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
 
 # Google Sheets "Database"
-gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
+gs_client = gspread.service_account(
+    GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient
+)
 database_core = CoreDatabase(gs_client)
 database = FullDatabase(database_core)
 

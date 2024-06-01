@@ -1,5 +1,18 @@
 from enum import IntEnum, EnumCheck, StrEnum, verify
 
+
+### Database ###
+
+
+@verify(EnumCheck.UNIQUE)
+class WriteOperations(StrEnum):
+    """Lookup for Write Operation values"""
+
+    INSERT = "INSERT"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
+
 ### Common ###
 
 

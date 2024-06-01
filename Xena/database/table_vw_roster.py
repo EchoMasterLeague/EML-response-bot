@@ -25,6 +25,9 @@ class VwRosterTable(BaseTable):
         super().__init__(
             db, constants.LEAGUE_DB_TAB_VW_ROSTER, VwRosterRecord, VwRosterFields
         )
+        self._tab: gspread.Worksheet = db.get_table_worksheet(
+            constants.LEAGUE_DB_TAB_VW_ROSTER
+        )
 
     async def create_vw_roster_record(
         self,
