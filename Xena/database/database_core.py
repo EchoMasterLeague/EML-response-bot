@@ -173,6 +173,10 @@ class CoreDatabase:
                 except Exception as error:
                     print(f"Failed to commit write: {error}")
                     time.sleep(1)
+        # Remove synced tables from the write queue
+        for table_name in self._db_write_queue.keys():
+            if self._db_write_queue[table_name] == []:
+                del self._db_write_queue[table_name]
 
     async def get_pending_writes(
         self,

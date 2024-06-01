@@ -27,7 +27,7 @@ class ManageSystem:
         """List local cache"""
         try:
             interaction.response.defer()  # This could take a while
-            cache_times = self._db.core_database.get_cache_times()
+            cache_times = await self._db.core_database.get_cache_times()
             cache_times_json = await general_helpers.format_json(cache_times)
             code_block = await discord_helpers.code_block(
                 cache_times_json, language="json"
