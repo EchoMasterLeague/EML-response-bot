@@ -63,7 +63,7 @@ class CoreDatabase:
     ) -> list[list[int | float | str | None]]:
         """Get all the data from a worksheet"""
         # write any pending changes to the spreadsheet
-        await self.commit_all_writes(table_name=table_name)
+        await self.commit_all_writes()
         # get the data from the worksheet if needed
         is_cached = (
             table_name in self._db_local_cache
@@ -95,7 +95,7 @@ class CoreDatabase:
         if table_name in self._db_local_cache:
             self._db_local_cache[table_name] += [row_data]
         # write any pending changes to the spreadsheet
-        await self.commit_all_writes(table_name=table_name)
+        await self.commit_all_writes()
 
     async def update_row(
         self, table_name: str, row_data: list[int | float | str | None]
@@ -114,7 +114,7 @@ class CoreDatabase:
                     self._db_local_cache[table_name][i] = row_data
                     break
         # write any pending changes to the spreadsheet
-        await self.commit_all_writes(table_name=table_name)
+        await self.commit_all_writes()
 
     async def delete_row(self, table_name: str, record_id: str) -> None:
         """Delete a record from a worksheet"""
@@ -130,7 +130,7 @@ class CoreDatabase:
                     del self._db_local_cache[table_name][i]
                     break
         # write any pending changes to the spreadsheet
-        await self.commit_all_writes(table_name=table_name)
+        await self.commit_all_writes()
 
     async def commit_single_write(
         self,
