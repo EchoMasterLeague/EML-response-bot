@@ -86,7 +86,7 @@ class BaseTable:
             await self._history_table.create_history_record(record, operation)
             # Insert Record
             record_list = await record.to_list()
-            self._db.append_row(table_name=self.table_name, row_data=record_list)
+            await self._db.append_row(table_name=self.table_name, row_data=record_list)
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"
@@ -108,7 +108,9 @@ class BaseTable:
                 await self._history_table.create_history_record(record, operation)
                 # Update Records
                 record_list = await record.to_list()
-                self._db.update_row(table_name=self.table_name, row_data=record_list)
+                await self._db.update_row(
+                    table_name=self.table_name, row_data=record_list
+                )
                 return
         raise DbErrors.EmlRecordNotFound(f"Record '{record_id}' not found")
 
@@ -125,7 +127,9 @@ class BaseTable:
                     operation = HistoryOperations.DELETE
                     await self._history_table.create_history_record(record, operation)
                     # Delete Record
-                    self._db.delete_row(table_name=self.table_name, record_id=record_id)
+                    await self._db.delete_row(
+                        table_name=self.table_name, record_id=record_id
+                    )
                 except gspread.exceptions.APIError as error:
                     raise DbErrors.EmlWorksheetWriteError(
                         f"Error writing to worksheet: {error.response.text}"
@@ -207,7 +211,7 @@ class HistoryTable:
         history_list[HistoryFields.history_operation] = operation.value
         # insert the history record list into the table
         try:
-            self._db.append_row(table_name=self.table_name, row_data=history_list)
+            await self._db.append_row(table_name=self.table_name, row_data=history_list)
         except gspread.exceptions.APIError as error:
             raise DbErrors.EmlWorksheetWriteError(
                 f"Error writing to worksheet: {error.response.text}"
