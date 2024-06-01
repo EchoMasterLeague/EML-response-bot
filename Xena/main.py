@@ -9,6 +9,7 @@ import discord.ext.commands as commands
 import dotenv
 import gspread
 import os
+import utils.discord_helpers as discord_helpers
 
 # Configuration
 THIS_DIR = os.path.dirname(__file__)
@@ -23,6 +24,7 @@ BOT_PREFIX = os.environ.get("BOT_PREFIX")
 BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
+LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID")
 
 # Google Sheets "Database"
 gs_client = gspread.service_account(
@@ -46,6 +48,7 @@ intents.message_content = True
 # Discord Bot
 # bot = commands.Bot(command_prefix=".", intents=intents)
 bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
+log_channel: discord.TextChannel = None
 
 
 @bot.event
@@ -57,6 +60,7 @@ async def on_ready():
         synced = await bot.tree.sync(guild=guild)
     else:
         synced = await bot.tree.sync()
+
     print(f"synced {len(synced)} command(s)")
     command_list = []
     for thing in synced:
@@ -88,14 +92,20 @@ async def bot_lookup_player(
 async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_players.register_player(interaction=interaction, region=None)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_players.register_player(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_players.unregister_player(interaction)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_players.unregister_player(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
@@ -329,14 +339,18 @@ async def staff_app(interaction: discord.Interaction):
     )
 
 
-@bot.tree.command(name='calendar_na')
+@bot.tree.command(name="calendar_na")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&")
+    await interaction.response.send_message(
+        f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
+    )
 
 
-@bot.tree.command(name='calendar_eu')
+@bot.tree.command(name="calendar_eu")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&")
+    await interaction.response.send_message(
+        f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&"
+    )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}ap")

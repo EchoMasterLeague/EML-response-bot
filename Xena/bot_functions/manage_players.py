@@ -20,10 +20,10 @@ class ManagePlayers:
         self,
         interaction: discord.Interaction,
         region: str = None,
+        log_channel: discord.TextChannel = None,
     ):
         """Create a new Player"""
         try:
-
             # Get region
             if region:
                 # This could take a while
@@ -56,7 +56,11 @@ class ManagePlayers:
             )
             # Success
             message = f"Player '{player_name}' registered for region '{region}'"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{interaction.user.mention} has joined the League.",
+            )
         except database_errors.EmlRecordAlreadyExists:
             message = f"Player already registered"
             await discord_helpers.final_message(interaction, message)
@@ -65,7 +69,9 @@ class ManagePlayers:
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
-    async def unregister_player(self, interaction: discord.Interaction):
+    async def unregister_player(
+        self, interaction: discord.Interaction, log_channel: discord.TextChannel = None
+    ):
         """Unregister a Player"""
         try:
             # This could take a while
@@ -89,7 +95,11 @@ class ManagePlayers:
             await self._db.table_player.delete_player_record(existing_player)
             # Success
             message = f"You are no longer registered as a player"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{interaction.user.mention} has left the League.",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:

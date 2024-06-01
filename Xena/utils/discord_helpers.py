@@ -31,6 +31,33 @@ async def error_message(
     raise error
 
 
+async def log_to_channel(
+    channel: discord.TextChannel,
+    message: str = None,
+    dictionary: dict = None,
+    embed: discord.Embed = None,
+):
+    """Send a log message to a channel"""
+    if not channel:
+        return False
+    embed = discord.Embed(description=message) if message else embed
+    embed = discord.Embed.from_dict(dictionary) if dictionary else embed
+    if embed:
+        embed.color = discord.Color.green() if not embed.color else embed.color
+        return await channel.send(embed=embed)
+    return False
+
+
+### Channels ###
+
+
+async def get_channel(client: discord.Client, channel_id: int):
+    """Get a channel by ID"""
+    channel = client.get_channel(channel_id)
+    channel = await client.fetch_channel(channel_id) if not channel else channel
+    return channel
+
+
 ### Members ###
 
 
