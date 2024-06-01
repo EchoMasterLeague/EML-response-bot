@@ -50,7 +50,7 @@ class CoreDatabase:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
             if table_name not in self._worksheets:
-                print(f"Getting Worksheet: {table_name} (initial load)")
+                print(f"Getting Worksheet: {table_name} (not cached)")
                 self._worksheets[table_name] = self._db_spreadsheet.worksheet(
                     table_name
                 )
