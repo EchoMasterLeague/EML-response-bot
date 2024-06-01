@@ -28,9 +28,12 @@ class ManageSystem:
         try:
             await interaction.response.defer()  # This could take a while
             cache_times = await self._db.core_database.get_cache_times()
+            normalized_cache_times = {}
             for key, value in cache_times.items():
-                cache_times[key] = await general_helpers.iso_timestamp(int(value))
-            cache_times_json = await general_helpers.format_json(cache_times)
+                normalized_cache_times[key] = await general_helpers.iso_timestamp(
+                    int(value)
+                )
+            cache_times_json = await general_helpers.format_json(normalized_cache_times)
             code_block = await discord_helpers.code_block(
                 cache_times_json, language="json"
             )
