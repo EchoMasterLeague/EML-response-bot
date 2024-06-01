@@ -2,10 +2,7 @@ from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import InviteStatus
 from database.fields import TeamInviteFields, PlayerFields, TeamPlayerFields, TeamFields
-from database.records import TeamRecord, PlayerRecord
 from utils import discord_helpers, database_helpers, general_helpers
-import constants
-import datetime
 import discord
 
 
