@@ -175,7 +175,8 @@ class ManagePlayers:
             for cooldown in cooldowns:
                 player_name = await cooldown.get_field(CooldownFields.vw_player)
                 former_team = await cooldown.get_field(CooldownFields.vw_old_team)
-                cooldown_players[player_name] = former_team
+                created_at = await cooldown.get_field(CooldownFields.created_at)
+                cooldown_players[player_name] = f"{former_team} ({created_at})"
             # Create Response
             message = await general_helpers.format_json(cooldown_players)
             message = await discord_helpers.code_block(message, language="json")
