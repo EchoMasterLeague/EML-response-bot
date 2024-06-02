@@ -123,7 +123,7 @@ async def update_roster_view(
                 is_2_co_cap,
             ]
         )
-    await db.table_vw_roster.write_all_vw_roster_records(roster_table)
+    await db.table_vw_roster.replace_vw_roster(roster_table)
 
 
 ### Player ###
