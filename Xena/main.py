@@ -10,6 +10,7 @@ import discord.ext.commands as commands
 import dotenv
 import gspread
 import os
+import utils.discord_helpers as discord_helpers
 
 # Configuration
 THIS_DIR = os.path.dirname(__file__)
@@ -52,12 +53,15 @@ bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
 @bot.event
 async def on_ready():
     """Event triggered when the bot is ready."""
+    # Sync Commands
     if GUILD_ID:
         guild = await bot.fetch_guild(int(GUILD_ID))
         bot.tree.copy_global_to(guild=guild)
         synced = await bot.tree.sync(guild=guild)
     else:
         synced = await bot.tree.sync()
+
+    # Print Synced Commands
     print(f"synced {len(synced)} command(s)")
     command_list = []
     for thing in synced:
@@ -108,14 +112,20 @@ async def bot_lookup_player(
 async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_players.register_player(interaction=interaction, region=None)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_players.register_player(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_players.unregister_player(interaction)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_players.unregister_player(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
@@ -141,7 +151,10 @@ async def bot_lookup_team(interaction: discord.Interaction, team_name: str = Non
 async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.create_team(interaction, team_name)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.create_team(
+            interaction=interaction, team_name=team_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
@@ -155,45 +168,58 @@ async def bot_team_invite_offer(interaction: discord.Interaction, player_name: s
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.accept_invite(interaction)
-    # TODO: make team active with at least 4 players
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.accept_invite(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.remove_player_from_team(interaction, player_name)
-    # TODO: make team inactive under 4 players
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.remove_player_from_team(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
 async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
     """Promote a player to Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.promote_player_to_co_captain(interaction, player_name)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.promote_player_to_co_captain(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
 async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
     """Demote a player from Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.demote_player_from_co_captain(interaction, player_name)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.demote_player_from_co_captain(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamleave")
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.leave_team(interaction)
-    # TODO: make team inactive under 4 players
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.leave_team(interaction=interaction, log_channel=log_channel)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamdisband")
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.disband_team(interaction)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_teams.disband_team(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 ######################
@@ -218,7 +244,12 @@ async def bot_match_accept(
 ):
     """Accept a Match with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.accept_match_invite(interaction, match_invite_id)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_matches.accept_match_invite(
+            interaction=interaction,
+            match_invite_id=match_invite_id,
+            log_channel=log_channel,
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
@@ -254,7 +285,10 @@ async def bot_match_result_offer(
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.accept_result_invite(interaction)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
+        await manage_matches.accept_result_invite(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 #########################
