@@ -148,8 +148,10 @@ async def bot_team_invite_offer(interaction: discord.Interaction, player_name: s
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.accept_invite(interaction)
-    # TODO: make team active with at least 4 players
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.accept_invite(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
@@ -164,22 +166,28 @@ async def bot_team_player_remove(interaction: discord.Interaction, player_name: 
 async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
     """Promote a player to Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.promote_player_to_co_captain(interaction, player_name)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.promote_player_to_co_captain(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
 async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
     """Demote a player from Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.demote_player_from_co_captain(interaction, player_name)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.demote_player_from_co_captain(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamleave")
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.leave_team(interaction)
-    # TODO: make team inactive under 4 players
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.leave_team(interaction=interaction, log_channel=log_channel)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamdisband")

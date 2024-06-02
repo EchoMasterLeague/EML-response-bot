@@ -100,7 +100,9 @@ class ManageTeams:
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
-    async def accept_invite(self, interaction: discord.Interaction):
+    async def accept_invite(
+        self, interaction: discord.Interaction, log_channel: discord.TextChannel = None
+    ):
         """Add the requestor to their new Team"""
         try:
             # Get info about the Player
@@ -176,7 +178,14 @@ class ManageTeams:
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"You have joined Team '{team_name}'"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            team_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=team_name
+            )
+            await discord_helpers.log_to_channel(
+                log_channel=log_channel,
+                message=f"{interaction.user.mention} has joined {team_role.mention}",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
@@ -230,7 +239,10 @@ class ManageTeams:
             await discord_helpers.error_message(interaction, error)
 
     async def promote_player_to_co_captain(
-        self, interaction: discord.Interaction, player_name
+        self,
+        interaction: discord.Interaction,
+        player_name: str,
+        log_channel: discord.TextChannel = None,
     ):
         """Promote a Player to Team captain"""
         try:
@@ -294,18 +306,29 @@ class ManageTeams:
             await discord_helpers.member_add_co_captain_role(
                 player_discord_member, region
             )
+            new_role_names = [role.name for role in player_discord_member.roles]
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"Player '{player_name}' promoted to co-captain"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            cocap = constants.ROLE_PREFIX_CO_CAPTAIN
+            cocap_roles = [role for role in new_role_names if role.startswith(cocap)]
+            cocap_role = next(cocap_roles, None)
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{player_discord_member.mention} has new role `{cocap_role}`",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
     async def demote_player_from_co_captain(
-        self, interaction: discord.Interaction, player_name
+        self,
+        interaction: discord.Interaction,
+        player_name: str,
+        log_channel: discord.TextChannel = None,
     ):
         """Demote a Player from Team captain"""
         try:
@@ -360,18 +383,28 @@ class ManageTeams:
                 guild=interaction.guild,
                 discord_id=player_discord_id,
             )
+            old_role_names = [role.name for role in player_discord_member.roles]
             await discord_helpers.member_remove_captain_roles(player_discord_member)
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"Player '{player_name}' demoted from co-captain"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            cocap = constants.ROLE_PREFIX_CO_CAPTAIN
+            cocap_roles = [role for role in old_role_names if role.startswith(cocap)]
+            cocap_role = next(cocap_roles, None)
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{player_discord_member.mention} has lost role `{cocap_role}`",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
-    async def leave_team(self, interaction: discord.Interaction):
+    async def leave_team(
+        self, interaction: discord.Interaction, log_channel: discord.TextChannel = None
+    ):
         """Remove the requestor from their Team"""
         try:
             # This could take a while
@@ -433,7 +466,14 @@ class ManageTeams:
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"You have left Team '{team_name}'"
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            team_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=team_name
+            )
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{member.mention} has left {team_role.mention}",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
