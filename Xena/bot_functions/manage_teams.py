@@ -324,7 +324,7 @@ class ManageTeams:
             await discord_helpers.final_message(interaction, message)
             cocap = constants.ROLE_PREFIX_CO_CAPTAIN
             cocap_roles = [role for role in new_role_names if role.startswith(cocap)]
-            cocap_role = next(cocap_roles, None)
+            cocap_role = next((role for role in cocap_roles), None)
             await discord_helpers.log_to_channel(
                 channel=log_channel,
                 message=f"{player_discord_member.mention} has new role `{cocap_role}`",
