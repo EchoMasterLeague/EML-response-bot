@@ -352,12 +352,16 @@ async def website(interaction: discord.Interaction):
 
 @bot.tree.command(name=f"{BOT_PREFIX}instructions")
 async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing")    
+    await interaction.response.send_message(
+        f"https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing"
+    )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}commands")
 async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing") 
+    await interaction.response.send_message(
+        f"https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing"
+    )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}league_rules")
