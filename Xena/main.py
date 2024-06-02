@@ -224,7 +224,12 @@ async def bot_match_accept(
 ):
     """Accept a Match with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.accept_match_invite(interaction, match_invite_id)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_matches.accept_match_invite(
+            interaction=interaction,
+            match_invite_id=match_invite_id,
+            log_channel=log_channel,
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
@@ -260,7 +265,10 @@ async def bot_match_result_offer(
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.accept_result_invite(interaction)
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_matches.accept_result_invite(
+            interaction=interaction, log_channel=log_channel
+        )
 
 
 #########################

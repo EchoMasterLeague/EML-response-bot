@@ -106,7 +106,10 @@ class ManageMatches:
             await discord_helpers.error_message(interaction, error)
 
     async def accept_match_invite(
-        self, interaction: discord.Interaction, match_invite_id: str = None
+        self,
+        interaction: discord.Interaction,
+        match_invite_id: str = None,
+        log_channel: discord.TextChannel = None,
     ):
         try:
             if match_invite_id:
@@ -259,6 +262,16 @@ class ManageMatches:
             message = f"Match Invite accepted. Match created.\n{match_code_block}"
             message += f"\n\nRemember: This cannot be undone. Failure to show will result in automatic forfeiture."
             await discord_helpers.final_message(interaction, message)
+            team_a_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=inviter_team_name
+            )
+            team_b_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=invitee_team_name
+            )
+            eml_date = new_match.get_field(MatchFields.match_date)
+            eml_time = new_match.get_field(MatchFields.match_time_et)
+            log_message = f"{team_a_role.mention} and {team_b_role.mention} have a `{match_type}` match scheduled for `{eml_date}` at `{eml_time}` (`{match_timestamp}`)"
+            await discord_helpers.log_to_channel(log_channel, message=log_message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
@@ -430,7 +443,9 @@ class ManageMatches:
         except Exception as error:
             await discord_helpers.error_message(interaction, error)
 
-    async def accept_result_invite(self, interaction: discord.Interaction):
+    async def accept_result_invite(
+        self, interaction: discord.Interaction, log_channel: discord.TextChannel = None
+    ):
         """Accept a Match Result Invite"""
         try:
             # this could take a while, so defer the response
@@ -656,6 +671,23 @@ class ManageMatches:
             )
             message = f"Match Result Invite accepted.\n{match_code_block}\nMatch results confirmed."
             await discord_helpers.final_message(interaction, message)
+            # [@TEAM A] "wins against" or "loses to" [@TEAM B]
+            team_a_name = await match_record.get_field(MatchFields.vw_team_a)
+            team_b_name = await match_record.get_field(MatchFields.vw_team_b)
+            team_a_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=team_a_name
+            )
+            team_b_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=team_b_name
+            )
+            outcomes = "draws with"
+            outcomes = "wins against" if outcome == MatchResult.WIN else outcomes
+            outcomes = "loses to" if outcome == MatchResult.LOSS else outcomes
+            await discord_helpers.log_to_channel(
+                log_channel,
+                message=f"{team_a_role.mention} {outcomes} {team_b_role.mention} in a `{match_type}` match",
+            )
+
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
