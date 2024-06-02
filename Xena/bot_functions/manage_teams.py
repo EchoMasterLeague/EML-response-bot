@@ -316,18 +316,14 @@ class ManageTeams:
             await discord_helpers.member_add_co_captain_role(
                 player_discord_member, region
             )
-            new_role_names = [role.name for role in player_discord_member.roles]
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"Player '{player_name}' promoted to co-captain"
             await discord_helpers.final_message(interaction, message)
-            cocap = constants.ROLE_PREFIX_CO_CAPTAIN
-            cocap_roles = [role for role in new_role_names if role.startswith(cocap)]
-            cocap_role = next((role for role in cocap_roles), None)
             await discord_helpers.log_to_channel(
                 channel=log_channel,
-                message=f"{player_discord_member.mention} has new role `{cocap_role}`",
+                message=f"{player_discord_member.mention} is now Co-Captain",
             )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
@@ -393,19 +389,15 @@ class ManageTeams:
                 guild=interaction.guild,
                 discord_id=player_discord_id,
             )
-            old_role_names = [role.name for role in player_discord_member.roles]
             await discord_helpers.member_remove_captain_roles(player_discord_member)
             # Update roster view
             await database_helpers.update_roster_view(self._db, team_id)
             # Success
             message = f"Player '{player_name}' demoted from co-captain"
             await discord_helpers.final_message(interaction, message)
-            cocap = constants.ROLE_PREFIX_CO_CAPTAIN
-            cocap_roles = [role for role in old_role_names if role.startswith(cocap)]
-            cocap_role = next(cocap_roles, None)
             await discord_helpers.log_to_channel(
                 channel=log_channel,
-                message=f"{player_discord_member.mention} has lost role `{cocap_role}`",
+                message=f"{player_discord_member.mention} is no longer Co-Captain",
             )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
