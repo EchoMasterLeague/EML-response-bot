@@ -31,6 +31,31 @@ async def error_message(
     raise error
 
 
+async def log_to_channel(
+    channel: discord.TextChannel,
+    message: str = None,
+    dictionary: dict = None,
+    embed: discord.Embed = None,
+):
+    """Send a log message to a channel"""
+    if not channel:
+        return False
+    embed = discord.Embed(description=message) if message else embed
+    embed = discord.Embed.from_dict(dictionary) if dictionary else embed
+    if embed:
+        embed.color = discord.Color.green() if not embed.color else embed.color
+        return await channel.send(embed=embed)
+    return False
+
+
+### Channels ###
+
+
+async def get_log_channel(guild: discord.Guild):
+    """Get log channel"""
+    return discord.utils.get(guild.channels, name=constants.GUILD_CHANNEL_BOT_LOGS)
+
+
 ### Members ###
 
 
@@ -82,6 +107,12 @@ async def member_role_remove_by_prefix(
 
 
 ### Roles for Teams ###
+
+
+async def get_team_role(guild: discord.Guild, team_name: str):
+    """Get a Team role from a Guild"""
+    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    return discord.utils.get(guild.roles, name=role_name)
 
 
 async def member_add_team_role(member: discord.Member, team_name: str):

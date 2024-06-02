@@ -101,3 +101,4 @@ class ButtonExampleUsage:
         )
         await interaction.response.send_message(
             "This message has buttons!", view=link_button, ephemeral=True
+        )
