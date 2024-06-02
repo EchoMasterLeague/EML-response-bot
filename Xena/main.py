@@ -274,6 +274,8 @@ async def help(interaction: discord.Interaction):
         "`/rosters`: Display team rosters.\n"
         "`/registration`: Display registration information.\n"
         "`/website`: Display the league website.\n"
+        "`/instructions`: Instructions for the Commands.\n"
+        "`/commands`: The Commands.\n"
         "`/league_rules`: Display league rules.\n"
         "`/server_coc`: Display server Code of Conduct.\n"
         "`/ticket`: Display ticket information.\n"
@@ -312,6 +314,16 @@ async def rosters(interaction: discord.Interaction):
 @bot.tree.command(name=f"{BOT_PREFIX}website")
 async def website(interaction: discord.Interaction):
     await interaction.response.send_message(f"https://echomasterleague.com/")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}instructions")
+async def website(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing")    
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}commands")
+async def website(interaction: discord.Interaction):
+    await interaction.response.send_message(f"https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing") 
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}league_rules")
