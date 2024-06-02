@@ -28,9 +28,8 @@ GUILD_ID = os.environ.get("GUILD_ID")
 LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID")
 
 # Google Sheets "Database"
-gs_client = gspread.service_account(
-    GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient
-)
+# gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
+gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
 database_core = CoreDatabase(gs_client)
 database = FullDatabase(database_core)
 

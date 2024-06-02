@@ -15,7 +15,7 @@ class CoreDatabase:
         _gs_client (gspread.Client): The Google Sheets client to use
         _db_spreadsheet (gspread.Spreadsheet): The Google Sheets spreadsheet to use as a database
         _db_local_cache (dict): A cache of worksheets to reduce API calls
-        _db_write_queue (dict): A queue of write operations to commit to the database
+        _db_write_queue (list): A queue of write operations to commit to the database
     """
 
     def __init__(self, gs_client: gspread.Client):
@@ -23,8 +23,8 @@ class CoreDatabase:
         self._gs_client = gs_client
         self._worksheets: dict[str, gspread.Worksheet] = {}
         self._db_cache_pull_times: dict[str, float] = {}
-        self._db_local_cache: dict[list[list[int | float | str | None]]] = {}
-        self._db_write_queue: dict[list[list[int | float | str | None]]] = {}
+        self._db_local_cache: dict[str, list[list[int | float | str | None]]] = {}
+        self._db_write_queue: list[list[int | float | str | None]] = []
         try:
             self._db_spreadsheet = gs_client.open_by_url(
                 constants.LEAGUE_DB_SPREADSHEET_URL
@@ -50,7 +50,7 @@ class CoreDatabase:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
             if table_name not in self._worksheets:
-                print(f"Getting Worksheet: {table_name} (not cached)")
+                print(f"[ 0 write, 1 read ] Getting Worksheet: {table_name}")
                 self._worksheets[table_name] = self._db_spreadsheet.worksheet(
                     table_name
                 )
@@ -74,9 +74,9 @@ class CoreDatabase:
             and (time.time() - self._db_cache_pull_times[table_name])
             > constants.LEAGUE_DB_CACHE_DURATION_SECONDS
         )
-        if not is_cached or is_stale:
-            reason = "cache stale" if is_stale else "not cached"
-            print(f"Getting Table: {table_name} ({reason})")
+        is_safe = len(self._db_write_queue) == 0
+        if not is_cached or (is_stale and is_safe):
+            print(f"[ 0 write, 1 read ] Getting Table: {table_name}")
             worksheet = self.get_table_worksheet(table_name)
             self._db_local_cache[table_name] = worksheet.get_all_values()
             self._db_cache_pull_times[table_name] = time.time()
@@ -87,10 +87,8 @@ class CoreDatabase:
     ) -> None:
         """Insert a record into a worksheet"""
         # Add the write operation to the queue
-        if table_name not in self._db_write_queue:
-            self._db_write_queue[table_name] = []
-        queued_write = [WriteOperations.INSERT] + row_data
-        self._db_write_queue[table_name] += [queued_write]
+        queued_write = [table_name, WriteOperations.INSERT] + row_data
+        self._db_write_queue.append(queued_write)
         # Update the local cache
         if table_name in self._db_local_cache:
             self._db_local_cache[table_name] += [row_data]
@@ -102,10 +100,8 @@ class CoreDatabase:
     ) -> None:
         """Update a record in a worksheet"""
         # Add the write operation to the queue
-        if table_name not in self._db_write_queue:
-            self._db_write_queue[table_name] = []
-        queued_write = [WriteOperations.UPDATE] + row_data
-        self._db_write_queue[table_name] += [queued_write]
+        queued_write = [table_name, WriteOperations.UPDATE] + row_data
+        self._db_write_queue.append(queued_write)
         # Update the local cache
         id = row_data[0]
         if table_name in self._db_local_cache:
@@ -119,10 +115,8 @@ class CoreDatabase:
     async def delete_row(self, table_name: str, record_id: str) -> None:
         """Delete a record from a worksheet"""
         # Add the write operation to the write queue
-        if table_name not in self._db_write_queue:
-            self._db_write_queue[table_name] = []
-        queued_write = [WriteOperations.DELETE, record_id]
-        self._db_write_queue[table_name] += [queued_write]
+        queued_write = [table_name, WriteOperations.DELETE, record_id]
+        self._db_write_queue.append(queued_write)
         # Update the local cache
         if table_name in self._db_local_cache:
             for i, row in enumerate(self._db_local_cache[table_name]):
@@ -132,56 +126,48 @@ class CoreDatabase:
         # write any pending changes to the spreadsheet
         await self.commit_all_writes()
 
-    async def commit_single_write(
+    async def commit_next_write(
         self,
-        worksheet: gspread.Worksheet,
-        operation: WriteOperations,
-        record_id: str,
-        row_data: list[int | float | str | None] = None,
     ) -> None:
         """Commit a single write operation to the worksheet"""
+        if not self._db_write_queue or not self._db_write_queue[0]:
+            raise ValueError("Write queue is empty")
+        write = self._db_write_queue[0]
+        if len(write) < 3:
+            write_entry = self._db_write_queue.pop(0)
+            raise ValueError(
+                f"Write operation discarded for missing data: {write_entry}"
+            )
+        table_name = write[0]
+        operation = write[1]
+        record_id = write[2]
+        row_data = write[2:]
+        worksheet = self.get_table_worksheet(table_name)
         if operation == WriteOperations.INSERT:
-            print(f"Insert in {worksheet.title} (write)")
+            print(f"[ 1 write, 0 read ] INSERT in {worksheet.title}")
             worksheet.append_row(row_data, table_range="A1")
         elif operation == WriteOperations.UPDATE:
-            print(f"Update in {worksheet.title} (read and write)")
+            print(f"[ 1 write, 1 read ] UPDATE in {worksheet.title}")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.update(f"A{cell.row}", [row_data])
         elif operation == WriteOperations.DELETE:
-            print(f"Delete in {worksheet.title} (read and write)")
+            print(f"[ 1 write, 1 read ]  DELETE in {worksheet.title}")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.delete_rows(cell.row)
+        self._db_write_queue.pop(0)
 
-    async def commit_all_writes(self, table_name: str = None) -> None:
+    async def commit_all_writes(self) -> None:
         """Commit the write queue to the database"""
-        tables = self._db_write_queue.keys() if table_name is None else [table_name]
-        writes: list[list[int | float | str | None]]
-        for table_name, writes in self._db_write_queue.items():
-            if table_name not in tables:
-                continue
-            worksheet = self.get_table_worksheet(table_name)
-            while writes:
-                write = writes[0]
-                operation = write[0]
-                record_id = write[1]
-                row_data = write[1:]
-                try:
-                    await self.commit_single_write(
-                        worksheet, operation, record_id, row_data
-                    )
-                    writes.pop(0)
-                except Exception as error:
-                    print(f"Failed to commit write: {error}")
-                    time.sleep(1)
-        # Remove synced tables from the write queue
-        all_table_names = list(self._db_write_queue.keys())
-        for table_name in all_table_names:
-            if self._db_write_queue[table_name] == []:
-                del self._db_write_queue[table_name]
+        try:
+            while len(self._db_write_queue) > 0:
+                await self.commit_next_write()
+                time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
+        except Exception as error:
+            print(f"Failed to commit write: {error}")
 
     async def get_pending_writes(
         self,
-    ) -> dict[str, list[list[int | float | str | None]]]:
+    ) -> list[list[int | float | str | None]]:
         """Get all pending write operations"""
         return self._db_write_queue
 

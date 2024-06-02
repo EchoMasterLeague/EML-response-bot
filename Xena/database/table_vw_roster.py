@@ -7,6 +7,7 @@ import errors.database_errors as DbErrors
 import gspread
 import utils.general_helpers as general_helpers
 from database.enums import MatchType, MatchStatus, Bool
+import time
 
 
 """
@@ -154,15 +155,13 @@ class VwRosterTable(BaseTable):
                 existing_records.append(VwRosterRecord(row))
         return existing_records
 
-    async def delete_all_vw_roster_records(self) -> None:
-        """Delete all VwRoster records"""
-        self._tab.clear()
-        return
-
-    async def write_all_vw_roster_records(
+    async def replace_vw_roster(
         self, roster_table: list[list[int | float | str | None]]
     ) -> None:
-        """Write a list of VwRoster records to the database"""
-        await self.delete_all_vw_roster_records()
+        """Write a new list of VwRoster records to the database"""
+        print("[ 2 write, 0 read ] UPDATE of vwRoster")
+        self._tab.clear()
+        time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
         self._tab.append_rows(roster_table)
+        time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
         return
