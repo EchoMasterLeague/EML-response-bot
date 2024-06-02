@@ -266,8 +266,8 @@ class ManageMatches:
             team_b_role = await discord_helpers.get_team_role(
                 guild=interaction.guild, team_name=invitee_team_name
             )
-            eml_date = new_match.get_field(MatchFields.match_date)
-            eml_time = new_match.get_field(MatchFields.match_time_et)
+            eml_date = await new_match.get_field(MatchFields.match_date)
+            eml_time = await new_match.get_field(MatchFields.match_time_et)
             log_message = f"{team_a_role.mention} and {team_b_role.mention} have a `{match_type}` match scheduled for `{eml_date}` at `{eml_time}` (`{match_timestamp}`)"
             await discord_helpers.log_to_channel(
                 channel=log_channel, message=log_message
