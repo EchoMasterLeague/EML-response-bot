@@ -31,15 +31,12 @@ async def error_message(
     raise error
 
 
-async def log_to_channel(
-    channel: discord.TextChannel,
-    message: str = None,
-    dictionary: dict = None,
-    embed: discord.Embed = None,
-):
+async def log_to_channel(channel: discord.TextChannel, message: str):
     """Send a log message to a channel"""
     if not channel:
         return False
+    return await channel.send(content=message)
+    # embed stuff not being used because it doesn't ping players.
     embed = discord.Embed(description=message) if message else embed
     embed = discord.Embed.from_dict(dictionary) if dictionary else embed
     if embed:
