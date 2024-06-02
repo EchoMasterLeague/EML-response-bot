@@ -192,7 +192,10 @@ class ManageTeams:
             await discord_helpers.error_message(interaction, error)
 
     async def remove_player_from_team(
-        self, interaction: discord.Interaction, player_name: str
+        self,
+        interaction: discord.Interaction,
+        player_name: str,
+        log_channel: discord.TextChannel = None,
     ):
         """Remove a Player from a Team by name"""
         try:
@@ -232,7 +235,14 @@ class ManageTeams:
             # Success
             team_name = await team_details.team.get_field(TeamFields.team_name)
             message = f"Player `{player_name}` removed from team `{team_name}`."
-            return await discord_helpers.final_message(interaction, message)
+            await discord_helpers.final_message(interaction, message)
+            team_role = await discord_helpers.get_team_role(
+                guild=interaction.guild, team_name=team_name
+            )
+            await discord_helpers.log_to_channel(
+                channel=log_channel,
+                message=f"{player_discord_member.mention} has been removed from {team_role.mention}",
+            )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:

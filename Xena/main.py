@@ -158,8 +158,10 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.remove_player_from_team(interaction, player_name)
-    # TODO: make team inactive under 4 players
+        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        await manage_teams.remove_player_from_team(
+            interaction=interaction, player_name=player_name, log_channel=log_channel
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
