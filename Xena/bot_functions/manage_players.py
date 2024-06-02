@@ -174,9 +174,8 @@ class ManagePlayers:
             cooldown_players = {}
             for cooldown in cooldowns:
                 player_name = await cooldown.get_field(CooldownFields.vw_player)
-                cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
-                cooldown_end_date = cooldown_end.split("T")[0] if cooldown_end else None
-                cooldown_players[player_name] = cooldown_end_date
+                former_team = await cooldown.get_field(CooldownFields.vw_old_team)
+                cooldown_players[player_name] = former_team
             # Create Response
             message = await general_helpers.format_json(cooldown_players)
             message = await discord_helpers.code_block(message, language="json")
