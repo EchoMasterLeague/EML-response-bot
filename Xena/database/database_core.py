@@ -151,7 +151,7 @@ class CoreDatabase:
             cell = worksheet.find(record_id, in_column=1)
             worksheet.update(f"A{cell.row}", [row_data])
         elif operation == WriteOperations.DELETE:
-            print(f"[ 1 write, 1 read ]  DELETE in {worksheet.title}")
+            print(f"[ 1 write, 1 read ] DELETE in {worksheet.title}")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.delete_rows(cell.row)
         self._db_write_queue.pop(0)
