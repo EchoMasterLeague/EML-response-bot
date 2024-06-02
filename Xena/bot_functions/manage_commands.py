@@ -1,11 +1,6 @@
 from database.database_full import FullDatabase
-from database.fields import CommandLockFields
-import discord
-
-from database.database_full import FullDatabase
-from database.table_command_lock import CommandLockTable
-import discord
 from utils import discord_helpers
+import discord
 
 
 class ManageCommands:
