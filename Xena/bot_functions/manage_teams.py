@@ -53,8 +53,8 @@ class ManageTeams:
             user_message = f"Team created: '{team_name}'"
             await discord_helpers.final_message(interaction, user_message)
             await discord_helpers.log_to_channel(
-                log_channel,
-                f"`{team_name}` has been created by {discord_member.mention}",
+                channel=log_channel,
+                message=f"`{team_name}` has been created by {discord_member.mention}",
             )
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
@@ -183,7 +183,7 @@ class ManageTeams:
                 guild=interaction.guild, team_name=team_name
             )
             await discord_helpers.log_to_channel(
-                log_channel=log_channel,
+                channel=log_channel,
                 message=f"{interaction.user.mention} has joined {team_role.mention}",
             )
         except AssertionError as message:
