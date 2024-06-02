@@ -51,11 +51,9 @@ async def log_to_channel(
 ### Channels ###
 
 
-async def get_channel(client: discord.Client, channel_id: int):
-    """Get a channel by ID"""
-    channel = client.get_channel(channel_id)
-    channel = await client.fetch_channel(channel_id) if not channel else channel
-    return channel
+async def get_log_channel(guild: discord.Guild):
+    """Get log channel"""
+    return discord.utils.get(guild.channels, name=constants.GUILD_CHANNEL_BOT_LOGS)
 
 
 ### Members ###

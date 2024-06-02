@@ -25,7 +25,6 @@ BOT_PREFIX = os.environ.get("BOT_PREFIX")
 BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
-LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID")
 
 # Google Sheets "Database"
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
@@ -49,12 +48,12 @@ intents.message_content = True
 # Discord Bot
 # bot = commands.Bot(command_prefix=".", intents=intents)
 bot = commands.Bot(command_prefix=".", intents=discord.Intents.all())
-log_channel: discord.TextChannel = None
 
 
 @bot.event
 async def on_ready():
     """Event triggered when the bot is ready."""
+    # Sync Commands
     if GUILD_ID:
         guild = await bot.fetch_guild(int(GUILD_ID))
         bot.tree.copy_global_to(guild=guild)
@@ -62,6 +61,7 @@ async def on_ready():
     else:
         synced = await bot.tree.sync()
 
+    # Print Synced Commands
     print(f"synced {len(synced)} command(s)")
     command_list = []
     for thing in synced:
@@ -112,7 +112,7 @@ async def bot_lookup_player(
 async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_players.register_player(
             interaction=interaction, log_channel=log_channel
         )
@@ -122,7 +122,7 @@ async def bot_player_register(interaction: discord.Interaction):
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_players.unregister_player(
             interaction=interaction, log_channel=log_channel
         )
@@ -151,7 +151,7 @@ async def bot_lookup_team(interaction: discord.Interaction, team_name: str = Non
 async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.create_team(
             interaction=interaction, team_name=team_name, log_channel=log_channel
         )
@@ -168,7 +168,7 @@ async def bot_team_invite_offer(interaction: discord.Interaction, player_name: s
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.accept_invite(
             interaction=interaction, log_channel=log_channel
         )
@@ -178,7 +178,7 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.remove_player_from_team(
             interaction=interaction, player_name=player_name, log_channel=log_channel
         )
@@ -188,7 +188,7 @@ async def bot_team_player_remove(interaction: discord.Interaction, player_name: 
 async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
     """Promote a player to Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.promote_player_to_co_captain(
             interaction=interaction, player_name=player_name, log_channel=log_channel
         )
@@ -198,7 +198,7 @@ async def bot_team_player_promote(interaction: discord.Interaction, player_name:
 async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
     """Demote a player from Team Co-Captain"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.demote_player_from_co_captain(
             interaction=interaction, player_name=player_name, log_channel=log_channel
         )
@@ -208,7 +208,7 @@ async def bot_team_player_demote(interaction: discord.Interaction, player_name: 
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.leave_team(interaction=interaction, log_channel=log_channel)
 
 
@@ -216,7 +216,7 @@ async def bot_team_leave(interaction: discord.Interaction):
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_teams.disband_team(
             interaction=interaction, log_channel=log_channel
         )
@@ -244,7 +244,7 @@ async def bot_match_accept(
 ):
     """Accept a Match with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_matches.accept_match_invite(
             interaction=interaction,
             match_invite_id=match_invite_id,
@@ -285,7 +285,7 @@ async def bot_match_result_offer(
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_channel(bot, LOG_CHANNEL_ID)
+        log_channel = await discord_helpers.get_log_channel(interaction.guild)
         await manage_matches.accept_result_invite(
             interaction=interaction, log_channel=log_channel
         )
