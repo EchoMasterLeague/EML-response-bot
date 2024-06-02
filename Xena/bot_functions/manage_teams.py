@@ -28,6 +28,19 @@ class ManageTeams:
         try:
             # This could take a while
             await interaction.response.defer()
+            allowed_chars = ""
+            allowed_chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            allowed_chars += "abcdefghijklmnopqrstuvwxyz"
+            allowed_chars += "0123456789"
+            allowed_chars += "-_ "
+            filtered_team_name = "".join(
+                [char for char in team_name if char in set(allowed_chars)]
+            )
+            assert (
+                filtered_team_name == team_name
+            ), f"Team name contains invalid characters. Only the following characters are allowed: [`{allowed_chars}`]"
+            assert len(team_name) >= 3, f"Team name must be at least 3 characters long."
+            assert len(team_name) <= 32, f"Team name must be under 32 characters long."
             # Check if the Player is registered
             discord_id = interaction.user.id
             player = await self._db.table_player.get_player_record(
