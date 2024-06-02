@@ -26,9 +26,8 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
 
 # Google Sheets "Database"
-gs_client = gspread.service_account(
-    GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient
-)
+# gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
+gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
 database_core = CoreDatabase(gs_client)
 database = FullDatabase(database_core)
 
