@@ -1,22 +1,19 @@
-from bot_dialogues import choices
-from database.database_full import FullDatabase
 from database.fields import (
-    TeamInviteFields,
     PlayerFields,
-    TeamPlayerFields,
     TeamFields,
     MatchInviteFields,
     MatchResultInviteFields,
     MatchFields,
 )
+from bot_dialogues import choices
+from database.database_full import FullDatabase
 from database.enums import MatchType, MatchResult, MatchStatus, InviteStatus
-from database.records import TeamRecord, MatchRecord, MatchResultInviteRecord
+from database.records import MatchRecord, MatchResultInviteRecord
+from errors.database_errors import EmlRecordAlreadyExists
 from utils import discord_helpers, database_helpers, general_helpers
 import constants
 import datetime
 import discord
-from errors.database_errors import EmlRecordAlreadyExists
-import re
 
 
 class ManageMatches:

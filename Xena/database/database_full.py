@@ -16,7 +16,7 @@ class FullDatabase:
 
     def __init__(self, core_database: CoreDatabase):
         """Initialize the Database class"""
-        self._database = core_database
+        self.core_database = core_database
         self.table_command_lock = CommandLockTable(core_database)
         self.table_cooldown = CooldownTable(core_database)
         self.table_match = MatchTable(core_database)
