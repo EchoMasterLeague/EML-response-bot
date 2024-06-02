@@ -70,6 +70,7 @@ class ManageMatches:
             invitee_team = await self._db.table_team.get_team_record(
                 team_name=opposing_team_name
             )
+            assert invitee_team, f"Error: Team '{opposing_team_name}' not found."
             inviter_player_name = await inviter_player.get_field(
                 PlayerFields.player_name
             )
