@@ -32,9 +32,10 @@ class ManageCommands:
         """Enable a command"""
         try:
             interaction.response.defer()  # This could take a while
-            record = await self._db.table_command_lock.get_command_lock_record(
+            records = await self._db.table_command_lock.get_command_lock_records(
                 command_name=command_name
             )
+            record = records[0] if records else None
             record = await self._db.table_command_lock.update_command_lock_record(
                 record, is_allowed=True
             )
@@ -49,9 +50,10 @@ class ManageCommands:
         """Disable a command"""
         try:
             interaction.response.defer()  # This could take a while
-            record = await self._db.table_command_lock.get_command_lock_record(
+            records = await self._db.table_command_lock.get_command_lock_records(
                 command_name=command_name
             )
+            record = records[0] if records else None
             record = await self._db.table_command_lock.update_command_lock_record(
                 record, is_allowed=False
             )

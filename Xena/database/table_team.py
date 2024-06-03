@@ -25,8 +25,8 @@ class TeamTable(BaseTable):
     async def create_team_record(self, team_name: str, vw_region: str) -> TeamRecord:
         """Create a new Team record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_team_record(team_name=team_name)
-        if existing_record:
+        existing_records = await self.get_team_records(team_name=team_name)
+        if existing_records:
             raise DbErrors.EmlRecordAlreadyExists(f"Team '{team_name}' already exists")
         # Create the Team record
         record_list = [None] * len(TeamFields)
@@ -47,13 +47,14 @@ class TeamTable(BaseTable):
         record_id = await record.get_field(TeamFields.record_id)
         await self.delete_record(record_id)
 
-    async def get_team_record(
+    async def get_team_records(
         self, record_id: str = None, team_name: str = None
-    ) -> TeamRecord:
+    ) -> list[TeamRecord]:
         """Get an existing Team record"""
         if record_id is None and team_name is None:
             raise ValueError("At least one of 'record_id' or 'team_name' is required")
         table = await self.get_table_data()
+        existing_records = []
         for row in table:
             if table.index(row) == 0:
                 continue
@@ -66,6 +67,5 @@ class TeamTable(BaseTable):
                 or str(team_name).casefold()
                 == str(row[TeamFields.team_name]).casefold()
             ):
-                existing_record = TeamRecord(row)
-                return existing_record
-        return None
+                existing_records.append(TeamRecord(row))
+        return existing_records

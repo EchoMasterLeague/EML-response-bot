@@ -135,12 +135,12 @@ async def get_player_details_from_discord_id(
     assert_player: bool = True,
 ):
     """Get Player Details from a Discord ID"""
-    player = await db.table_player.get_player_record(discord_id=discord_id)
+    players = await db.table_player.get_player_records(discord_id=discord_id)
     if assert_player:
-        assert player, f"Player is not registered"
-    if not player:
+        assert players, f"Player is not registered"
+    if not players:
         return None
-    return player
+    return players[0]
 
 
 ### Team ###
@@ -204,9 +204,10 @@ async def get_team_details_from_player(
         assert is_any_captain, f"Player `{player_name}` is not any captain."
     # Get team from team_player
     team_id = await team_player.get_field(TeamPlayerFields.team_id)
-    team = await db.table_team.get_team_record(record_id=team_id)
+    teams = await db.table_team.get_team_records(record_id=team_id)
     if assert_team:
         assert team, f"Team no longer exists."
+    team = teams[0] if teams else None
     if not team:
         return details
     details.team = team
@@ -246,7 +247,9 @@ async def get_team_details_from_team(
         is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
         is_co_captain = await team_player.get_field(TeamPlayerFields.is_co_captain)
         player_id = await team_player.get_field(TeamPlayerFields.player_id)
-        player = await db.table_player.get_player_record(record_id=player_id)
+        players = await db.table_player.get_player_records(record_id=player_id)
+        assert players, f"Player not found."
+        player = players[0]
         if is_captain:
             details.team_captain = player
         if is_co_captain:
@@ -267,12 +270,14 @@ async def create_team(
     team_name: str,
 ):
     """Create a Team"""
-    player = await db.table_player.get_player_record(record_id=player_id)
-    assert player, f"Player not found."
+    players = await db.table_player.get_player_records(record_id=player_id)
+
+    assert players, f"Player not found."
+    player = players[0]
     player_name = await player.get_field(PlayerFields.player_name)
     # Check if team already exists
-    team = await db.table_team.get_team_record(team_name=team_name)
-    assert not team, f"Team `{team_name}` already exists."
+    teams = await db.table_team.get_team_records(team_name=team_name)
+    assert not teams, f"Team `{team_name}` already exists."
     # Check if captain is already on a team
     player_team_players = await db.table_team_player.get_team_player_records(
         player_id=player_id
@@ -305,8 +310,9 @@ async def add_player_to_team(
 ):
     """Add a Player to a Team"""
     # Get info about team
-    team = await db.table_team.get_team_record(team_name=team_name)
-    assert team, f"Team `{team_name}` not found."
+    teams = await db.table_team.get_team_records(team_name=team_name)
+    assert teams, f"Team `{team_name}` not found."
+    team = teams[0]
     team_name = await team.get_field(TeamFields.team_name)
     team_id = await team.get_field(TeamFields.record_id)
     team_players = await db.table_team_player.get_team_player_records(team_id=team_id)
@@ -315,8 +321,9 @@ async def add_player_to_team(
     player_limit = constants.TEAM_PLAYERS_MAX
     assert player_count < player_limit, f"Team `{team_name}` is full."
     # Get info about player
-    player = await db.table_player.get_player_record(record_id=player_id)
-    assert player, f"Player not found."
+    players = await db.table_player.get_player_records(record_id=player_id)
+    assert players, f"Player not found."
+    player = players[0]
     player_name = await player.get_field(PlayerFields.player_name)
     player_team_players = await db.table_team_player.get_team_player_records(
         player_id=player_id
@@ -371,8 +378,9 @@ async def remove_player_from_team(db: FullDatabase, player_id: str, team_id: str
     # Remove the player from the team
     await db.table_team_player.delete_team_player_record(this_team_player)
     # Update team status
-    team = await db.table_team.get_team_record(record_id=team_id)
-    assert team, f"Team not found."
+    teams = await db.table_team.get_team_records(record_id=team_id)
+    assert teams, f"Team not found."
+    team = teams[0]
     is_active = await team.get_field(TeamFields.status) == TeamStatus.ACTIVE
     if is_active and player_count - 1 < constants.TEAM_PLAYERS_MIN:
         await team.set_field(TeamFields.status, TeamStatus.INACTIVE)

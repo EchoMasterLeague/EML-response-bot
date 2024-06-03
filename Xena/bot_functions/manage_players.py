@@ -46,6 +46,15 @@ class ManagePlayers:
             allowed_regions = [r.value for r in Regions]
             region = await ManagePlayersHelpers.normalize_region(region)
             assert region, f"Region must be in {allowed_regions}"
+            # Check for existing Players with the same DisplayName or Discord ID
+            existing_players = await self._db.table_player.get_player_records(
+                discord_id=discord_id
+            )
+            assert not existing_players, "You are already registered."
+            existing_players = await self._db.table_player.get_player_records(
+                player_name=player_name
+            )
+            assert not existing_players, f"Player name {player_name} already in use."
             # Create Player record
             await self._db.table_player.create_player_record(
                 discord_id=discord_id, player_name=player_name, region=region
@@ -61,9 +70,6 @@ class ManagePlayers:
                 channel=log_channel,
                 message=f"{interaction.user.mention} has joined the League.",
             )
-        except database_errors.EmlRecordAlreadyExists:
-            message = f"Player already registered"
-            await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
@@ -78,10 +84,12 @@ class ManagePlayers:
             await interaction.response.defer()
             # Get Player info
             discord_id = interaction.user.id
-            existing_player = await self._db.table_player.get_player_record(
+            existing_players = await self._db.table_player.get_player_records(
                 discord_id=discord_id
             )
-            assert existing_player, "You are not registered."
+
+            assert existing_players, "You are not registered."
+            existing_player = existing_players[0]
             existing_player_id = await existing_player.get_field(PlayerFields.record_id)
             existing_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -118,42 +126,55 @@ class ManagePlayers:
             # Get Player info
             if not discord_id and not player_name:
                 discord_id = interaction.user.id
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 discord_id=discord_id, player_name=player_name
             )
-            assert player, "Player not found."
-            player_name = await player.get_field(PlayerFields.player_name)
-            player_region = await player.get_field(PlayerFields.region)
-            player_id = await player.get_field(PlayerFields.record_id)
-            message_dict = {}
-            message_dict["player"] = player_name
-            message_dict["region"] = player_region
-            # Get cooldown info
-            cooldowns = await self._db.table_cooldown.get_cooldown_records(
-                player_id=player_id
-            )
-            cooldown: CooldownRecord = cooldowns[0] if cooldowns else None
-            if cooldown:
-                cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
-                message_dict["cooldown_end"] = cooldown_end
-            # Get Team info
-            team_players = await self._db.table_team_player.get_team_player_records(
-                player_id=player_id
-            )
-            team_player = team_players[0] if team_players else None
-            if team_player:
-                team_id = await team_player.get_field(TeamPlayerFields.team_id)
-                team = await self._db.table_team.get_team_record(record_id=team_id)
-                team_name = await team.get_field(TeamFields.team_name)
-                is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
-                is_co_cap = await team_player.get_field(TeamPlayerFields.is_co_captain)
-                message_dict["team"] = team_name
-                team_role = "member"
-                team_role = "captain" if is_captain else team_role
-                team_role = "co-captain" if is_co_cap else team_role
-                message_dict["team_role"] = team_role
+            assert players, "Player not found."
+            message_data = []
+            for player in players:
+                player_name = await player.get_field(PlayerFields.player_name)
+                player_region = await player.get_field(PlayerFields.region)
+                player_id = await player.get_field(PlayerFields.record_id)
+                message_dict = {}
+                message_dict["player"] = player_name
+                message_dict["region"] = player_region
+                # Get cooldown info
+                cooldowns = await self._db.table_cooldown.get_cooldown_records(
+                    player_id=player_id
+                )
+                cooldown: CooldownRecord = cooldowns[0] if cooldowns else None
+                if cooldown:
+                    cooldown_end = await cooldown.get_field(CooldownFields.expires_at)
+                    message_dict["cooldown_end"] = cooldown_end
+                # Get Team info
+                team_players = await self._db.table_team_player.get_team_player_records(
+                    player_id=player_id
+                )
+                team_player = team_players[0] if team_players else None
+                if team_player:
+                    team_id = await team_player.get_field(TeamPlayerFields.team_id)
+                    teams = await self._db.table_team.get_team_records(
+                        record_id=team_id
+                    )
+                    assert teams, "Player team not found"
+                    team = teams[0] if teams else None
+                    team_name = await team.get_field(TeamFields.team_name)
+                    is_captain = await team_player.get_field(
+                        TeamPlayerFields.is_captain
+                    )
+                    is_co_cap = await team_player.get_field(
+                        TeamPlayerFields.is_co_captain
+                    )
+                    message_dict["team"] = team_name
+                    team_role = "member"
+                    team_role = "captain" if is_captain else team_role
+                    team_role = "co-captain" if is_co_cap else team_role
+                    message_dict["team_role"] = team_role
+                message_data.append(message_dict)
             # Create Response
-            message = await general_helpers.format_json(message_dict)
+            if len(message_data) == 1:
+                message_data = message_data[0]
+            message = await general_helpers.format_json(message_data)
             message = await discord_helpers.code_block(message, language="json")
             return await discord_helpers.final_message(interaction, message)
         except AssertionError as message:

@@ -31,9 +31,10 @@ class CommandLockTable(BaseTable):
     ) -> CommandLockRecord:
         """Create a new CommandLock record, or update an existing one"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_command_lock_record(
+        existing_records = await self.get_command_lock_records(
             command_name == command_name
         )
+        existing_record = existing_records[0] if existing_records else None
         if existing_record:
             # Update existing record in the database
             existing_record.set_field(CommandLockFields.is_allowed, is_allowed)
@@ -57,9 +58,9 @@ class CommandLockTable(BaseTable):
         record_id = await record.get_field(CommandLockFields.record_id)
         await self.delete_record(record_id)
 
-    async def get_command_lock_record(
+    async def get_command_lock_records(
         self, record_id: str = None, command_name: str = None, is_allowed: bool = None
-    ) -> CommandLockRecord:
+    ) -> list[CommandLockRecord]:
         """Get an existing CommandLock record"""
         if record_id is None and command_name is None and is_allowed is None:
             raise ValueError(
@@ -68,6 +69,7 @@ class CommandLockTable(BaseTable):
         if is_allowed is not None:
             is_allowed = Bool.TRUE if is_allowed else Bool.FALSE
         table = await self.get_table_data()
+        existing_records = []
         for row in table:
             if table.index(row) == 0:
                 continue
@@ -88,13 +90,13 @@ class CommandLockTable(BaseTable):
                     == str(row[CommandLockFields.is_allowed]).casefold()
                 )
             ):
-                existing_record = CommandLockRecord(row)
-                return existing_record
-        return None
+                existing_records.append(CommandLockRecord(row))
+        return existing_records
 
     async def ensure_command_allowance(self, command_name: str) -> bool:
         """Check if a command is allowed, create reacord if needed"""
-        record = await self.get_command_lock_record(command_name=command_name)
+        records = await self.get_command_lock_records(command_name=command_name)
+        record = records[0] if records else None
         if not record:
             record = await self.create_command_lock_record(command_name, True)
         if record:

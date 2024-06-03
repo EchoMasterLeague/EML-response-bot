@@ -26,10 +26,10 @@ class PlayerTable(BaseTable):
     ) -> PlayerRecord:
         """Create a new Player record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_player_record(
+        existing_records = await self.get_player_records(
             discord_id=discord_id, player_name=player_name
         )
-        if existing_record:
+        if existing_records:
             raise DbErrors.EmlRecordAlreadyExists(
                 f"Player '{player_name}' already exists"
             )
@@ -55,15 +55,16 @@ class PlayerTable(BaseTable):
         record_id = await record.get_field(PlayerFields.record_id)
         await self.delete_record(record_id)
 
-    async def get_player_record(
+    async def get_player_records(
         self, record_id: str = None, discord_id: str = None, player_name: str = None
-    ) -> PlayerRecord:
-        """Get an existing Player record"""
+    ) -> list[PlayerRecord]:
+        """Get existing Player records"""
         if record_id is None and discord_id is None and player_name is None:
             raise ValueError(
                 "At least one of 'record_id', 'discord_id', or 'player_name' is required"
             )
         table = await self.get_table_data()
+        existing_records = []
         for row in table:
             if table.index(row) == 0:
                 continue
@@ -84,9 +85,8 @@ class PlayerTable(BaseTable):
                     == str(row[PlayerFields.player_name]).casefold()
                 )
             ):
-                existing_record = PlayerRecord(row)
-                return existing_record
-        return None
+                existing_records.append(PlayerRecord(row))
+        return existing_records
 
     async def get_players_by_region(self, region: str) -> list[PlayerRecord]:
         """Get all players from a specific region"""
