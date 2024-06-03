@@ -206,7 +206,7 @@ async def get_team_details_from_player(
     team_id = await team_player.get_field(TeamPlayerFields.team_id)
     teams = await db.table_team.get_team_records(record_id=team_id)
     if assert_team:
-        assert team, f"Team no longer exists."
+        assert teams, f"Team no longer exists."
     team = teams[0] if teams else None
     if not team:
         return details
