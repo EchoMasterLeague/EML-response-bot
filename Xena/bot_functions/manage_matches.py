@@ -64,10 +64,11 @@ class ManageMatches:
             inviter_team_id = await inviter_team.get_field(TeamFields.record_id)
             inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
             # Get invitee team from opposing_team_name
-            invitee_team = await self._db.table_team.get_team_record(
+            invitee_team_matches = await self._db.table_team.get_team_records(
                 team_name=opposing_team_name
             )
-            assert invitee_team, f"Team '{opposing_team_name}' not found."
+            assert invitee_team_matches, f"Team '{opposing_team_name}' not found."
+            invitee_team = invitee_team_matches[0]
             inviter_player_name = await inviter_player.get_field(
                 PlayerFields.player_name
             )
@@ -250,13 +251,17 @@ class ManageMatches:
             inviter_team_id = await selected_match_invite.get_field(
                 MatchInviteFields.from_team_id
             )
-            inviter_team = await self._db.table_team.get_team_record(
+            inviter_team_matches = await self._db.table_team.get_team_records(
                 record_id=inviter_team_id
             )
+            assert inviter_team_matches, f"Team not found."
+            inviter_team = inviter_team_matches[0]
             inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
-            invitee_team = await self._db.table_team.get_team_record(
+            invitee_team_matches = await self._db.table_team.get_team_records(
                 record_id=invitee_team_id
             )
+            assert invitee_team_matches, f"Team not found."
+            invitee_team = invitee_team_matches[0]
             invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
             assert (
                 inviter_team_id != invitee_team_id
@@ -341,9 +346,11 @@ class ManageMatches:
             inviter_team_id = await inviter_team.get_field(TeamFields.record_id)
             inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
             # Get invitee team details from opposing_team_name
-            invitee_team = await self._db.table_team.get_team_record(
+            invitee_team_matches = await self._db.table_team.get_team_records(
                 team_name=opposing_team_name
             )
+            assert invitee_team_matches, f"Team '{opposing_team_name}' not found."
+            invitee_team = invitee_team_matches[0]
             invitee_team_details = await database_helpers.get_team_details_from_team(
                 self._db, team=invitee_team
             )

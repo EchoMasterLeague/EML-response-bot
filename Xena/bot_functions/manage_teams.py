@@ -43,10 +43,11 @@ class ManageTeams:
             assert len(team_name) <= 32, f"Team name must be under 32 characters long."
             # Check if the Player is registered
             discord_id = interaction.user.id
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 discord_id=discord_id
             )
-            assert player, f"You must be registered as a player to create a team."
+            assert players, f"You must be registered as a player to create a team."
+            player = players[0]
             # Create Team and Captain Database Records
             player_id = await player.get_field(PlayerFields.record_id)
             new_team = await database_helpers.create_team(
@@ -79,22 +80,24 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get Player Record for inviter
-            inviter = await self._db.table_player.get_player_record(
+            inviter_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
             assert_message = f"You must be registered as a player to invite players."
-            assert inviter, assert_message
+            assert inviter_matches, assert_message
+            inviter = inviter_matches[0]
             # check permissions
             team_details = await database_helpers.get_team_details_from_player(
                 self._db, inviter, assert_captain=True
             )
             assert team_details, f"You must be a captain to invite players."
             # Get player record for invitee
-            invitee = await self._db.table_player.get_player_record(
+            invitee_matches = await self._db.table_player.get_player_records(
                 player_name=player_name
             )
             assert_message = f"Player `{player_name}` not found. Please check the spelling, and verify the player is registered."
-            assert invitee, assert_message
+            assert invitee_matches, assert_message
+            invitee = invitee_matches[0]
             # Create Invite record
             new_invite = await database_helpers.create_team_invite(
                 self._db, inviter, invitee
@@ -116,10 +119,11 @@ class ManageTeams:
         """Add the requestor to their new Team"""
         try:
             # Get info about the Player
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert player, f"You must be registered as a Player to accept an invite."
+            assert players, f"You must be registered as a Player to accept an invite."
+            player = players[0]
             player_id = await player.get_field(PlayerFields.record_id)
             # Gather Invites
             invites = await self._db.table_team_invite.get_team_invite_records(
@@ -212,11 +216,12 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get requestor's Team Details
-            requestor = await self._db.table_player.get_player_record(
+            requestor_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
             assert_message = f"You register as a player, and be cpatin of a team to remove players from it."
-            assert requestor, assert_message
+            assert requestor_matches, assert_message
+            requestor = requestor_matches[0]
             team_details = await database_helpers.get_team_details_from_player(
                 self._db, requestor, assert_captain=True
             )
@@ -224,12 +229,13 @@ class ManageTeams:
                 team_details
             ), f"You must be the captain of a team to remove players from it."
             # Verify Player exists
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 player_name=player_name
             )
-            player_name = await player.get_field(PlayerFields.player_name)
             assert_message = f"Player `{player_name}` not found. Please check the spelling, and verify the player is registered."
-            assert player, assert_message
+            assert players, assert_message
+            player = players[0]
+            player_name = await player.get_field(PlayerFields.player_name)
             # Remove Player from Team
             player_id = await player.get_field(PlayerFields.record_id)
             team_id = await team_details.team.get_field(TeamFields.record_id)
@@ -269,10 +275,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self._db.table_player.get_player_record(
+            requestor_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert requestor, f"You must be registered as a player to promote players."
+            assert (
+                requestor_matches
+            ), f"You must be registered as a player to promote players."
+            requestor = requestor_matches[0]
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -299,10 +308,11 @@ class ManageTeams:
                     )
             assert not co_captain_id, f"Team already has a co-captain."
             # Get info about the Player
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 player_name=player_name
             )
-            assert player, f"Player not found."
+            assert players, f"Player not found."
+            player = players[0]
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
             player_team_player = None
@@ -351,10 +361,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self._db.table_player.get_player_record(
+            requestor_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert requestor, f"You must be registered as a player to demote players."
+            assert (
+                requestor_matches
+            ), f"You must be registered as a player to demote players."
+            requestor = requestor_matches[0]
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -373,10 +386,11 @@ class ManageTeams:
                 team_id=team_id
             )
             # Get info about the Player
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 player_name=player_name
             )
-            assert player, f"Player not found."
+            assert players, f"Player not found."
+            player = players[0]
             player_name = await player.get_field(PlayerFields.player_name)
             player_id = await player.get_field(PlayerFields.record_id)
             player_team_player = None
@@ -422,10 +436,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self._db.table_player.get_player_record(
+            requestor_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert requestor, f"You must be registered as a Player to leave a Team."
+            assert (
+                requestor_matches
+            ), f"You must be registered as a Player to leave a Team."
+            requestor = requestor_matches[0]
             requestor_player_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -439,7 +456,9 @@ class ManageTeams:
             )
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team = await self._db.table_team.get_team_record(record_id=team_id)
+            teams = await self._db.table_team.get_team_records(record_id=team_id)
+            assert teams, f"Team not found."
+            team = teams[0]
             team_name = await team.get_field(TeamFields.team_name)
             team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
@@ -499,10 +518,13 @@ class ManageTeams:
             # This could take a while
             await interaction.response.defer()
             # Get info about the requestor
-            requestor = await self._db.table_player.get_player_record(
+            requestor_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert requestor, f"You must be registered as a player to disband a team."
+            assert (
+                requestor_matches
+            ), f"You must be registered as a player to disband a team."
+            requestor = requestor_matches[0]
             requestor_id = await requestor.get_field(PlayerFields.record_id)
             requestor_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -517,7 +539,9 @@ class ManageTeams:
             assert requestor_is_captain, f"You must be team captain to disband a team."
             # Get info about the Team
             team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-            team = await self._db.table_team.get_team_record(record_id=team_id)
+            teams = await self._db.table_team.get_team_records(record_id=team_id)
+            assert teams, f"Team not found."
+            team = teams[0]
             team_name = await team.get_field(TeamFields.team_name)
             team_players = await self._db.table_team_player.get_team_player_records(
                 team_id=team_id
@@ -527,9 +551,11 @@ class ManageTeams:
             for team_player in team_players:
                 # Remove Player's Discord roles
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
-                player = await self._db.table_player.get_player_record(
+                players = await self._db.table_player.get_player_records(
                     record_id=player_id
                 )
+                assert players, f"Player not found."
+                player = players[0]
                 player_discord_id = await player.get_field(PlayerFields.discord_id)
                 player_discord_member = await discord_helpers.member_from_discord_id(
                     guild=interaction.guild,
@@ -578,9 +604,13 @@ class ManageTeams:
             # Determine desired team
             team = None
             if not team_name:
-                requestor = await self._db.table_player.get_player_record(
+                requestor_matches = await self._db.table_player.get_player_records(
                     discord_id=interaction.user.id
                 )
+                assert (
+                    requestor_matches
+                ), f"You must provide a team name, or be on a team to get team details."
+                requestor = requestor_matches[0]
                 requestor_id = await requestor.get_field(PlayerFields.record_id)
                 team_players = await self._db.table_team_player.get_team_player_records(
                     player_id=requestor_id
@@ -588,10 +618,14 @@ class ManageTeams:
                 assert team_players, f"No team specified."
                 team_player = team_players[0]
                 team_id = await team_player.get_field(TeamPlayerFields.team_id)
-                team = await self._db.table_team.get_team_record(record_id=team_id)
+                teams = await self._db.table_team.get_team_records(record_id=team_id)
+                assert teams, f"Team not found."
+                team = teams[0]
             # Get info about the Team
             if not team:
-                team = await self._db.table_team.get_team_record(team_name=team_name)
+                teams = await self._db.table_team.get_team_records(team_name=team_name)
+                assert teams, f"Team not found."
+                team = teams[0]
             assert team, f"Team not found."
             team_name = await team.get_field(TeamFields.team_name)
             team_id = await team.get_field(TeamFields.record_id)
@@ -604,9 +638,11 @@ class ManageTeams:
             player_names = []
             for team_player in team_players:
                 player_id = await team_player.get_field(TeamPlayerFields.player_id)
-                player = await self._db.table_player.get_player_record(
+                players = await self._db.table_player.get_player_records(
                     record_id=player_id
                 )
+                assert players, f"Player not found."
+                player = players[0]
                 player_name = await player.get_field(PlayerFields.player_name)
                 player_names.append(player_name)
                 if await team_player.get_field(TeamPlayerFields.is_captain):

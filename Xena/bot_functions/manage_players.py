@@ -46,6 +46,15 @@ class ManagePlayers:
             allowed_regions = [r.value for r in Regions]
             region = await ManagePlayersHelpers.normalize_region(region)
             assert region, f"Region must be in {allowed_regions}"
+            # Check for existing Players with the same DisplayName or Discord ID
+            existing_players = await self._db.table_player.get_player_records(
+                discord_id=discord_id
+            )
+            assert not existing_players, "You are already registered."
+            existing_players = await self._db.table_player.get_player_records(
+                player_name=player_name
+            )
+            assert not existing_players, f"Player name {player_name} already in use."
             # Create Player record
             await self._db.table_player.create_player_record(
                 discord_id=discord_id, player_name=player_name, region=region
@@ -61,9 +70,6 @@ class ManagePlayers:
                 channel=log_channel,
                 message=f"{interaction.user.mention} has joined the League.",
             )
-        except database_errors.EmlRecordAlreadyExists:
-            message = f"Player already registered"
-            await discord_helpers.final_message(interaction, message)
         except AssertionError as message:
             await discord_helpers.final_message(interaction, message)
         except Exception as error:
@@ -78,10 +84,12 @@ class ManagePlayers:
             await interaction.response.defer()
             # Get Player info
             discord_id = interaction.user.id
-            existing_player = await self._db.table_player.get_player_record(
+            existing_players = await self._db.table_player.get_player_records(
                 discord_id=discord_id
             )
-            assert existing_player, "You are not registered."
+
+            assert existing_players, "You are not registered."
+            existing_player = existing_players[0]
             existing_player_id = await existing_player.get_field(PlayerFields.record_id)
             existing_team_players = (
                 await self._db.table_team_player.get_team_player_records(
@@ -118,10 +126,11 @@ class ManagePlayers:
             # Get Player info
             if not discord_id and not player_name:
                 discord_id = interaction.user.id
-            player = await self._db.table_player.get_player_record(
+            players = await self._db.table_player.get_player_records(
                 discord_id=discord_id, player_name=player_name
             )
-            assert player, "Player not found."
+            assert players, "Player not found."
+            player = players[0]
             player_name = await player.get_field(PlayerFields.player_name)
             player_region = await player.get_field(PlayerFields.region)
             player_id = await player.get_field(PlayerFields.record_id)
@@ -143,7 +152,9 @@ class ManagePlayers:
             team_player = team_players[0] if team_players else None
             if team_player:
                 team_id = await team_player.get_field(TeamPlayerFields.team_id)
-                team = await self._db.table_team.get_team_record(record_id=team_id)
+                teams = await self._db.table_team.get_team_records(record_id=team_id)
+                assert teams, "Player team not found"
+                team = teams[0] if teams else None
                 team_name = await team.get_field(TeamFields.team_name)
                 is_captain = await team_player.get_field(TeamPlayerFields.is_captain)
                 is_co_cap = await team_player.get_field(TeamPlayerFields.is_co_captain)
