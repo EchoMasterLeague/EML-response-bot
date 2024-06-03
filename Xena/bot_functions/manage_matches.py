@@ -85,9 +85,20 @@ class ManageMatches:
                 )
             )
             assert new_match_invite, f"Error: Failed to create match invite."
-            match_invite_dict = await new_match_invite.to_dict()
+            fields_to_show = [
+                MatchInviteFields.vw_from_team,
+                MatchInviteFields.vw_to_team,
+                MatchInviteFields.match_date,
+                MatchInviteFields.match_time_et,
+                MatchInviteFields.match_type,
+                MatchInviteFields.invite_expires_at,
+            ]
+            full_match_invite_dict = await new_match_invite.to_dict()
+            clean_match_invite_dict = {}
+            for field in fields_to_show:
+                clean_match_invite_dict[field] = full_match_invite_dict[field]
             match_invite_code_block = await discord_helpers.code_block(
-                await general_helpers.format_json(match_invite_dict), "json"
+                await general_helpers.format_json(clean_match_invite_dict), "json"
             )
             message = (
                 f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
@@ -253,9 +264,19 @@ class ManageMatches:
                 selected_match_invite
             )
             # success
-            new_match_dict = await new_match.to_dict()
+            fields_to_show = [
+                MatchFields.vw_team_a,
+                MatchFields.vw_team_b,
+                MatchFields.match_date,
+                MatchFields.match_time_et,
+                MatchFields.match_type,
+            ]
+            full_new_match_dict = await new_match.to_dict()
+            clean_new_match_dict = {}
+            for field in fields_to_show:
+                clean_new_match_dict[field] = full_new_match_dict[field]
             match_code_block = await discord_helpers.code_block(
-                await general_helpers.format_json(new_match_dict), "json"
+                await general_helpers.format_json(clean_new_match_dict), "json"
             )
             message = f"Match Invite accepted. Match created.\n{match_code_block}"
             message += f"\n\nRemember: This cannot be undone. Failure to show will result in automatic forfeiture."
@@ -430,8 +451,24 @@ class ManageMatches:
             )
             assert new_result_invite, f"Error: Failed to create match result invite."
             # success
+            fields_to_show = [
+                MatchResultInviteFields.vw_from_team,
+                MatchResultInviteFields.vw_to_team,
+                MatchResultInviteFields.match_outcome,
+                MatchResultInviteFields.round_1_score_a,
+                MatchResultInviteFields.round_1_score_b,
+                MatchResultInviteFields.round_2_score_a,
+                MatchResultInviteFields.round_2_score_b,
+                MatchResultInviteFields.round_3_score_a,
+                MatchResultInviteFields.round_3_score_b,
+                MatchResultInviteFields.match_type,
+            ]
+            full_new_result_invite_dict = await new_result_invite.to_dict()
+            clean_new_result_invite_dict = {}
+            for field in fields_to_show:
+                clean_new_result_invite_dict[field] = full_new_result_invite_dict[field]
             invite_code_block = await discord_helpers.code_block(
-                f"{await general_helpers.format_json(await new_result_invite.to_dict())}",
+                f"{await general_helpers.format_json(clean_new_result_invite_dict)}",
                 "json",
             )
             message = f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
