@@ -160,8 +160,10 @@ class VwRosterTable(BaseTable):
     ) -> None:
         """Write a new list of VwRoster records to the database"""
         print("[ 2 write, 0 read ] UPDATE of vwRoster")
-        self._tab.clear()
-        time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
-        self._tab.append_rows(roster_table)
-        time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
-        return
+        try:
+            self._tab.clear()
+            time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
+            self._tab.append_rows(roster_table)
+            time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
+        except Exception as error:
+            print(f"    Failed to commit write: {error}")
