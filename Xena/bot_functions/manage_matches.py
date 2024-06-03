@@ -97,7 +97,7 @@ class ManageMatches:
             full_match_invite_dict = await new_match_invite.to_dict()
             clean_match_invite_dict = {}
             for field in fields_to_show:
-                clean_match_invite_dict[field] = full_match_invite_dict[field]
+                clean_match_invite_dict[field.name] = full_match_invite_dict[field.name]
             match_invite_code_block = await discord_helpers.code_block(
                 await general_helpers.format_json(clean_match_invite_dict), "json"
             )
@@ -285,7 +285,7 @@ class ManageMatches:
             full_new_match_dict = await new_match.to_dict()
             clean_new_match_dict = {}
             for field in fields_to_show:
-                clean_new_match_dict[field] = full_new_match_dict[field]
+                clean_new_match_dict[field.name] = full_new_match_dict[field.name]
             match_code_block = await discord_helpers.code_block(
                 await general_helpers.format_json(clean_new_match_dict), "json"
             )
@@ -480,7 +480,9 @@ class ManageMatches:
             full_new_result_invite_dict = await new_result_invite.to_dict()
             clean_new_result_invite_dict = {}
             for field in fields_to_show:
-                clean_new_result_invite_dict[field] = full_new_result_invite_dict[field]
+                clean_new_result_invite_dict[field.name] = full_new_result_invite_dict[
+                    field.name
+                ]
             invite_code_block = await discord_helpers.code_block(
                 f"{await general_helpers.format_json(clean_new_result_invite_dict)}",
                 "json",
