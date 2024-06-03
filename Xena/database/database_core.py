@@ -163,7 +163,7 @@ class CoreDatabase:
                 await self.commit_next_write()
                 time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
         except Exception as error:
-            print(f"Failed to commit write: {error}")
+            print(f"    Failed to commit write: {error}")
 
     async def get_pending_writes(
         self,
