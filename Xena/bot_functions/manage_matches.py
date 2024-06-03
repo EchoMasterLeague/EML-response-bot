@@ -72,6 +72,7 @@ class ManageMatches:
                 PlayerFields.player_name
             )
             invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+            assert inviter_team_id != invitee_team_id, f"Cannot invite your own team."
             new_match_invite = (
                 await self._db.table_match_invite.create_match_invite_record(
                     match_type=normalized_match_type,
@@ -213,6 +214,13 @@ class ManageMatches:
             await selected_match_invite.set_field(
                 MatchInviteFields.to_player_id, invitee_player_id
             )
+            inviter_team_id = await selected_match_invite.get_field(
+                MatchInviteFields.from_team_id
+            )
+            invitee_team_id = await selected_match_invite.get_field(
+                MatchInviteFields.to_team_id
+            )
+            assert inviter_team_id != invitee_team_id, f"Cannot accept your own invite."
             await self._db.table_match_invite.update_match_invite_record(
                 selected_match_invite
             )
@@ -239,6 +247,9 @@ class ManageMatches:
                 record_id=invitee_team_id
             )
             invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
+            assert (
+                inviter_team_id != invitee_team_id
+            ), f"Cannot play against your own team."
             new_match = await self._db.table_match.create_match_record(
                 team_a_id=inviter_team_id,
                 team_b_id=invitee_team_id,
@@ -408,6 +419,9 @@ class ManageMatches:
             elif reverse_matches:
                 match_record = reverse_matches[0]
             assert match_record, f"Error: Failed to find match record."
+            assert (
+                inviter_team_id != invitee_team_id
+            ), f"Cannot propose scores to your own team."
             # create match result invite record
             match_id = await match_record.get_field(MatchFields.record_id)
             match_type = await match_record.get_field(MatchFields.match_type)
@@ -638,6 +652,10 @@ class ManageMatches:
                     outcome = MatchResult.LOSS
                 elif outcome == MatchResult.LOSS:
                     outcome = MatchResult.WIN
+            # verify this isn't the same team on both sides
+            assert (
+                team_a_id != team_b_id
+            ), f"Cannot accept scores sent by your own team."
             # update match record
             await match_record.set_field(
                 MatchFields.match_status, MatchStatus.COMPLETED.value
