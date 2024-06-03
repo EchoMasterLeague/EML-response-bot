@@ -485,7 +485,6 @@ class ManageMatches:
                 ]
             invite_code_block = await discord_helpers.code_block(
                 f"{await general_helpers.format_json(clean_new_result_invite_dict)}",
-                f"{await general_helpers.format_json(clean_new_result_invite_dict)}",
                 "json",
             )
             message = f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
