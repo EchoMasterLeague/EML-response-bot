@@ -73,7 +73,10 @@ class ManageTeams:
             await discord_helpers.error_message(interaction, error)
 
     async def invite_player_to_team(
-        self, interaction: discord.Interaction, player_name
+        self,
+        interaction: discord.Interaction,
+        player_name: str = None,
+        player_discord_id: str = None,
     ):
         """Invite a Player to a Team by name"""
         try:
@@ -83,8 +86,9 @@ class ManageTeams:
             inviter_matches = await self._db.table_player.get_player_records(
                 discord_id=interaction.user.id
             )
-            assert_message = f"You must be registered as a player to invite players."
-            assert inviter_matches, assert_message
+            assert (
+                inviter_matches
+            ), f"You must be registered as a player to invite players."
             inviter = inviter_matches[0]
             # check permissions
             team_details = await database_helpers.get_team_details_from_player(
@@ -93,10 +97,14 @@ class ManageTeams:
             assert team_details, f"You must be a captain to invite players."
             # Get player record for invitee
             invitee_matches = await self._db.table_player.get_player_records(
-                player_name=player_name
+                player_name=player_name, discord_id=player_discord_id
             )
-            assert_message = f"Player `{player_name}` not found. Please check the spelling, and verify the player is registered."
-            assert invitee_matches, assert_message
+            assert (
+                invitee_matches
+            ), f"Player not found. Please verify the player is registered."
+            assert (
+                len(invitee_matches) == 1
+            ), f"Multiple players found. Please specify the player's Discord ID (nubmers only) to invite them."
             invitee = invitee_matches[0]
             # Create Invite record
             new_invite = await database_helpers.create_team_invite(
