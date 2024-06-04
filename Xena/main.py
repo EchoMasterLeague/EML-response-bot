@@ -1,10 +1,6 @@
-from bot_functions.manage_commands import ManageCommands
-from bot_functions.manage_players import ManagePlayers
-from bot_functions.manage_teams import ManageTeams
-from bot_functions.manage_matches import ManageMatches
-from bot_functions.manage_system import ManageSystem
 from database.database_core import CoreDatabase
 from database.database_full import FullDatabase
+import bot_functions
 import discord
 import discord.ext.commands as commands
 import dotenv
@@ -30,14 +26,7 @@ GUILD_ID = os.environ.get("GUILD_ID")
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
 database_core = CoreDatabase(gs_client)
-database = FullDatabase(database_core)
-
-# Bot Functions
-manage_players = ManagePlayers(database)
-manage_teams = ManageTeams(database)
-manage_commands = ManageCommands(database)
-manage_matches = ManageMatches(database)
-manage_system = ManageSystem(database)
+db = FullDatabase(database_core)
 
 # Discord Intents
 intents = discord.Intents.default()
@@ -75,231 +64,9 @@ async def on_ready():
 ###                                          Bot Commands Begin                                                     ###
 ###vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv###
 
-#######################
-### System Commands ###
-#######################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbqueue")
-async def bot_z_debug_db_queue(interaction: discord.Interaction):
-    """Debug the pending writes"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_system.list_pending_writes(interaction)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbcache")
-async def bot_z_debug_db_cache(interaction: discord.Interaction):
-    """Debug the local cache"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_system.list_local_cache(interaction)
-
-
-#######################
-### Player Commands ###
-#######################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}lookupplayer")
-async def bot_lookup_player(
-    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
-):
-    """Lookup a Player by name or Discord ID"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_players.get_player_details(interaction, player_name, discord_id)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}playerregister")
-async def bot_player_register(interaction: discord.Interaction):
-    """Register to become a Player"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_players.register_player(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
-async def bot_player_unregister(interaction: discord.Interaction):
-    """Unregister as a Player"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_players.unregister_player(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
-async def bot_lookup_cooldown_players(interaction: discord.Interaction):
-    """List players on cooldown"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_players.get_cooldown_players(interaction)
-
-
-#####################
-### Team Commands ###
-#####################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}lookupteam")
-async def bot_lookup_team(interaction: discord.Interaction, team_name: str = None):
-    """Lookup a Team by name"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.get_team_details(interaction, team_name)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamcreate")
-async def bot_team_create(interaction: discord.Interaction, team_name: str):
-    """Create a new Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.create_team(
-            interaction=interaction, team_name=team_name, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
-async def bot_team_invite_offer(
-    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
-):
-    """Invite a player to join your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.invite_player_to_team(
-            interaction=interaction,
-            player_name=player_name,
-            player_discord_id=discord_id,
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teaminviteaccept")
-async def bot_team_invite_accept(interaction: discord.Interaction):
-    """Accept an invite to join a Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.accept_invite(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
-async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
-    """Remove a player from your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.remove_player_from_team(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
-async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
-    """Promote a player to Team Co-Captain"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.promote_player_to_co_captain(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
-async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
-    """Demote a player from Team Co-Captain"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.demote_player_from_co_captain(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamleave")
-async def bot_team_leave(interaction: discord.Interaction):
-    """Leave your current Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.leave_team(interaction=interaction, log_channel=log_channel)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamdisband")
-async def bot_team_disband(interaction: discord.Interaction):
-    """Disband your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.disband_team(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-######################
-### Match Commands ###
-######################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}matchdatepropose")
-async def bot_match_propose(
-    interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
-):
-    """Propose a Match with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.send_match_invite(
-            interaction, match_type, opponent_name, date
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}matchdateaccept")
-async def bot_match_accept(
-    interaction: discord.Interaction, match_invite_id: str = None
-):
-    """Accept a Match with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_matches.accept_match_invite(
-            interaction=interaction,
-            match_invite_id=match_invite_id,
-            log_channel=log_channel,
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
-async def bot_match_result_offer(
-    interaction: discord.Interaction,
-    match_type: str,
-    opponent_name: str,
-    outcome: str,
-    round_1_us: int,
-    round_1_them: int,
-    round_2_us: int,
-    round_2_them: int,
-    round_3_us: int = None,
-    round_3_them: int = None,
-):
-    """Propose a Match Result with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        scores = [
-            (round_1_us, round_1_them),
-            (round_2_us, round_2_them),
-            (round_3_us, round_3_them),
-        ]
-        await manage_matches.send_result_invite(
-            interaction=interaction,
-            match_type=match_type,
-            opposing_team_name=opponent_name,
-            scores=scores,
-            outcome=outcome,
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultaccept")
-async def bot_match_result_accept(interaction: discord.Interaction):
-    """Accept a Match Result with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_matches.accept_result_invite(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-#########################
-### Original Commands ###
-#########################
+##############################
+### Informational Commands ###
+##############################
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}help")
@@ -441,63 +208,265 @@ async def lounge_report(interaction: discord.Interaction):
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}rolelookup")
-async def rolelookup(
+async def bot_rolelookup(
     interaction: discord.Interaction,
     role_input1: str,
     role_input2: str = None,
 ):
-    # Get the guild from the interaction
-    guild = interaction.guild
+    bot_functions.show_role_members(
+        interaction=interaction, role_input1=role_input1, role_input2=role_input2
+    )
 
-    if guild:
-        # Get role based on the provided role_input1 (case-insensitive)
-        role1 = discord.utils.get(
-            guild.roles, name=role_input1, case_insensitive=True
-        ) or discord.utils.get(guild.roles, mention=role_input1)
 
-        # If role_input2 is provided, get the role based on it (case-insensitive)
-        role2 = (
-            discord.utils.get(guild.roles, name=role_input2, case_insensitive=True)
-            or discord.utils.get(guild.roles, mention=role_input2)
-            if role_input2
-            else None
+#######################
+### System Commands ###
+#######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbqueue")
+async def bot_z_debug_db_queue(interaction: discord.Interaction):
+    """Debug the pending writes"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.system_list_writes(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbcache")
+async def bot_z_debug_db_cache(interaction: discord.Interaction):
+    """Debug the local cache"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.system_list_cache(database=db, interaction=interaction)
+
+
+#######################
+### Player Commands ###
+#######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}lookupplayer")
+async def bot_lookup_player(
+    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
+):
+    """Lookup a Player by name or Discord ID"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_player_details(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            discord_id=discord_id,
         )
 
-        if role1:
-            # Print some debug information
-            print(
-                f"Roles found: {role1.name}, {role1.id}, {role2.name if role2 else None}, {role2.id if role2 else None}"
-            )
 
-            # Get members with specified roles (case-insensitive comparison)
-            if role2:
-                members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if all(role in member.roles for role in (role1, role2))
-                ]
-            else:
-                members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if role1 in member.roles
-                ]
+@bot.tree.command(name=f"{BOT_PREFIX}playerregister")
+async def bot_player_register(interaction: discord.Interaction):
+    """Register to become a Player"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.player_register(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
 
-            if members_with_roles:
-                await interaction.response.send_message(
-                    f"Members with {role1.mention} role{' and ' + role2.mention if role2 else ''}: {', '.join(members_with_roles)}",
-                    ephemeral=True,
-                )
-            else:
-                await interaction.response.send_message(
-                    f"No members found with {role1.mention} role{' and ' + role2.mention if role2 else ''}.",
-                    ephemeral=True,
-                )
-        else:
-            await interaction.response.send_message("Role not found.", ephemeral=True)
-    else:
-        await interaction.response.send_message(
-            "Error: Guild not found.", ephemeral=True
+
+@bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
+async def bot_player_unregister(interaction: discord.Interaction):
+    """Unregister as a Player"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.player_unregister(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
+async def bot_lookup_cooldown_players(interaction: discord.Interaction):
+    """List players on cooldown"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_list_cooldown(database=db, interaction=interaction)
+
+
+#####################
+### Team Commands ###
+#####################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}lookupteam")
+async def bot_lookup_team(interaction: discord.Interaction, team_name: str = None):
+    """Lookup a Team by name"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_team_details(
+            database=db, interaction=interaction, team_name=team_name
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamcreate")
+async def bot_team_create(interaction: discord.Interaction, team_name: str):
+    """Create a new Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_create(
+            database=db,
+            interaction=interaction,
+            team_name=team_name,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
+async def bot_team_invite_offer(
+    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
+):
+    """Invite a player to join your Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.team_player_invite(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            player_discord_id=discord_id,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teaminviteaccept")
+async def bot_team_invite_accept(interaction: discord.Interaction):
+    """Accept an invite to join a Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_accept(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
+async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
+    """Remove a player from your Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_remove(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
+async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
+    """Promote a player to Team Co-Captain"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_cocaptain_promote(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
+async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
+    """Demote a player from Team Co-Captain"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_cocaptain_demote(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamleave")
+async def bot_team_leave(interaction: discord.Interaction):
+    """Leave your current Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_leave(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}teamdisband")
+async def bot_team_disband(interaction: discord.Interaction):
+    """Disband your Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_disband(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
+
+
+######################
+### Match Commands ###
+######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}matchdatepropose")
+async def bot_match_propose(
+    interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
+):
+    """Propose a Match with another Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.match_invite(
+            database=db,
+            interaction=interaction,
+            match_type=match_type,
+            opposing_team_name=opponent_name,
+            date_time=date,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}matchdateaccept")
+async def bot_match_accept(
+    interaction: discord.Interaction, match_invite_id: str = None
+):
+    """Accept a Match with another Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.match_accept(
+            db,
+            database=db,
+            interaction=interaction,
+            match_invite_id=match_invite_id,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
+async def bot_match_result_offer(
+    interaction: discord.Interaction,
+    match_type: str,
+    opponent_name: str,
+    outcome: str,
+    round_1_us: int,
+    round_1_them: int,
+    round_2_us: int,
+    round_2_them: int,
+    round_3_us: int = None,
+    round_3_them: int = None,
+):
+    """Propose a Match Result with another Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        scores = [
+            (round_1_us, round_1_them),
+            (round_2_us, round_2_them),
+            (round_3_us, round_3_them),
+        ]
+        await bot_functions.match_result_invite(
+            db,
+            database=db,
+            interaction=interaction,
+            match_type=match_type,
+            opposing_team_name=opponent_name,
+            scores=scores,
+            outcome=outcome,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}matchresultaccept")
+async def bot_match_result_accept(interaction: discord.Interaction):
+    """Accept a Match Result with another Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.match_result_accept(
+            db, database=db, interaction=interaction, log_channel=log_channel
         )
 
 
