@@ -163,7 +163,11 @@ async def bot_team_invite_offer(
 ):
     """Invite a player to join your Team"""
     if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.invite_player_to_team(interaction, player_name, discord_id)
+        await manage_teams.invite_player_to_team(
+            interaction=interaction,
+            player_name=player_name,
+            player_discord_id=discord_id,
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}teaminviteaccept")

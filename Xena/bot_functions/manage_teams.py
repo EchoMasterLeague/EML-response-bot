@@ -96,6 +96,9 @@ class ManageTeams:
             )
             assert team_details, f"You must be a captain to invite players."
             # Get player record for invitee
+            assert (
+                player_name or player_discord_id
+            ), f"Please specify a player to invite."
             invitee_matches = await self._db.table_player.get_player_records(
                 player_name=player_name, discord_id=player_discord_id
             )
