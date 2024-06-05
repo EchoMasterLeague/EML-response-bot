@@ -78,6 +78,15 @@ async def member_from_discord_id(guild: discord.Guild, discord_id: str):
 ### Roles ###
 
 
+async def guild_role_get(guild: discord.Guild, role_name: str) -> discord.Role:
+    """Get a role from a Discord server"""
+    try:
+        existing_role = discord.utils.get(guild.roles, name=role_name)
+        return existing_role
+    except discord.errors.NotFound:
+        return None
+
+
 async def guild_role_get_or_create(
     guild: discord.Guild, role_name: str
 ) -> discord.Role:
@@ -122,7 +131,7 @@ async def get_team_role(guild: discord.Guild, team_name: str):
     """Get a Team role from a Guild"""
     try:
         role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
-        role = discord.utils.get(guild.roles, name=role_name)
+        role = await get_team_role(guild, role_name)
         return role
     except discord.errors.NotFound:
         return None
