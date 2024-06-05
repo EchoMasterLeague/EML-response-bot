@@ -10,42 +10,35 @@ async def show_role_members(
     guild = interaction.guild
 
     if guild:
+        all_roles: list[discord.Role] = await guild.fetch_roles()
+        all_members: list[discord.Member] = guild.members
         # Get role based on the provided role_input1 (case-insensitive)
-        role1 = discord.utils.get(
-            guild.roles, name=role_input1, case_insensitive=True
-        ) or discord.utils.get(guild.roles, mention=role_input1)
-
+        role1_matches = [
+            role for role in all_roles if role_input1.casefold() == role.name.casefold()
+        ]
+        role1 = role1_matches[0] if role1_matches else None
         # If role_input2 is provided, get the role based on it (case-insensitive)
-        role2 = (
-            discord.utils.get(guild.roles, name=role_input2, case_insensitive=True)
-            or discord.utils.get(guild.roles, mention=role_input2)
-            if role_input2
-            else None
-        )
-
+        role2 = None
+        if role_input2:
+            role2_matches = [
+                role
+                for role in all_roles
+                if role_input2.casefold() == role.name.casefold()
+            ]
+            role2 = role2_matches[0] if role2_matches else None
         if role1:
-            # Print some debug information
-            print(
-                f"Roles found: {role1.name}, {role1.id}, {role2.name if role2 else None}, {role2.id if role2 else None}"
-            )
-
             # Get members with specified roles (case-insensitive comparison)
+            members_with_roles = [
+                member for member in all_members if role1 in member.roles
+            ]
             if role2:
                 members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if all(role in member.roles for role in (role1, role2))
+                    member for member in members_with_roles if role2 in member.roles
                 ]
-            else:
-                members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if role1 in member.roles
-                ]
-
             if members_with_roles:
+                member_mentions = [member.mention for member in members_with_roles]
                 await interaction.response.send_message(
-                    f"Members with {role1.mention} role{' and ' + role2.mention if role2 else ''}: {', '.join(members_with_roles)}",
+                    f"Members with {role1.mention} role{' and ' + role2.mention if role2 else ''}: {', '.join(member_mentions)}",
                     ephemeral=True,
                 )
             else:
