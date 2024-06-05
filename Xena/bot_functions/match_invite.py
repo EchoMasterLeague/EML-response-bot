@@ -40,6 +40,13 @@ async def match_invite(
         # Verify time format (raises ValueError if incorrect format)
         datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
         match_epoch = int(datetime_obj.timestamp())
+        # Normalize opposing_team_name
+        invitee_team_records = await database.table_team.get_team_records(
+            team_name=opposing_team_name
+        )
+        assert invitee_team_records, f"Team '{opposing_team_name}' not found."
+        invitee_team_record = invitee_team_records[0]
+        opposing_team_name = await invitee_team_record.get_field(TeamFields.team_name)
         # Get inviter player details from discord_id
         inviter_player = await database_helpers.get_player_details_from_discord_id(
             database, interaction.user.id

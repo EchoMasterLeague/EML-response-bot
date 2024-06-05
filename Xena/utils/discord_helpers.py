@@ -131,7 +131,7 @@ async def get_team_role(guild: discord.Guild, team_name: str):
     """Get a Team role from a Guild"""
     try:
         role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
-        role = await get_team_role(guild, role_name)
+        role = await guild_role_get(guild, role_name)
         return role
     except discord.errors.NotFound:
         return None
