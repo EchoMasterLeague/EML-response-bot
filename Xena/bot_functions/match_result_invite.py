@@ -47,6 +47,7 @@ async def match_result_invite(
         )
         assert invitee_team_matches, f"Team '{opposing_team_name}' not found."
         invitee_team = invitee_team_matches[0]
+        opposing_team_name = await invitee_team.get_field(TeamFields.team_name)
         invitee_team_details = await database_helpers.get_team_details_from_team(
             database, team=invitee_team
         )
