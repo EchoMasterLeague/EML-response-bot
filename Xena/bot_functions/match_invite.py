@@ -93,15 +93,23 @@ async def match_invite(
         )
         await discord_helpers.final_message(interaction, message)
         # Log to Channel
-        to_team_role = await discord_helpers.get_team_role(
-            guild=interaction.guild, team_name=opposing_team_name
+        to_team_name = await new_match_invite.get_field(MatchInviteFields.vw_to_team)
+        from_team_name = await new_match_invite.get_field(
+            MatchInviteFields.vw_from_team
         )
+        to_team_role = await discord_helpers.get_team_role(
+            guild=interaction.guild, team_name=to_team_name
+        )
+        to_team_mention = to_team_role.mention if to_team_role else f"`{to_team_name}`"
         from_team_role = await discord_helpers.get_team_role(
-            guild=interaction.guild, team_name=inviter_team_name
+            guild=interaction.guild, team_name=from_team_name
+        )
+        from_team_mention = (
+            from_team_role.mention if from_team_role else f"`{from_team_name}`"
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Match Invite sent from {from_team_role.mention} to {to_team_role.mention}",
+            message=f"Match Invite sent from {from_team_mention} to {to_team_mention}",
         )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
