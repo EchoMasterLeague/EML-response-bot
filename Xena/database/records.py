@@ -1,4 +1,4 @@
-from database.enums import Bool, Regions, TeamStatus
+from database.enums import Bool, Regions, TeamStatus, MatchResult
 from database.fields import (
     BaseFields,
     CommandLockFields,
@@ -361,6 +361,34 @@ class MatchRecord(BaseRecord):
         data_list[MatchFields.round_3_score_a.value] = new_score_list[4]
         data_list[MatchFields.round_3_score_b.value] = new_score_list[5]
         return data_list
+
+    async def reverse_scores(self) -> None:
+        """Reverse the scores of the match"""
+        round_1_score_a = self._data_dict[MatchFields.round_1_score_a.name]
+        round_1_score_b = self._data_dict[MatchFields.round_1_score_b.name]
+        round_2_score_a = self._data_dict[MatchFields.round_2_score_a.name]
+        round_2_score_b = self._data_dict[MatchFields.round_2_score_b.name]
+        round_3_score_a = self._data_dict[MatchFields.round_3_score_a.name]
+        round_3_score_b = self._data_dict[MatchFields.round_3_score_b.name]
+        self._data_dict[MatchFields.round_1_score_a.name] = round_1_score_b
+        self._data_dict[MatchFields.round_1_score_b.name] = round_1_score_a
+        self._data_dict[MatchFields.round_2_score_a.name] = round_2_score_b
+        self._data_dict[MatchFields.round_2_score_b.name] = round_2_score_a
+        self._data_dict[MatchFields.round_3_score_a.name] = round_3_score_b
+        self._data_dict[MatchFields.round_3_score_b.name] = round_3_score_a
+
+    async def reverse_outcome(self) -> None:
+        """Reverse the outcome of the match"""
+        transform_dict = {
+            MatchResult.WIN.value: MatchResult.LOSS.value,
+            MatchResult.LOSS.value: MatchResult.WIN.value,
+            MatchResult.DRAW.value: MatchResult.DRAW.value,
+        }
+        outcome = self._data_dict[MatchFields.outcome.name]
+        if outcome in transform_dict.keys():
+            self._data_dict[MatchFields.outcome.name] = transform_dict[outcome]
+        elif outcome:
+            raise ValueError(f"Outcome '{outcome}' not available")
 
 
 class MatchInviteRecord(BaseRecord):
