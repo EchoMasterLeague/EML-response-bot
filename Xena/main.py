@@ -81,7 +81,7 @@ async def help(interaction: discord.Interaction):
         f"`/{BOT_PREFIX}{constants.COMMAND_HELP}`: Show this message\n"
         f"`/{BOT_PREFIX}{constants.COMMAND_COMMANDS}`: Link command reference\n"
         f"`/{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}`: Link to bot guide\n"
-        f"`/{BOT_PREFIX}{constants.COMMAND_SUPPORT}`: Link to #general-faq\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_SUPPORT}`: Link to #league-faq\n"
         f"`/{BOT_PREFIX}{constants.COMMAND_TICKET}`: Link to ticketing in Echo Master League\n"
         f"**Rules**\n"
         f"`/{BOT_PREFIX}{constants.COMMAND_COC}`: Link to the Code of Conduct\n"
@@ -132,111 +132,102 @@ async def help(interaction: discord.Interaction):
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_RANKS}")
 async def ranks(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/team-rankings-2/"
-    )
+    link = constants.LINK_TEAM_RANKINGS
+    await interaction.response.send_message(f"Team Rankings: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHES}")
 async def matches(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/current-week-matches-and-results/"
-    )
+    link = constants.LINK_LEAGUE_MATCHES
+    await interaction.response.send_message(f"Upcoming Matches: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ROSTERS}")
 async def rosters(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/13vcfXkCejl9I4dtlA9ZI19dHGYh7aWIQXUU5MWhpYt0/edit?usp=sharing"
-    )
+    link = constants.LINK_LEAGUE_ROSTER
+    await interaction.response.send_message(f"Roster: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_WEBSITE}")
 async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://echomasterleague.com/")
+    link = constants.LINK_EML_WEBSITE
+    await interaction.response.send_message(f"EML Website: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}")
 async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing"
-    )
+    link = constants.LINK_BOT_INSTRUCTIONS
+    await interaction.response.send_message(f"Bot Instructions: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COMMANDS}")
 async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing"
-    )
+    link = constants.LINK_COMMAND_REFERENCE
+    await interaction.response.send_message(f"Command Reference: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}")
 async def leaguerules(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/eml-league-rules/"
-    )
+    link = constants.LINK_LEAGUE_RULES
+    await interaction.response.send_message(f"League Rules: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COC}")
 async def coc(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380146506866823"
-    )
+    link = constants.LINK_DISCORD_CHANNEL_EML_COC
+    await interaction.response.send_message(f"EML Code of Conduct: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TICKET}")
 async def ticket(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380148436242475"
-    )
+    link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
+    await interaction.response.send_message(f"EML Tickets: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_SUPPORT}")
 async def support(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380148436242476"
-    )
+    link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
+    await interaction.response.send_message(f"EML Support: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_STAFF_APP}")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/staff-application/"
-    )
+    link = constants.LINK_STAFF_APPLICATION
+    await interaction.response.send_message(f"Staff Application: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"**Europe**: [Europe]({constants.LINK_CALENDAR_EU})"
-    )
+    link = constants.LINK_CALENDAR_EU
+    await interaction.response.send_message(f"**Europe**: [EU]({link})")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_CALENDAR_NA}")
 async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"**North America**: [North America]({constants.LINK_CALENDAR_NA})"
-    )
+    link = constants.LINK_CALENDAR_NA
+    await interaction.response.send_message(f"**North America**: [NA]({link})")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_AP}")
 async def ap(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml"
-    )
+    link = constants.LINK_ACCUMULATED_POINTS
+    await interaction.response.send_message(f"Accumlulated Points: {link}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}")
 async def action_list(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
-    )
+    await interaction.response.send_message(f"Action List {constants.LINK_ACTION_LIST}")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}")
 async def lounge_report(interaction: discord.Interaction):
+    link_lounge = constants.LINK_ECHO_VR_LOUNGE
+    link_report = constants.LINK_ECHO_VR_LOUNGE_TICKETS
     await interaction.response.send_message(
-        f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system. https://discord.gg/echo-combat-lounge-779349159852769310"
+        f"**Echo VR Lounge Reporting**:\n"
+        f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system.\n\n"
+        f"Ticket Channel: {link_report}\n"
+        f"Echo VR Lounge: {link_lounge}\n"
     )
 
 
