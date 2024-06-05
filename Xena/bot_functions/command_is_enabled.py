@@ -3,14 +3,10 @@ from utils import discord_helpers
 import discord
 
 
-async def command_is_enabled(
-    database: FullDatabase,
-    interaction: discord.Interaction,
-    command_name: str = None,
-):
+async def command_is_enabled(database: FullDatabase, interaction: discord.Interaction):
     """Command availablity check"""
     try:
-        command_name = command_name or interaction.command.name
+        command_name = interaction.command.name
         is_allowed = await database.table_command_lock.ensure_command_allowance(
             command_name
         )

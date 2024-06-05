@@ -1,6 +1,7 @@
 from bot_functions.command_disable import command_disable
 from bot_functions.command_enable import command_enable
 from bot_functions.command_is_enabled import command_is_enabled
+from bot_functions.command_log import command_log
 from bot_functions.match_accept import match_accept
 from bot_functions.match_invite import match_invite
 from bot_functions.match_result_accept import match_result_accept
