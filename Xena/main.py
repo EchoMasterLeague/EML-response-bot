@@ -327,10 +327,7 @@ async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.player_register(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.player_register(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_PLAYERUNREGISTER}")
@@ -338,10 +335,7 @@ async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.player_unregister(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.player_unregister(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LISTCOOLDOWNPLAYERS}")
@@ -372,12 +366,10 @@ async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.team_create(
             database=db,
             interaction=interaction,
             team_name=team_name,
-            log_channel=log_channel,
         )
 
 
@@ -401,10 +393,7 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.team_player_accept(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.team_player_accept(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}")
@@ -412,12 +401,10 @@ async def bot_team_player_remove(interaction: discord.Interaction, player_name: 
     """Remove a player from your Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.team_player_remove(
             database=db,
             interaction=interaction,
             player_name=player_name,
-            log_channel=log_channel,
         )
 
 
@@ -426,12 +413,10 @@ async def bot_team_player_promote(interaction: discord.Interaction, player_name:
     """Promote a player to Team Co-Captain"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.team_cocaptain_promote(
             database=db,
             interaction=interaction,
             player_name=player_name,
-            log_channel=log_channel,
         )
 
 
@@ -440,12 +425,10 @@ async def bot_team_player_demote(interaction: discord.Interaction, player_name: 
     """Demote a player from Team Co-Captain"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.team_cocaptain_demote(
             database=db,
             interaction=interaction,
             player_name=player_name,
-            log_channel=log_channel,
         )
 
 
@@ -454,10 +437,7 @@ async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.team_player_leave(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.team_player_leave(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMDISBAND}")
@@ -465,10 +445,7 @@ async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.team_disband(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.team_disband(database=db, interaction=interaction)
 
 
 ######################
@@ -499,12 +476,10 @@ async def bot_match_accept(
     """Accept a Match with another Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.match_accept(
             database=db,
             interaction=interaction,
             match_invite_id=match_invite_id,
-            log_channel=log_channel,
         )
 
 
@@ -544,10 +519,7 @@ async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
-        await bot_functions.match_result_accept(
-            database=db, interaction=interaction, log_channel=log_channel
-        )
+        await bot_functions.match_result_accept(database=db, interaction=interaction)
 
 
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###

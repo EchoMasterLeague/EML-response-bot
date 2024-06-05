@@ -9,7 +9,6 @@ async def player_register(
     database: FullDatabase,
     interaction: discord.Interaction,
     region: str = None,
-    log_channel: discord.TextChannel = None,
 ):
     """Register a new Player"""
     try:
@@ -54,7 +53,7 @@ async def player_register(
         message = f"Player '{player_name}' registered for region '{region}'"
         await discord_helpers.final_message(interaction, message)
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{interaction.user.mention} has joined the League.",
         )
     except AssertionError as message:

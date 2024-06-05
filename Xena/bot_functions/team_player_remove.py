@@ -8,7 +8,6 @@ async def team_player_remove(
     database: FullDatabase,
     interaction: discord.Interaction,
     player_name: str,
-    log_channel: discord.TextChannel = None,
 ):
     """Remove a Player from a Team by name"""
     try:
@@ -55,7 +54,7 @@ async def team_player_remove(
             guild=interaction.guild, team_name=team_name
         )
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{player_discord_member.mention} has been removed from {team_role.mention}",
         )
     except AssertionError as message:

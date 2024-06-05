@@ -16,7 +16,6 @@ import discord
 async def match_result_accept(
     database: FullDatabase,
     interaction: discord.Interaction,
-    log_channel: discord.TextChannel = None,
 ):
     """Accept a Match Result Invite"""
     try:
@@ -258,10 +257,9 @@ async def match_result_accept(
         outcomes = "wins against" if outcome == MatchResult.WIN else outcomes
         outcomes = "loses to" if outcome == MatchResult.LOSS else outcomes
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{team_a_role.mention} {outcomes} {team_b_role.mention} in a `{match_type}` match",
         )
-
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

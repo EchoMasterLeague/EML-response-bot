@@ -7,7 +7,6 @@ import discord
 async def player_unregister(
     database: FullDatabase,
     interaction: discord.Interaction,
-    log_channel: discord.TextChannel = None,
 ):
     """Unregister a Player"""
     try:
@@ -36,7 +35,7 @@ async def player_unregister(
         message = f"You are no longer registered as a player"
         await discord_helpers.final_message(interaction, message)
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{interaction.user.mention} has left the League.",
         )
     except AssertionError as message:

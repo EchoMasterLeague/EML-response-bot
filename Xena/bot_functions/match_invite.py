@@ -92,6 +92,17 @@ async def match_invite(
             f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
         )
         await discord_helpers.final_message(interaction, message)
+        # Log to Channel
+        to_team_role = await discord_helpers.get_team_role(
+            guild=interaction.guild, team_name=opposing_team_name
+        )
+        from_team_role = await discord_helpers.get_team_role(
+            guild=interaction.guild, team_name=inviter_team_name
+        )
+        await discord_helpers.log_to_channel(
+            interaction=interaction,
+            message=f"Match Invite sent from {from_team_role.mention} to {to_team_role.mention}",
+        )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except EmlRecordAlreadyExists as message:

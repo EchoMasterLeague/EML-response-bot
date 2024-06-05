@@ -8,7 +8,6 @@ async def team_create(
     database: FullDatabase,
     interaction: discord.Interaction,
     team_name: str,
-    log_channel: discord.TextChannel = None,
 ):
     """Create a Team with the given name
 
@@ -52,7 +51,7 @@ async def team_create(
         user_message = f"Team created: '{team_name}'"
         await discord_helpers.final_message(interaction, user_message)
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"`{team_name}` has been created by {discord_member.mention}",
         )
     except AssertionError as message:
