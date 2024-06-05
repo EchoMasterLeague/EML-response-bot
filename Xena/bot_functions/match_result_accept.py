@@ -67,7 +67,7 @@ async def match_result_accept(
             scores_dict = {}
             scores_dict["round_1"] = f"{scores[0][0]: >3} : {scores[0][1]: >3}"
             scores_dict["round_2"] = f"{scores[1][0]: >3} : {scores[1][1]: >3}"
-            if scores[2][0] is not None and scores[2][1] is not None:
+            if (len(str(scores[2][0])) > 0) and (len(str(scores[2][1])) > 0):
                 scores_dict["round_3"] = f"{scores[2][0]: >3} : {scores[2][1]: >3}"
             else:
                 scores_dict["round_3"] = "Not played"
