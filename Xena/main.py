@@ -276,7 +276,7 @@ async def bot_rolelookup(
 ):
     """Show members with a specific role"""
     await bot_functions.command_log({**locals()})
-    bot_functions.show_role_members(
+    await bot_functions.show_role_members(
         interaction=interaction, role_input1=role_input1, role_input2=role_input2
     )
 
