@@ -445,7 +445,6 @@ async def bot_match_accept(
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
         log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.match_accept(
-            db,
             database=db,
             interaction=interaction,
             match_invite_id=match_invite_id,
@@ -474,7 +473,6 @@ async def bot_match_result_offer(
             (round_3_us, round_3_them),
         ]
         await bot_functions.match_result_invite(
-            db,
             database=db,
             interaction=interaction,
             match_type=match_type,
@@ -490,7 +488,7 @@ async def bot_match_result_accept(interaction: discord.Interaction):
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
         log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
         await bot_functions.match_result_accept(
-            db, database=db, interaction=interaction, log_channel=log_channel
+            database=db, interaction=interaction, log_channel=log_channel
         )
 
 
