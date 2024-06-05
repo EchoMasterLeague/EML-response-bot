@@ -69,8 +69,6 @@ async def match_result_accept(
             scores_dict["round_2"] = f"{scores[1][0]: >3} : {scores[1][1]: >3}"
             if (len(str(scores[2][0])) > 0) and (len(str(scores[2][1])) > 0):
                 scores_dict["round_3"] = f"{scores[2][0]: >3} : {scores[2][1]: >3}"
-            else:
-                scores_dict["round_3"] = "Not played"
             # reverse outcome
             outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
             match_type = await invite.get_field(MatchResultInviteFields.match_type)
