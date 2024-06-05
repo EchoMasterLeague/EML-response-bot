@@ -1,16 +1,13 @@
-from bot_functions.manage_commands import ManageCommands
-from bot_functions.manage_players import ManagePlayers
-from bot_functions.manage_teams import ManageTeams
-from bot_functions.manage_matches import ManageMatches
-from bot_functions.manage_system import ManageSystem
 from database.database_core import CoreDatabase
 from database.database_full import FullDatabase
+import bot_functions
 import discord
 import discord.ext.commands as commands
 import dotenv
 import gspread
 import os
 import utils.discord_helpers as discord_helpers
+import constants
 
 # Configuration
 THIS_DIR = os.path.dirname(__file__)
@@ -30,14 +27,7 @@ GUILD_ID = os.environ.get("GUILD_ID")
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
 database_core = CoreDatabase(gs_client)
-database = FullDatabase(database_core)
-
-# Bot Functions
-manage_players = ManagePlayers(database)
-manage_teams = ManageTeams(database)
-manage_commands = ManageCommands(database)
-manage_matches = ManageMatches(database)
-manage_system = ManageSystem(database)
+db = FullDatabase(database_core)
 
 # Discord Intents
 intents = discord.Intents.default()
@@ -75,23 +65,200 @@ async def on_ready():
 ###                                          Bot Commands Begin                                                     ###
 ###vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv###
 
+##############################
+### Informational Commands ###
+##############################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}help")
+async def help(interaction: discord.Interaction):
+    """
+    Displays information about available commands.
+    """
+    # f"`/{BOT_PREFIX}{constants.COMMAND_REGISTRATION}`: Gives a link to the website NA Team Registration Form\n"
+    help_message = (
+        f"**Help**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_HELP}`: Show this message\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_COMMANDS}`: Link command reference\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}`: Link to bot guide\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_SUPPORT}`: Link to #league-faq\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TICKET}`: Link to ticketing in Echo Master League\n"
+        f"**Rules**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_COC}`: Link to the Code of Conduct\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}`: Link to League Rules\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_AP}`: Link to the Accumulated Points system\n"
+        f"**Violations**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}`: Link to ticketing in Echo VR Lounge\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}`: Link to the violator action list\n"
+        f"**League Info**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_WEBSITE}`: Link to EML website\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_STAFF_APP}`: Link to EML staff application\n"
+        f"**Season Info**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}`: Show EU League Calendar\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_NA}`: Show NA League Calendar\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_MATCHES}`: Link to upcoming matches list\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_RANKS}`: Link to team rankings\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_ROSTERS}`: Link to roster\n"
+        f"**League Management Commands**\n"
+        f"**Players**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERREGISTER}`: Register into the League\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERUNREGISTER}`: Unregister from the League\n"
+        f"**Teams**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMINVITEACCEPT}`: Join a team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMCREATE}`: Create year own team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERADD}`: Invite a player to join your team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMLEAVE}`: Leave your team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMDISBAND}`: Disband your team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}`: Remove teammate from your team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERPROMOTE}`: Specify Co-Captain of your team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERDEMOTE}`: Remove Co-Captain role from your teammate\n"
+        f"**Matches**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEACCEPT}`: Accept match date and time proposed by another team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTACCEPT}`: Accept match results proposed by another team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}`: Propose match date and time to another team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}`: Propose match results to another team\n"
+        f"**Lookup**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPPLAYER}`: Show player details\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPTEAM}`: Show team details\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_LISTCOOLDOWNPLAYERS}`: Show players who recenly left a team\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_ROLELOOKUP}`: Show discord members with a specific role\n"
+        f"**Debug**\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}`: Show database cache pull timestamps\n"
+        f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}`: Show database write queue\n"
+    )
+    print(len(help_message))
+    await interaction.response.send_message(help_message)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_RANKS}")
+async def ranks(interaction: discord.Interaction):
+    link = constants.LINK_TEAM_RANKINGS
+    await interaction.response.send_message(f"Team Rankings: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHES}")
+async def matches(interaction: discord.Interaction):
+    link = constants.LINK_LEAGUE_MATCHES
+    await interaction.response.send_message(f"Upcoming Matches: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ROSTERS}")
+async def rosters(interaction: discord.Interaction):
+    link = constants.LINK_LEAGUE_ROSTER
+    await interaction.response.send_message(f"Roster: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_WEBSITE}")
+async def website(interaction: discord.Interaction):
+    link = constants.LINK_EML_WEBSITE
+    await interaction.response.send_message(f"EML Website: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}")
+async def website(interaction: discord.Interaction):
+    link = constants.LINK_BOT_INSTRUCTIONS
+    await interaction.response.send_message(f"Bot Instructions: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COMMANDS}")
+async def website(interaction: discord.Interaction):
+    link = constants.LINK_COMMAND_REFERENCE
+    await interaction.response.send_message(f"Command Reference: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}")
+async def leaguerules(interaction: discord.Interaction):
+    link = constants.LINK_LEAGUE_RULES
+    await interaction.response.send_message(f"League Rules: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COC}")
+async def coc(interaction: discord.Interaction):
+    link = constants.LINK_DISCORD_CHANNEL_EML_COC
+    await interaction.response.send_message(f"EML Code of Conduct: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TICKET}")
+async def ticket(interaction: discord.Interaction):
+    link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
+    await interaction.response.send_message(f"EML Tickets: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_SUPPORT}")
+async def support(interaction: discord.Interaction):
+    link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
+    await interaction.response.send_message(f"EML Support: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_STAFF_APP}")
+async def staff_app(interaction: discord.Interaction):
+    link = constants.LINK_STAFF_APPLICATION
+    await interaction.response.send_message(f"Staff Application: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}")
+async def staff_app(interaction: discord.Interaction):
+    link = constants.LINK_CALENDAR_EU
+    await interaction.response.send_message(f"**Europe**: [EU]({link})")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_CALENDAR_NA}")
+async def staff_app(interaction: discord.Interaction):
+    link = constants.LINK_CALENDAR_NA
+    await interaction.response.send_message(f"**North America**: [NA]({link})")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_AP}")
+async def ap(interaction: discord.Interaction):
+    link = constants.LINK_ACCUMULATED_POINTS
+    await interaction.response.send_message(f"Accumlulated Points: {link}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}")
+async def action_list(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Action List {constants.LINK_ACTION_LIST}")
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}")
+async def lounge_report(interaction: discord.Interaction):
+    link_lounge = constants.LINK_ECHO_VR_LOUNGE
+    link_report = constants.LINK_ECHO_VR_LOUNGE_TICKETS
+    await interaction.response.send_message(
+        f"**Echo VR Lounge Reporting**:\n"
+        f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system.\n\n"
+        f"Ticket Channel: {link_report}\n"
+        f"Echo VR Lounge: {link_lounge}\n"
+    )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ROLELOOKUP}")
+async def bot_rolelookup(
+    interaction: discord.Interaction,
+    role_input1: str,
+    role_input2: str = None,
+):
+    bot_functions.show_role_members(
+        interaction=interaction, role_input1=role_input1, role_input2=role_input2
+    )
+
+
 #######################
 ### System Commands ###
 #######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbqueue")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}")
 async def bot_z_debug_db_queue(interaction: discord.Interaction):
     """Debug the pending writes"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_system.list_pending_writes(interaction)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.system_list_writes(database=db, interaction=interaction)
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}zdebugdbcache")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}")
 async def bot_z_debug_db_cache(interaction: discord.Interaction):
     """Debug the local cache"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_system.list_local_cache(interaction)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.system_list_cache(database=db, interaction=interaction)
 
 
 #######################
@@ -99,40 +266,45 @@ async def bot_z_debug_db_cache(interaction: discord.Interaction):
 #######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}lookupplayer")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOOKUPPLAYER}")
 async def bot_lookup_player(
     interaction: discord.Interaction, player_name: str = None, discord_id: str = None
 ):
     """Lookup a Player by name or Discord ID"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_players.get_player_details(interaction, player_name, discord_id)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_player_details(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            discord_id=discord_id,
+        )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}playerregister")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_PLAYERREGISTER}")
 async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_players.register_player(
-            interaction=interaction, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.player_register(
+            database=db, interaction=interaction, log_channel=log_channel
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}playerunregister")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_PLAYERUNREGISTER}")
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_players.unregister_player(
-            interaction=interaction, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.player_unregister(
+            database=db, interaction=interaction, log_channel=log_channel
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}listcooldownplayers")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LISTCOOLDOWNPLAYERS}")
 async def bot_lookup_cooldown_players(interaction: discord.Interaction):
     """List players on cooldown"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_players.get_cooldown_players(interaction)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_list_cooldown(database=db, interaction=interaction)
 
 
 #####################
@@ -140,87 +312,108 @@ async def bot_lookup_cooldown_players(interaction: discord.Interaction):
 #####################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}lookupteam")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOOKUPTEAM}")
 async def bot_lookup_team(interaction: discord.Interaction, team_name: str = None):
     """Lookup a Team by name"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.get_team_details(interaction, team_name)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}teamcreate")
-async def bot_team_create(interaction: discord.Interaction, team_name: str):
-    """Create a new Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.create_team(
-            interaction=interaction, team_name=team_name, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.show_team_details(
+            database=db, interaction=interaction, team_name=team_name
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayeradd")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMCREATE}")
+async def bot_team_create(interaction: discord.Interaction, team_name: str):
+    """Create a new Team"""
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_create(
+            database=db,
+            interaction=interaction,
+            team_name=team_name,
+            log_channel=log_channel,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERADD}")
 async def bot_team_invite_offer(
     interaction: discord.Interaction, player_name: str = None, discord_id: str = None
 ):
     """Invite a player to join your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_teams.invite_player_to_team(interaction, player_name, discord_id)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.team_player_invite(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            player_discord_id=discord_id,
+        )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teaminviteaccept")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMINVITEACCEPT}")
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.accept_invite(
-            interaction=interaction, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_accept(
+            database=db, interaction=interaction, log_channel=log_channel
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerkick")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}")
 async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
     """Remove a player from your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.remove_player_from_team(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_remove(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerpromote")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERPROMOTE}")
 async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
     """Promote a player to Team Co-Captain"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.promote_player_to_co_captain(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_cocaptain_promote(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamplayerdemote")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERDEMOTE}")
 async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
     """Demote a player from Team Co-Captain"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.demote_player_from_co_captain(
-            interaction=interaction, player_name=player_name, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_cocaptain_demote(
+            database=db,
+            interaction=interaction,
+            player_name=player_name,
+            log_channel=log_channel,
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamleave")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMLEAVE}")
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.leave_team(interaction=interaction, log_channel=log_channel)
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_player_leave(
+            database=db, interaction=interaction, log_channel=log_channel
+        )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}teamdisband")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMDISBAND}")
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_teams.disband_team(
-            interaction=interaction, log_channel=log_channel
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.team_disband(
+            database=db, interaction=interaction, log_channel=log_channel
         )
 
 
@@ -229,32 +422,38 @@ async def bot_team_disband(interaction: discord.Interaction):
 ######################
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchdatepropose")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}")
 async def bot_match_propose(
     interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
 ):
     """Propose a Match with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        await manage_matches.send_match_invite(
-            interaction, match_type, opponent_name, date
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        await bot_functions.match_invite(
+            database=db,
+            interaction=interaction,
+            match_type=match_type,
+            opposing_team_name=opponent_name,
+            date_time=date,
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchdateaccept")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEACCEPT}")
 async def bot_match_accept(
     interaction: discord.Interaction, match_invite_id: str = None
 ):
     """Accept a Match with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_matches.accept_match_invite(
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.match_accept(
+            db,
+            database=db,
             interaction=interaction,
             match_invite_id=match_invite_id,
             log_channel=log_channel,
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultpropose")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
     match_type: str,
@@ -268,13 +467,15 @@ async def bot_match_result_offer(
     round_3_them: int = None,
 ):
     """Propose a Match Result with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
         scores = [
             (round_1_us, round_1_them),
             (round_2_us, round_2_them),
             (round_3_us, round_3_them),
         ]
-        await manage_matches.send_result_invite(
+        await bot_functions.match_result_invite(
+            db,
+            database=db,
             interaction=interaction,
             match_type=match_type,
             opposing_team_name=opponent_name,
@@ -283,217 +484,13 @@ async def bot_match_result_offer(
         )
 
 
-@bot.tree.command(name=f"{BOT_PREFIX}matchresultaccept")
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHRESULTACCEPT}")
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
-    if await manage_commands.is_command_enabled(interaction):
-        log_channel = await discord_helpers.get_log_channel(interaction.guild)
-        await manage_matches.accept_result_invite(
-            interaction=interaction, log_channel=log_channel
-        )
-
-
-#########################
-### Original Commands ###
-#########################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}help")
-async def help(interaction: discord.Interaction):
-    """
-    Displays information about available commands.
-    """
-    help_message = (
-        "Here are the available commands:\n"
-        "`/ranks`: Display team rankings.\n"
-        "`/matches`: Display season matches and results.\n"
-        "`/rosters`: Display team rosters.\n"
-        "`/registration`: Display registration information.\n"
-        "`/website`: Display the league website.\n"
-        "`/instructions`: Instructions for the Commands.\n"
-        "`/commands`: The Commands.\n"
-        "`/league_rules`: Display league rules.\n"
-        "`/server_coc`: Display server Code of Conduct.\n"
-        "`/ticket`: Display ticket information.\n"
-        "`/support`: Display support information.\n"
-        "`/staff_app`: Display staff application link.\n"
-        "`/calendar_na`: Display the na league calendar.\n"
-        "`/calendar_eu`: Display the eu league calendar.\n"
-        "`/eml_action_list`: Display the EML action list.\n"
-        "`/list_members <role>`: List members with a specific role."
-    )
-
-    await interaction.response.send_message(help_message)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}ranks")
-async def ranks(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/team-rankings-2/"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}matches")
-async def matches(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/current-week-matches-and-results/"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}rosters")
-async def rosters(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/13vcfXkCejl9I4dtlA9ZI19dHGYh7aWIQXUU5MWhpYt0/edit?usp=sharing"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}website")
-async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(f"https://echomasterleague.com/")
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}instructions")
-async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}commands")
-async def website(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}league_rules")
-async def leaguerules(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/eml-league-rules/"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}coc")
-async def coc(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380146506866823"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}ticket")
-async def ticket(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380148436242475"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}support")
-async def support(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://discord.com/channels/1182380144887865406/1182380148436242476"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}staff_app")
-async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://echomasterleague.com/staff-application/"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}calendar_na")
-async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}calendar_eu")
-async def staff_app(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}ap")
-async def ap(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}action_list")
-async def action_list(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}lounge_report")
-async def lounge_report(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system. https://discord.gg/echo-combat-lounge-779349159852769310"
-    )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}rolelookup")
-async def rolelookup(
-    interaction: discord.Interaction,
-    role_input1: str,
-    role_input2: str = None,
-):
-    # Get the guild from the interaction
-    guild = interaction.guild
-
-    if guild:
-        # Get role based on the provided role_input1 (case-insensitive)
-        role1 = discord.utils.get(
-            guild.roles, name=role_input1, case_insensitive=True
-        ) or discord.utils.get(guild.roles, mention=role_input1)
-
-        # If role_input2 is provided, get the role based on it (case-insensitive)
-        role2 = (
-            discord.utils.get(guild.roles, name=role_input2, case_insensitive=True)
-            or discord.utils.get(guild.roles, mention=role_input2)
-            if role_input2
-            else None
-        )
-
-        if role1:
-            # Print some debug information
-            print(
-                f"Roles found: {role1.name}, {role1.id}, {role2.name if role2 else None}, {role2.id if role2 else None}"
-            )
-
-            # Get members with specified roles (case-insensitive comparison)
-            if role2:
-                members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if all(role in member.roles for role in (role1, role2))
-                ]
-            else:
-                members_with_roles = [
-                    member.display_name
-                    for member in guild.members
-                    if role1 in member.roles
-                ]
-
-            if members_with_roles:
-                await interaction.response.send_message(
-                    f"Members with {role1.mention} role{' and ' + role2.mention if role2 else ''}: {', '.join(members_with_roles)}",
-                    ephemeral=True,
-                )
-            else:
-                await interaction.response.send_message(
-                    f"No members found with {role1.mention} role{' and ' + role2.mention if role2 else ''}.",
-                    ephemeral=True,
-                )
-        else:
-            await interaction.response.send_message("Role not found.", ephemeral=True)
-    else:
-        await interaction.response.send_message(
-            "Error: Guild not found.", ephemeral=True
+    if await bot_functions.command_is_enabled(database=db, interaction=interaction):
+        log_channel = await discord_helpers.get_log_channel(guild=interaction.guild)
+        await bot_functions.match_result_accept(
+            db, database=db, interaction=interaction, log_channel=log_channel
         )
 
 

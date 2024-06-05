@@ -27,7 +27,7 @@ class CoreDatabase:
         self._db_write_queue: list[list[int | float | str | None]] = []
         try:
             self._db_spreadsheet = gs_client.open_by_url(
-                constants.LEAGUE_DB_SPREADSHEET_URL
+                constants.LINK_DB_SPREADSHEET_URL
             )
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
