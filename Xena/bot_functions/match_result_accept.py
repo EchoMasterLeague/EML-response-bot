@@ -64,12 +64,12 @@ async def match_result_accept(
                     await invite.get_field(MatchResultInviteFields.round_3_score_a),
                 ),
             ]
-            scores_dict = {
-                "round_1": f"{scores[0][0]: >3} : {scores[0][1]: >3}",
-                "round_2": f"{scores[1][0]: >3} : {scores[1][1]: >3}",
-                "round_3": f"{scores[2][0]: >3} : {scores[2][1]: >3}",
-            }
-            if scores_dict["round_3"] == " : ":
+            scores_dict = {}
+            scores_dict["round_1"] = f"{scores[0][0]: >3} : {scores[0][1]: >3}"
+            scores_dict["round_2"] = f"{scores[1][0]: >3} : {scores[1][1]: >3}"
+            if scores[2][0] is not None and scores[2][1] is not None:
+                scores_dict["round_3"] = f"{scores[2][0]: >3} : {scores[2][1]: >3}"
+            else:
                 scores_dict["round_3"] = "Not played"
             # reverse outcome
             outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
