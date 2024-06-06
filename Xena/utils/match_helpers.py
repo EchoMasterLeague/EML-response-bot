@@ -4,7 +4,7 @@ from database.enums import MatchResult
 ### Outcome ###
 
 
-async def get_reversed_outcome(self, outcome: MatchResult) -> MatchResult:
+async def get_reversed_outcome(outcome: MatchResult) -> MatchResult:
     """Reverse the outcome of the match"""
     transform_dict = {
         MatchResult.WIN: MatchResult.LOSS,
