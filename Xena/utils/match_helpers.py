@@ -57,11 +57,12 @@ async def get_reversed_scores(
     intput and output in the form of `scores[round][team] = score`
     rounds maintain order, teams are reversed
     """
-    return [
+    reversed_scores = [
         [scores[0][1], scores[0][0]],
         [scores[1][1], scores[1][0]],
         [scores[2][1], scores[2][0]],
     ]
+    return reversed_scores
 
 
 async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, str]:
@@ -70,8 +71,10 @@ async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, s
     output: scores[round] = "team_a_score : team_b_score"
     """
     # Convert each score to a 3 character string
+    print("scores", scores)
     for i in range(3):
         for j in range(2):
+            print(i, j, scores[i][j])
             if isinstance(scores[i][j], int):
                 if j == 0:
                     scores[i][j] = str(scores[i][j]).rjust(3)
