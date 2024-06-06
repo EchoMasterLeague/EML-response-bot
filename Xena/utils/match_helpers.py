@@ -51,7 +51,7 @@ async def get_scores_from_list(scores: list[int | None]) -> list[list[int | None
 
 
 async def get_reversed_scores(
-    self, scores: list[list[int | None]] = None
+    scores: list[list[int | None]] = None,
 ) -> list[list[int | None]]:
     """Reverse the scores of the match
     intput and output in the form of `scores[round][team] = score`
