@@ -8,15 +8,25 @@ async def command_disable(
 ):
     """Disable a command"""
     try:
-        interaction.response.defer()  # This could take a while
-        records = await database.table_command_lock.get_command_lock_records(
+        # Defer Response
+        interaction.response.defer()
+        # Existing Records
+        existing_records = await database.table_command_lock.get_command_lock_records(
             command_name=command_name
         )
-        record = records[0] if records else None
-        record = await database.table_command_lock.update_command_lock_record(
-            record, is_allowed=False
+        record = existing_records[0] if existing_records else None
+        if not record:
+            # Create Record
+            record = await database.table_command_lock.create_command_lock_record(
+                command_name, is_allowed=False
+            )
+        else:
+            # Update Record
+            await record.set_field("is_allowed", False)
+            await database.table_command_lock.update_command_lock_record(record)
+        # Response
+        await discord_helpers.final_message(
+            interaction, f"Command `{command_name}` disabled."
         )
-        message = f"Command `{command_name}` disabled."
-        await discord_helpers.final_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

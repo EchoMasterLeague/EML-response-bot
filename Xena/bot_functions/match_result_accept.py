@@ -56,13 +56,11 @@ async def match_result_accept(
             options_dict[invite_id] = f"Accept ({option_number})"
             match_result_offers[str(option_number)] = {
                 "invite_id": invite_id,
-                "created_at": await invite.get_field(ResultFields.created_at),
-                "expires_at": await invite.get_field(ResultFields.invite_expires_at),
-                "match_type": await invite.get_field(ResultFields.match_type),
-                "opposing_team": await invite.get_field(ResultFields.vw_from_team),
-                "your_outcome": await match_helpers.get_reversed_outcome(
-                    await invite.get_field(ResultFields.match_outcome)
-                ),
+                "created_at": f"{await invite.get_field(ResultFields.created_at)}",
+                "expires_at": f"{await invite.get_field(ResultFields.invite_expires_at)}",
+                "match_type": f"{await invite.get_field(ResultFields.match_type)}",
+                "opposing_team": f"{await invite.get_field(ResultFields.vw_from_team)}",
+                "your_outcome": f"{await match_helpers.get_reversed_outcome(await invite.get_field(ResultFields.match_outcome))}",
                 "scores": await match_helpers.get_scores_display_dict(
                     await match_helpers.get_reversed_scores(await invite.get_scores())
                 ),
@@ -101,14 +99,14 @@ async def match_result_accept(
         ############################
         #        CHOICE            #
         ############################
-
         # Wait for Choice
         await view.wait()
         # Get Choice
         choice = view.value
         if not choice or choice == "cancel":
-            message = "No match result selected."
-            return await discord_helpers.final_message(interaction, message)
+            return await discord_helpers.final_message(
+                interaction, message=f"No match result selected."
+            )
         # Choice: Clear all invites
         if choice == "clearall":
             for invite in match_result_invites:
@@ -119,10 +117,10 @@ async def match_result_accept(
             return await discord_helpers.final_message(interaction, message)
         # Choice: Accept (#)
         selected_invite = None
-        for match_result_invite in match_result_invites:
-            invite_id = await match_result_invite.get_field(ResultFields.record_id)
+        for invite in match_result_invites:
+            invite_id = await invite.get_field(ResultFields.record_id)
             if invite_id == choice:
-                selected_invite = match_result_invite
+                selected_invite = invite
                 break
         assert selected_invite, f"Match Result Invite not found."
 
@@ -178,12 +176,12 @@ async def match_result_accept(
         }
         response_dictionary = {
             "results_status": "confirmed",
-            "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
+            "match_time_utc": f"{await match_record.get_field(MatchFields.match_timestamp)}",
             "match_time_eml": f"{await match_record.get_field(MatchFields.match_date)} {await match_record.get_field(MatchFields.match_time_et)}",
-            "match_type": await match_record.get_field(MatchFields.match_type),
-            "team_a": await match_record.get_field(MatchFields.vw_team_a),
-            "team_b": await match_record.get_field(MatchFields.vw_team_b),
-            "winner": response_outcomes[outcome],
+            "match_type": f"{await match_record.get_field(MatchFields.match_type)}",
+            "team_a": f"{await match_record.get_field(MatchFields.vw_team_a)}",
+            "team_b": f"{await match_record.get_field(MatchFields.vw_team_b)}",
+            "winner": f"{response_outcomes[outcome]}",
             "scores": await match_helpers.get_scores_display_dict(
                 await match_record.get_scores()
             ),
@@ -193,14 +191,17 @@ async def match_result_accept(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Match Result Invite accepted.\n{response_code_block}\nMatch results confirmed.",
+            message=(
+                f"Match Result Invite accepted:\n"
+                f"{response_code_block}\n"
+                f"Match results confirmed."
+            ),
         )
 
         ############################
         #        LOGGING           #
         ############################
 
-        # [@TEAM A] "wins against" or "loses to" [@TEAM B]
         log_outcomes = {
             MatchResult.WIN: "wins against",
             MatchResult.LOSS: "loses to",

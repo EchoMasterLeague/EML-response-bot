@@ -6,7 +6,6 @@ import discord.ext.commands as commands
 import dotenv
 import gspread
 import os
-import utils.discord_helpers as discord_helpers
 import constants
 
 # Configuration
@@ -474,17 +473,11 @@ async def bot_match_propose(
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEACCEPT}")
-async def bot_match_accept(
-    interaction: discord.Interaction, match_invite_id: str = None
-):
+async def bot_match_accept(interaction: discord.Interaction):
     """Accept a Match with another Team"""
     await bot_functions.command_log({**locals()})
     if await bot_functions.command_is_enabled(database=db, interaction=interaction):
-        await bot_functions.match_accept(
-            database=db,
-            interaction=interaction,
-            match_invite_id=match_invite_id,
-        )
+        await bot_functions.match_accept(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}")
