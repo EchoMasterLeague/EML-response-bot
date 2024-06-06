@@ -164,7 +164,7 @@ async def match_result_invite(
 
         # gather details
         winner = "draw"
-        winner = "from_team" if result == MatchResult.WIN else winner
+        winner = "my_team" if result == MatchResult.WIN else winner
         winner = "to_team" if result == MatchResult.LOSS else winner
         time_eml = (
             await match_record.get_field(MatchFields.match_date)
@@ -177,7 +177,7 @@ async def match_result_invite(
             "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
             "match_time_eml": time_eml,
             "match_type": await match_record.get_field(MatchFields.match_type),
-            "from_team": inviter_team_name,
+            "my_team": inviter_team_name,
             "to_team": opposing_team_name,
             "winner": winner,
             "scores": await match_helpers.get_scores_display_dict(
