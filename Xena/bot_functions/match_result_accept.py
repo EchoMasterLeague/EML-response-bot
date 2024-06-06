@@ -67,6 +67,12 @@ async def match_result_accept(
             options_dict[invite_id] = f"Accept ({option_number})"
             match_result_offers[str(option_number)] = {
                 "invite_id": invite_id,
+                "created_at": await invite.get_field(
+                    MatchResultInviteFields.created_at
+                ),
+                "expires_at": await invite.get_field(
+                    MatchResultInviteFields.invite_expires_at
+                ),
                 "match_type": match_type,
                 "opposing_team": team_name,
                 "your_outcome": reversed_outcome,
