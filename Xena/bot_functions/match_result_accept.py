@@ -40,7 +40,7 @@ async def match_result_accept(
         )
         assert (
             match_result_invites
-        ), f"No match results availavble to confirm. You may want to create a result offer for another team."
+        ), f"No match results available to confirm. You may want to create a result offer for another team."
 
         ############################
         #          OPTIONS         #
