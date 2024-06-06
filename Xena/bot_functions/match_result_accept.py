@@ -55,8 +55,11 @@ async def match_result_accept(
             invite_id = await invite.get_field(MatchResultInviteFields.record_id)
             # reverse scores
             scores = await invite.get_scores()
+            print(scores)
             reversed_scores = await match_helpers.get_reversed_scores(scores)
+            print(reversed_scores)
             scores_dict = await match_helpers.get_scores_display_dict(reversed_scores)
+            print(scores_dict)
             # reverse outcome
             outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
             reversed_outcome = await match_helpers.get_reversed_outcome(outcome)
@@ -68,8 +71,8 @@ async def match_result_accept(
             match_result_offers[str(option_number)] = {
                 "invite_id": invite_id,
                 "match_type": match_type,
-                "team": team_name,
-                "outcome": reversed_outcome,
+                "opposing_team": team_name,
+                "your_outcome": reversed_outcome,
                 "scores": scores_dict,
             }
         # Create the view to display the options
