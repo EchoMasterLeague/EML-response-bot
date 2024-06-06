@@ -55,9 +55,8 @@ async def match_result_accept(
             invite_id = await invite.get_field(MatchResultInviteFields.record_id)
             # reverse scores
             scores = await invite.get_scores()
-            print(scores)
             reversed_scores = await match_helpers.get_reversed_scores(scores)
-            scores_dict = match_helpers.get_scores_display_dict(reversed_scores)
+            scores_dict = await match_helpers.get_scores_display_dict(reversed_scores)
             # reverse outcome
             outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
             reversed_outcome = await match_helpers.get_reversed_outcome(outcome)
