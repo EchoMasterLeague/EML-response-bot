@@ -362,33 +362,36 @@ class MatchRecord(BaseRecord):
         data_list[MatchFields.round_3_score_b.value] = new_score_list[5]
         return data_list
 
-    async def reverse_scores(self) -> None:
-        """Reverse the scores of the match"""
-        round_1_score_a = self._data_dict[MatchFields.round_1_score_a.name]
-        round_1_score_b = self._data_dict[MatchFields.round_1_score_b.name]
-        round_2_score_a = self._data_dict[MatchFields.round_2_score_a.name]
-        round_2_score_b = self._data_dict[MatchFields.round_2_score_b.name]
-        round_3_score_a = self._data_dict[MatchFields.round_3_score_a.name]
-        round_3_score_b = self._data_dict[MatchFields.round_3_score_b.name]
-        self._data_dict[MatchFields.round_1_score_a.name] = round_1_score_b
-        self._data_dict[MatchFields.round_1_score_b.name] = round_1_score_a
-        self._data_dict[MatchFields.round_2_score_a.name] = round_2_score_b
-        self._data_dict[MatchFields.round_2_score_b.name] = round_2_score_a
-        self._data_dict[MatchFields.round_3_score_a.name] = round_3_score_b
-        self._data_dict[MatchFields.round_3_score_b.name] = round_3_score_a
+    async def set_scores(self, scores: list[list[int | None]]) -> None:
+        """Set the scores of the match
+        from the form of `scores[round][team] = score`
+        """
+        self._data_dict[MatchFields.round_1_score_a.name] = scores[0][0]
+        self._data_dict[MatchFields.round_1_score_b.name] = scores[0][1]
+        self._data_dict[MatchFields.round_2_score_a.name] = scores[1][0]
+        self._data_dict[MatchFields.round_2_score_b.name] = scores[1][1]
+        self._data_dict[MatchFields.round_3_score_a.name] = scores[2][0]
+        self._data_dict[MatchFields.round_3_score_b.name] = scores[2][1]
 
-    async def reverse_outcome(self) -> None:
-        """Reverse the outcome of the match"""
-        transform_dict = {
-            MatchResult.WIN.value: MatchResult.LOSS.value,
-            MatchResult.LOSS.value: MatchResult.WIN.value,
-            MatchResult.DRAW.value: MatchResult.DRAW.value,
-        }
-        outcome = self._data_dict[MatchFields.outcome.name]
-        if outcome in transform_dict.keys():
-            self._data_dict[MatchFields.outcome.name] = transform_dict[outcome]
-        elif outcome:
-            raise ValueError(f"Outcome '{outcome}' not available")
+    async def get_scores(self) -> list[list[int | None]]:
+        """Return the scores of the match
+        in the form of `scores[round][team] = score`
+        """
+        scores = [
+            [
+                self._data_dict[MatchFields.round_1_score_a.name],
+                self._data_dict[MatchFields.round_1_score_b.name],
+            ],
+            [
+                self._data_dict[MatchFields.round_2_score_a.name],
+                self._data_dict[MatchFields.round_2_score_b.name],
+            ],
+            [
+                self._data_dict[MatchFields.round_3_score_a.name],
+                self._data_dict[MatchFields.round_3_score_b.name],
+            ],
+        ]
+        return scores
 
 
 class MatchInviteRecord(BaseRecord):
@@ -417,3 +420,23 @@ class MatchResultInviteRecord(BaseRecord):
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
+
+    async def get_scores(self) -> list[list[int | None]]:
+        """Return the scores of the match
+        in the form of `scores[round][team] = score`
+        """
+        scores = [
+            [
+                self._data_dict[MatchResultInviteFields.round_1_score_a.name],
+                self._data_dict[MatchResultInviteFields.round_1_score_b.name],
+            ],
+            [
+                self._data_dict[MatchResultInviteFields.round_2_score_a.name],
+                self._data_dict[MatchResultInviteFields.round_2_score_b.name],
+            ],
+            [
+                self._data_dict[MatchResultInviteFields.round_3_score_a.name],
+                self._data_dict[MatchResultInviteFields.round_3_score_b.name],
+            ],
+        ]
+        return scores

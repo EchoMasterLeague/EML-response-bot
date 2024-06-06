@@ -1,7 +1,6 @@
 from database.fields import (
     PlayerFields,
     TeamFields,
-    MatchInviteFields,
     MatchResultInviteFields,
     MatchFields,
 )
@@ -9,7 +8,7 @@ from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import MatchResult, MatchStatus, InviteStatus
 from database.records import MatchRecord
-from utils import discord_helpers, database_helpers, general_helpers
+from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
 
 
@@ -19,8 +18,7 @@ async def match_result_accept(
 ):
     """Accept a Match Result Invite"""
     try:
-        # this could take a while, so defer the response
-        # await interaction.response.defer()
+        # Cannot defer because this is interactive
         # Get invitee player details from discord_id
         invitee_player = await database_helpers.get_player_details_from_discord_id(
             database, interaction.user.id
@@ -32,11 +30,11 @@ async def match_result_accept(
             database, player=invitee_player, assert_any_captain=True
         )
         invitee_team = invitee_details.team
-        invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
+        to_team_id = await invitee_team.get_field(TeamFields.record_id)
         # Get match result invites for invitee team
         match_result_invites = (
             await database.table_match_result_invite.get_match_result_invite_records(
-                to_team_id=invitee_team_id
+                to_team_id=to_team_id
             )
         )
         assert (
@@ -48,44 +46,24 @@ async def match_result_accept(
         option_number = 0
         for invite in match_result_invites:
             option_number += 1
-            invite_id = await invite.get_field(MatchInviteFields.record_id)
+            invite_id = await invite.get_field(MatchResultInviteFields.record_id)
             # reverse scores
-            scores = [
-                (
-                    await invite.get_field(MatchResultInviteFields.round_1_score_b),
-                    await invite.get_field(MatchResultInviteFields.round_1_score_a),
-                ),
-                (
-                    await invite.get_field(MatchResultInviteFields.round_2_score_b),
-                    await invite.get_field(MatchResultInviteFields.round_2_score_a),
-                ),
-                (
-                    await invite.get_field(MatchResultInviteFields.round_3_score_b),
-                    await invite.get_field(MatchResultInviteFields.round_3_score_a),
-                ),
-            ]
-            scores_dict = {}
-            scores_dict["round_1"] = f"{scores[0][0]: >3} : {scores[0][1]: >3}"
-            scores_dict["round_2"] = f"{scores[1][0]: >3} : {scores[1][1]: >3}"
-            if scores[2][0] and scores[2][1]:
-                print(scores[2][0], scores[2][1])
-                scores_dict["round_3"] = (
-                    f"{str(scores[2][0]): >3} : {str(scores[2][1]): >3}"
-                )
+            scores = await invite.get_scores()
+            reversed_scores = await match_helpers.get_reversed_scores(scores)
+            scores_dict = match_helpers.get_scores_display_dict(reversed_scores)
             # reverse outcome
             outcome = await invite.get_field(MatchResultInviteFields.match_outcome)
+            reversed_outcome = await match_helpers.get_reversed_outcome(outcome)
+            # get match type and team name
             match_type = await invite.get_field(MatchResultInviteFields.match_type)
             team_name = await invite.get_field(MatchResultInviteFields.vw_from_team)
-            if outcome == MatchResult.WIN:
-                outcome = MatchResult.LOSS
-            elif outcome == MatchResult.LOSS:
-                outcome = MatchResult.WIN
+            # add to options_dict
             options_dict[invite_id] = f"Accept ({option_number})"
             match_result_offers[str(option_number)] = {
                 "invite_id": invite_id,
                 "match_type": match_type,
                 "team": team_name,
-                "outcome": outcome,
+                "outcome": reversed_outcome,
                 "scores": scores_dict,
             }
         # Create the view to display the options
@@ -144,107 +122,73 @@ async def match_result_accept(
                 selected_invite = match_result_invite
                 break
         assert selected_invite, f"Match Result Invite not found."
-        # update match result invite record
-        await selected_invite.set_field(
-            MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
+        # Get details from the selected invite record
+        from_team_id = await selected_invite.get_field(
+            MatchResultInviteFields.from_team_id
         )
-        await selected_invite.set_field(
-            MatchResultInviteFields.to_player_id, invitee_player_id
-        )
-        await database.table_match_result_invite.update_match_result_invite_record(
-            selected_invite
-        )
-        # get relevant fields from match record
+        to_team_id = await selected_invite.get_field(MatchResultInviteFields.to_team_id)
+        outcome = await selected_invite.get_field(MatchResultInviteFields.match_outcome)
+        scores = await selected_invite.get_scores()
+        # Get details from the associated match record
         match_id = await selected_invite.get_field(MatchResultInviteFields.match_id)
         match_records = await database.table_match.get_match_records(record_id=match_id)
         assert match_records, f"Error: Failed to find match record."
         match_record = match_records[0]
         team_a_id = await match_record.get_field(MatchFields.team_a_id)
         team_b_id = await match_record.get_field(MatchFields.team_b_id)
-        # get relevant fields from match results invite record
-        # get relevant fields from match result invite
-        inviter_team_id = await selected_invite.get_field(
-            MatchResultInviteFields.from_team_id
-        )
-        invitee_team_id = await selected_invite.get_field(
-            MatchResultInviteFields.to_team_id
-        )
-
-        outcome = outcome = await selected_invite.get_field(
-            MatchResultInviteFields.match_outcome
-        )
-        scores = [
-            [
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_1_score_a
-                ),
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_1_score_b
-                ),
-            ],
-            [
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_2_score_a
-                ),
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_2_score_b
-                ),
-            ],
-            [
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_3_score_a
-                ),
-                await selected_invite.get_field(
-                    MatchResultInviteFields.round_3_score_b
-                ),
-            ],
-        ]
-        # reverse scores and oucome if the teams are listed the other way in the match record
-        if team_a_id == invitee_team_id:
-            scores = [
-                [scores[0][1], scores[0][0]],
-                [scores[1][1], scores[1][0]],
-                [scores[2][1], scores[2][0]],
-            ]
-            if outcome == MatchResult.WIN:
-                outcome = MatchResult.LOSS
-            elif outcome == MatchResult.LOSS:
-                outcome = MatchResult.WIN
-        # verify this isn't the same team on both sides
         assert team_a_id != team_b_id, f"Cannot accept scores sent by your own team."
-        # update match record
+        # reverse scores and oucome if the teams are listed the other way in the match record
+        if team_a_id != from_team_id:
+            outcome = await match_helpers.get_reversed_outcome(outcome)
+            scores = await match_helpers.get_reversed_scores(scores)
+        # Update Match Record
         await match_record.set_field(
             MatchFields.match_status, MatchStatus.COMPLETED.value
         )
-        await match_record.set_field(MatchFields.round_1_score_a, scores[0][0])
-        await match_record.set_field(MatchFields.round_1_score_b, scores[0][1])
-        await match_record.set_field(MatchFields.round_2_score_a, scores[1][0])
-        await match_record.set_field(MatchFields.round_2_score_b, scores[1][1])
-        await match_record.set_field(MatchFields.round_3_score_a, scores[2][0])
-        await match_record.set_field(MatchFields.round_3_score_b, scores[2][1])
+        await match_record.set_scores(scores)
         await match_record.set_field(MatchFields.outcome, outcome)
         match_record = MatchRecord(await match_record.to_list())  # normalize
         await database.table_match.update_match_record(match_record)
-        # Update match result invite record
-        await selected_invite.set_field(
-            MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
-        )
+        # Update Match Result Invite record
         await selected_invite.set_field(
             MatchResultInviteFields.to_player_id, invitee_player_id
+        )
+        await selected_invite.set_field(
+            MatchResultInviteFields.invite_status, InviteStatus.ACCEPTED
         )
         await database.table_match_result_invite.update_match_result_invite_record(
             selected_invite
         )
-        # delete match result invite record
         await database.table_match_result_invite.delete_match_result_invite_record(
             selected_invite
         )
         # success
+        winner = "draw"
+        winner = "team_a" if outcome == MatchResult.WIN else winner
+        winner = "team_b" if outcome == MatchResult.LOSS else winner
+        time_eml = (
+            await match_record.get_field(MatchFields.match_date)
+            + " "
+            + await match_record.get_field(MatchFields.match_time_et)
+        )
+        match_dict = {
+            "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
+            "match_time_eml": time_eml,
+            "match_status": await match_record.get_field(MatchFields.match_status),
+            "match_type": await match_record.get_field(MatchFields.match_type),
+            "team_a": await match_record.get_field(MatchFields.vw_team_a),
+            "team_b": await match_record.get_field(MatchFields.vw_team_b),
+            "winner": winner,
+            "scores": await match_helpers.get_scores_display_dict(
+                await match_record.get_scores()
+            ),
+        }
         match_code_block = await discord_helpers.code_block(
-            await general_helpers.format_json(await match_record.to_dict()), "json"
+            await general_helpers.format_json(match_dict), "json"
         )
         message = f"Match Result Invite accepted.\n{match_code_block}\nMatch results confirmed."
         await discord_helpers.final_message(interaction, message)
+        # Log to Channel
         # [@TEAM A] "wins against" or "loses to" [@TEAM B]
         team_a_name = await match_record.get_field(MatchFields.vw_team_a)
         team_b_name = await match_record.get_field(MatchFields.vw_team_b)
@@ -255,8 +199,8 @@ async def match_result_accept(
             guild=interaction.guild, team_name=team_b_name
         )
         outcomes = "draws with"
-        outcomes = "wins against" if outcome == MatchResult.WIN else outcomes
-        outcomes = "loses to" if outcome == MatchResult.LOSS else outcomes
+        outcomes = "wins against" if reversed_outcome == MatchResult.WIN else outcomes
+        outcomes = "loses to" if reversed_outcome == MatchResult.LOSS else outcomes
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"{team_a_role.mention} {outcomes} {team_b_role.mention} in a `{match_type}` match",

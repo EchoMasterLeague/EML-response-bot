@@ -143,6 +143,24 @@ async def get_player_details_from_discord_id(
     return players[0]
 
 
+async def get_normalized_player_name(
+    database: FullDatabase,
+    player_id: str = None,
+    player_name: str = None,
+    player_record: PlayerRecord = None,
+) -> str:
+    """Get a normalized player name"""
+    if player_name and database:
+        player_records = await database.table_player.get_player_records(
+            record_id=player_id, player_name=player_name
+        )
+        if player_records:
+            player_record = player_records[0]
+    if player_record:
+        return await player_record.get_field(PlayerFields.player_name)
+    return None
+
+
 ### Team ###
 class TeamDetailsOfPlayer:
     def __init__(self):
@@ -216,6 +234,51 @@ async def get_team_details_from_player(
     details.team_players = team_players
     # Success
     return details
+
+
+async def get_normalized_team_name(
+    database: FullDatabase = None,
+    team_id: str = None,
+    team_name: str = None,
+    team_record: TeamRecord = None,
+) -> str:
+    """Get a normalized team name"""
+    if database and (team_id or team_name):
+        team_records = await database.table_team.get_team_records(
+            record_id=team_id, team_name=team_name
+        )
+        if team_records:
+            team_record = team_records[0]
+    if team_record:
+        return await team_record.get_field(TeamFields.team_name)
+    return None
+
+
+async def is_captain(
+    database: FullDatabase = None,
+    player_id: str = None,
+    team_player_record: TeamPlayerRecord = None,
+    must_be_main: bool = False,
+    must_be_co: bool = False,
+) -> bool:
+    """Check if a Player is a Captain"""
+    if not team_player_record and database and player_id:
+        team_player_records = await database.table_team_player.get_team_player_records(
+            player_id=player_id
+        )
+        if team_player_records:
+            team_player_record = team_player_records[0]
+    if team_player_record:
+        is_captain = await team_player_record.get_field(TeamPlayerFields.is_captain)
+        is_co_captain = await team_player_record.get_field(
+            TeamPlayerFields.is_co_captain
+        )
+        if must_be_main:
+            return is_captain
+        if must_be_co:
+            return is_co_captain
+        return is_captain or is_co_captain
+    return False
 
 
 async def get_team_details_from_team(
