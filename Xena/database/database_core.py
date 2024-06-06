@@ -26,6 +26,7 @@ class CoreDatabase:
         self._db_local_cache: dict[str, list[list[int | float | str | None]]] = {}
         self._db_write_queue: list[list[int | float | str | None]] = []
         try:
+            print(f"Connecting to Spreadsheet: {spreadsheet_url}")
             self._db_spreadsheet = gs_client.open_by_url(spreadsheet_url)
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
