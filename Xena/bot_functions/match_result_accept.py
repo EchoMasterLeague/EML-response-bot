@@ -224,10 +224,10 @@ async def match_result_accept(
         # [@TEAM A] "wins against" or "loses to" [@TEAM B]
         team_a_name = await match_record.get_field(MatchFields.vw_team_a)
         team_b_name = await match_record.get_field(MatchFields.vw_team_b)
-        team_a_role = await discord_helpers.get_team_role(
+        team_a_mention = await discord_helpers.role_mention(
             guild=interaction.guild, team_name=team_a_name
         )
-        team_b_role = await discord_helpers.get_team_role(
+        team_b_role = await discord_helpers.role_mention(
             guild=interaction.guild, team_name=team_b_name
         )
         outcomes = "draws with"
@@ -235,7 +235,7 @@ async def match_result_accept(
         outcomes = "loses to" if reversed_outcome == MatchResult.LOSS else outcomes
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{team_a_role.mention} {outcomes} {team_b_role.mention} in a `{match_type}` match",
+            message=f"{team_a_mention} {outcomes} {team_b_role} in a `{match_type}` match",
         )
 
     except AssertionError as message:
