@@ -173,7 +173,7 @@ async def match_result_invite(
         )
         # Dictionary
         response_dictionary = {
-            "result_status": "Pending confirmation",
+            "result_status": "pending confirmation",
             "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
             "match_time_eml": time_eml,
             "match_type": await match_record.get_field(MatchFields.match_type),
