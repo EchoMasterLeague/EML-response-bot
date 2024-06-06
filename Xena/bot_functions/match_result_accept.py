@@ -24,6 +24,7 @@ async def match_result_accept(
             database, interaction.user.id
         )
         invitee_player_id = await invitee_player.get_field(PlayerFields.record_id)
+        invitee_player_name = await invitee_player.get_field(PlayerFields.player_name)
         # Get invitee team details from invitee player
         invitee_details: database_helpers.TeamDetailsOfPlayer
         invitee_details = await database_helpers.get_team_details_from_player(
@@ -40,6 +41,11 @@ async def match_result_accept(
         assert (
             match_result_invites
         ), f"No match results availavble to confirm. You may want to create a result offer for another team."
+
+        ############################
+        #          OPTIONS         #
+        ############################
+
         # Get Options for the user to select
         match_result_offers = {}
         options_dict = {}
@@ -97,6 +103,11 @@ async def match_result_accept(
         await interaction.response.send_message(
             content=message, view=view, ephemeral=True
         )
+
+        ############################
+        #        CHOICE            #
+        ############################
+
         # Wait for the user to make a choice
         await view.wait()
         # Process the user's choice
@@ -122,6 +133,11 @@ async def match_result_accept(
                 selected_invite = match_result_invite
                 break
         assert selected_invite, f"Match Result Invite not found."
+
+        ############################
+        #        PROCESSING        #
+        ############################
+
         # Get details from the selected invite record
         from_team_id = await selected_invite.get_field(
             MatchResultInviteFields.from_team_id
@@ -162,7 +178,11 @@ async def match_result_accept(
         await database.table_match_result_invite.delete_match_result_invite_record(
             selected_invite
         )
-        # success
+
+        ############################
+        #        RESPONSE          #
+        ############################
+
         winner = "draw"
         winner = "team_a" if outcome == MatchResult.WIN else winner
         winner = "team_b" if outcome == MatchResult.LOSS else winner
@@ -172,9 +192,10 @@ async def match_result_accept(
             + await match_record.get_field(MatchFields.match_time_et)
         )
         match_dict = {
-            "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
-            "match_time_eml": time_eml,
-            "match_status": await match_record.get_field(MatchFields.match_status),
+            "match_played_utc": await match_record.get_field(
+                MatchFields.match_timestamp
+            ),
+            "match_played_eml": time_eml,
             "match_type": await match_record.get_field(MatchFields.match_type),
             "team_a": await match_record.get_field(MatchFields.vw_team_a),
             "team_b": await match_record.get_field(MatchFields.vw_team_b),
@@ -182,13 +203,18 @@ async def match_result_accept(
             "scores": await match_helpers.get_scores_display_dict(
                 await match_record.get_scores()
             ),
+            "match_results_status": "confirmed",
         }
         match_code_block = await discord_helpers.code_block(
             await general_helpers.format_json(match_dict), "json"
         )
         message = f"Match Result Invite accepted.\n{match_code_block}\nMatch results confirmed."
         await discord_helpers.final_message(interaction, message)
-        # Log to Channel
+
+        ############################
+        #        LOGGING           #
+        ############################
+
         # [@TEAM A] "wins against" or "loses to" [@TEAM B]
         team_a_name = await match_record.get_field(MatchFields.vw_team_a)
         team_b_name = await match_record.get_field(MatchFields.vw_team_b)
@@ -205,6 +231,7 @@ async def match_result_accept(
             interaction=interaction,
             message=f"{team_a_role.mention} {outcomes} {team_b_role.mention} in a `{match_type}` match",
         )
+
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

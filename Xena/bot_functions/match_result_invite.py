@@ -8,7 +8,7 @@ from database.database_full import FullDatabase
 from database.enums import MatchType, MatchResult, MatchStatus
 from database.records import MatchRecord, MatchResultInviteRecord
 from errors.database_errors import EmlRecordAlreadyExists
-from utils import discord_helpers, database_helpers, general_helpers
+from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
 
 
@@ -62,14 +62,17 @@ async def match_result_invite(
         if not result:
             if outcome.casefold() in [
                 "tie".casefold(),
+                "ties".casefold(),
                 "tied".casefold(),
                 "draw".casefold(),
+                "draws".casefold(),
                 "drawn".casefold(),
                 "equal".casefold(),
             ]:
                 result = MatchResult.DRAW
             if outcome.casefold() in [
                 "win".casefold(),
+                "wins".casefold(),
                 "won".casefold(),
                 "winner".casefold(),
                 "victor".casefold(),
@@ -79,6 +82,7 @@ async def match_result_invite(
                 result = MatchResult.WIN
             if outcome.casefold() in [
                 "lose".casefold(),
+                "loses".casefold(),
                 "loss".casefold(),
                 "lost".casefold(),
                 "loser".casefold(),
@@ -88,19 +92,6 @@ async def match_result_invite(
                 result = MatchResult.LOSS
         assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
         assert result, assert_message
-        # verify scores input matches format "1a:1b,2a:2b,3a:3b" with regex
-        # regex_score_format = r"^\d+:\d+(,\d+:\d+){1,2}$"
-        # is_valid_score_inptut = re.match(regex_score_format, scores)
-        # assert_message = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
-        # assert is_valid_score_inptut, assert_message
-        # parse scores from "1a:1b,2a:2b,3a:3b" to [["1a", "1b"], ["2a", "2b"], ["3a", "3b"]] and ensure they are integers
-        # rounds_array = scores.split(",")
-        # scores_list = []
-        # for round in rounds_array:
-        #    score_array = round.split(":")
-        #    score_a = int(score_array[0])
-        #    score_b = int(score_array[1])
-        #    scores_list.append([score_a, score_b])
         # validate outcome against scores
         scores_list = scores
         win = 0
@@ -166,49 +157,59 @@ async def match_result_invite(
             )
         )
         assert new_result_invite, f"Error: Failed to create match result invite."
-        # success
-        fields_to_show = [
-            MatchResultInviteFields.vw_from_team,
-            MatchResultInviteFields.vw_to_team,
-            MatchResultInviteFields.match_outcome,
-            MatchResultInviteFields.round_1_score_a,
-            MatchResultInviteFields.round_1_score_b,
-            MatchResultInviteFields.round_2_score_a,
-            MatchResultInviteFields.round_2_score_b,
-            MatchResultInviteFields.round_3_score_a,
-            MatchResultInviteFields.round_3_score_b,
-            MatchResultInviteFields.match_type,
-        ]
-        full_new_result_invite_dict = await new_result_invite.to_dict()
-        clean_new_result_invite_dict = {}
-        for field in fields_to_show:
-            clean_new_result_invite_dict[field.name] = full_new_result_invite_dict[
-                field.name
-            ]
-        invite_code_block = await discord_helpers.code_block(
-            f"{await general_helpers.format_json(clean_new_result_invite_dict)}",
+
+        ########################
+        #     RESPONSE         #
+        ########################
+
+        # gather details
+        winner = "draw"
+        winner = "from_team" if result == MatchResult.WIN else winner
+        winner = "to_team" if result == MatchResult.LOSS else winner
+        time_eml = (
+            await match_record.get_field(MatchFields.match_date)
+            + " "
+            + await match_record.get_field(MatchFields.match_time_et)
+        )
+        # Dictionary
+        response_dictionary = {
+            "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
+            "match_time_eml": time_eml,
+            "match_type": await match_record.get_field(MatchFields.match_type),
+            "from_team": inviter_team_name,
+            "to_team": opposing_team_name,
+            "winner": winner,
+            "scores": await match_helpers.get_scores_display_dict(
+                await new_result_invite.get_scores()
+            ),
+            "match_results_status": "waiting for opponent confirmation",
+        }
+        # code block
+        response_code_block = await discord_helpers.code_block(
+            f"{await general_helpers.format_json(response_dictionary)}",
             "json",
         )
-        message = (
-            f"Match Result Invite sent to {opposing_team_name}.\n{invite_code_block}"
+        # final message
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=f"Match Result Invite sent to {opposing_team_name}.\n{response_code_block}",
         )
-        await discord_helpers.final_message(interaction, message)
-        # Log to Channel
-        to_team_role = await discord_helpers.get_team_role(
+
+        ##################
+        #     LOGGING    #
+        ##################
+
+        to_team_mention = await discord_helpers.role_mention(
             guild=interaction.guild,
-            team_name=await new_result_invite.get_field(
-                MatchResultInviteFields.vw_to_team
-            ),
+            team_name=opposing_team_name,
         )
-        from_team_role = await discord_helpers.get_team_role(
+        from_team_mention = await discord_helpers.role_mention(
             guild=interaction.guild,
-            team_name=await new_result_invite.get_field(
-                MatchResultInviteFields.vw_from_team
-            ),
+            team_name=inviter_team_name,
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Match Results Proposal sent to {to_team_role.mention} from {from_team_role.mention}",
+            message=f"Match Results Proposal sent to {to_team_mention} from {from_team_mention}",
         )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)

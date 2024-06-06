@@ -124,6 +124,36 @@ async def member_role_remove_by_prefix(
     return True
 
 
+async def role_mention(
+    guild: discord.Guild,
+    team_name: str = None,
+    discord_id: str = None,
+    player_name: str = None,
+    role_name: str = None,
+):
+    if team_name:
+        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    if role_name:
+        role = await guild_role_get(guild, role_name)
+        if role:
+            return role.mention
+        else:
+            return f"`{role_name}`"
+    if discord_id:
+        member = await member_from_discord_id(guild, discord_id)
+        if member:
+            return member.mention
+        if player_name:
+            return f"`{player_name}`"
+        return f"`({discord_id})`"
+    return f"`(unknown)`"
+
+
+async def role_mention_player(guild: discord.Guild, player_id: str):
+    member = await member_from_discord_id(guild, player_id)
+    return member.mention if member else f"`{player_id}`"
+
+
 ### Roles for Teams ###
 
 
