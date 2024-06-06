@@ -66,7 +66,7 @@ LINK_DISCORD_CHANNEL_EML_SUPPORT = "https://discord.com/channels/118238014488786
 LINK_DISCORD_CHANNEL_EML_TICKETS = "https://discord.com/channels/1182380144887865406/1182380148436242475"  # Comment added to keep line long enough for the formatter to ignore
 LINK_EML_WEBSITE = "https://echomasterleague.com/"
 LINK_LEAGUE_MATCHES = "https://echomasterleague.com/current-week-matches-and-results/"
-LINK_LEAGUE_ROSTER = "https://docs.google.com/spreadsheets/d/13vcfXkCejl9I4dtlA9ZI19dHGYh7aWIQXUU5MWhpYt0/edit?usp=sharing"
+LINK_LEAGUE_ROSTER = "https://docs.google.com/spreadsheets/d/1oQ6wdNFd8neCMh20frV5UQ0gLoF6ahrF9e4poz4qGJs/edit?pli=1&gid=577240611#gid=577240611"
 LINK_LEAGUE_RULES = "https://echomasterleague.com/eml-league-rules/"
 LINK_STAFF_APPLICATION = "https://echomasterleague.com/staff-application/"
 LINK_TEAM_RANKINGS = "https://echomasterleague.com/team-rankings-2/"
