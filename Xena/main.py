@@ -30,7 +30,7 @@ SPREADSHEET_URL = (
 # Google Sheets "Database"
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
-database_core = CoreDatabase(gs_client, constants.LINK_DB_SPREADSHEET_URL)
+database_core = CoreDatabase(gs_client, SPREADSHEET_URL)
 db = FullDatabase(database_core)
 
 # Discord Intents
