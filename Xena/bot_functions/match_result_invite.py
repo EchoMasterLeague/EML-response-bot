@@ -1,7 +1,6 @@
 from database.fields import (
     PlayerFields,
     TeamFields,
-    MatchResultInviteFields,
     MatchFields,
 )
 from database.database_full import FullDatabase
@@ -24,10 +23,6 @@ async def match_result_invite(
     try:
         # this could take a while, so defer the response
         await interaction.response.defer()
-        # constants
-        # message_score_format = "Score format: '1a:1b,2a:2b,3a:3b' (you are team a) e.g. '7:5,4:6,6:4' means you won 7-5, lost 4-6, won 6-4"
-        message_outcome_mistmatch = "The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
-        message_warning = "Warning: Once accepted, this cannot be undone."
         # Get inviter player details from discord_id
         inviter_player = await database_helpers.get_player_details_from_discord_id(
             database, interaction.user.id
@@ -54,44 +49,9 @@ async def match_result_invite(
         invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
         invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
         # parse outcome
-        result: MatchResult = None
-        for outcome_option in MatchResult:
-            if str(outcome_option.value).casefold() == outcome.casefold():
-                result = outcome_option
-                break
-        if not result:
-            if outcome.casefold() in [
-                "tie".casefold(),
-                "ties".casefold(),
-                "tied".casefold(),
-                "draw".casefold(),
-                "draws".casefold(),
-                "drawn".casefold(),
-                "equal".casefold(),
-            ]:
-                result = MatchResult.DRAW
-            if outcome.casefold() in [
-                "win".casefold(),
-                "wins".casefold(),
-                "won".casefold(),
-                "winner".casefold(),
-                "victor".casefold(),
-                "victory".casefold(),
-                "victorious".casefold(),
-            ]:
-                result = MatchResult.WIN
-            if outcome.casefold() in [
-                "lose".casefold(),
-                "loses".casefold(),
-                "loss".casefold(),
-                "lost".casefold(),
-                "loser".casefold(),
-                "defeat".casefold(),
-                "defeated".casefold(),
-            ]:
-                result = MatchResult.LOSS
+        outcome = match_helpers.get_normalized_outcome(outcome)
         assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
-        assert result, assert_message
+        assert outcome, assert_message
         # validate outcome against scores
         scores_list = scores
         win = 0
@@ -104,13 +64,13 @@ async def match_result_invite(
             elif round_scores[0] < round_scores[1]:
                 loss += 1
         # assert_message = f"{message_outcome_mistmatch}\n{message_score_format}"
-        assert_message = f"{message_outcome_mistmatch}"
+        assert_message = "The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
         if win > loss:
-            assert result == MatchResult.WIN, assert_message
+            assert outcome == MatchResult.WIN, assert_message
         if win < loss:
-            assert result == MatchResult.LOSS, assert_message
+            assert outcome == MatchResult.LOSS, assert_message
         if win == loss:
-            assert result == MatchResult.DRAW, assert_message
+            assert outcome == MatchResult.DRAW, assert_message
         # find the relevant match record
         match_record: MatchRecord = None
         invitee_team_id = await invitee_team_details.team.get_field(
@@ -149,7 +109,7 @@ async def match_result_invite(
                 from_team_id=inviter_team_id,
                 from_player_id=inviter_player_id,
                 to_team_id=invitee_team_id,
-                match_outcome=result,
+                match_outcome=outcome,
                 scores=scores_list,
                 vw_from_team=inviter_team_name,
                 vw_to_team=opposing_team_name,
@@ -164,8 +124,8 @@ async def match_result_invite(
 
         # gather details
         winner = "draw"
-        winner = "my_team" if result == MatchResult.WIN else winner
-        winner = "to_team" if result == MatchResult.LOSS else winner
+        winner = "my_team" if outcome == MatchResult.WIN else winner
+        winner = "to_team" if outcome == MatchResult.LOSS else winner
         time_eml = (
             await match_record.get_field(MatchFields.match_date)
             + " "
@@ -211,6 +171,7 @@ async def match_result_invite(
             interaction=interaction,
             message=f"Match Results Proposal sent to {to_team_mention} from {from_team_mention}",
         )
+    # error handling
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except EmlRecordAlreadyExists as message:

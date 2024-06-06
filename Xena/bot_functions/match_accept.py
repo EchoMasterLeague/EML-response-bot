@@ -38,6 +38,11 @@ async def match_accept(
             to_team_id=invitee_team_id
         )
         assert match_invites, f"No invites found."
+
+        ####################
+        #     OPTIONS      #
+        ####################
+
         if not match_invite_id:
             # Get Options for the user to select
             match_offers = {}
@@ -89,6 +94,11 @@ async def match_accept(
             await interaction.response.send_message(
                 content=message, view=view, ephemeral=True
             )
+
+            ####################
+            #     CHOICE       #
+            ####################
+
             # Wait for the user to make a choice
             await view.wait()
             # Process the user's choice
@@ -112,6 +122,11 @@ async def match_accept(
                 selected_match_invite = match_invite
                 break
         assert selected_match_invite, f"Match Invite not found."
+
+        ########################
+        #     PROCESSING       #
+        ########################
+
         # update match invite record
         await selected_match_invite.set_field(
             MatchInviteFields.invite_status, InviteStatus.ACCEPTED
@@ -168,7 +183,11 @@ async def match_accept(
         await database.table_match_invite.delete_match_invite_record(
             selected_match_invite
         )
-        # success
+
+        ####################
+        #     RESPONSE     #
+        ####################
+
         fields_to_show = [
             MatchFields.vw_team_a,
             MatchFields.vw_team_b,
@@ -186,6 +205,11 @@ async def match_accept(
         message = f"Match Invite accepted. Match created.\n{match_code_block}"
         message += f"\n\nRemember: This cannot be undone. Failure to show will result in automatic forfeiture."
         await discord_helpers.final_message(interaction, message)
+
+        ####################
+        #     LOGGING      #
+        ####################
+
         team_a_role = await discord_helpers.get_team_role(
             guild=interaction.guild, team_name=inviter_team_name
         )
@@ -199,6 +223,7 @@ async def match_accept(
             interaction=interaction,
             message=log_message,
         )
+    # handle errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

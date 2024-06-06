@@ -95,3 +95,44 @@ async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, s
         "round_3": f"{scores[2][0]} :{scores[2][1]} ",
     }
     return display_scores
+
+
+async def get_normalized_outcome(outcome: str) -> MatchResult:
+    """Normalize the outcome of the match"""
+    normalized_outcome: MatchResult = None
+    for outcome_option in MatchResult:
+        if str(outcome_option.value).casefold() == outcome.casefold():
+            normalized_outcome = outcome_option
+            break
+    if not normalized_outcome:
+        if outcome.casefold() in [
+            "tie".casefold(),
+            "ties".casefold(),
+            "tied".casefold(),
+            "draw".casefold(),
+            "draws".casefold(),
+            "drawn".casefold(),
+            "equal".casefold(),
+        ]:
+            normalized_outcome = MatchResult.DRAW
+        if outcome.casefold() in [
+            "win".casefold(),
+            "wins".casefold(),
+            "won".casefold(),
+            "winner".casefold(),
+            "victor".casefold(),
+            "victory".casefold(),
+            "victorious".casefold(),
+        ]:
+            normalized_outcome = MatchResult.WIN
+        if outcome.casefold() in [
+            "lose".casefold(),
+            "loses".casefold(),
+            "loss".casefold(),
+            "lost".casefold(),
+            "loser".casefold(),
+            "defeat".casefold(),
+            "defeated".casefold(),
+        ]:
+            normalized_outcome = MatchResult.LOSS
+    return normalized_outcome

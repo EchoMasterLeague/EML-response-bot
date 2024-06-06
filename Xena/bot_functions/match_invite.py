@@ -80,6 +80,11 @@ async def match_invite(
             vw_to_team=opposing_team_name,
         )
         assert new_match_invite, f"Error: Failed to create match invite."
+
+        ###################
+        #     RESPONSE    #
+        ###################
+
         fields_to_show = [
             MatchInviteFields.vw_from_team,
             MatchInviteFields.vw_to_team,
@@ -99,6 +104,7 @@ async def match_invite(
             f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
         )
         await discord_helpers.final_message(interaction, message)
+
         ###################
         #     LOGGING     #
         ###################
