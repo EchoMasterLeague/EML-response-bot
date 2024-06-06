@@ -99,7 +99,15 @@ async def match_invite(
             f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
         )
         await discord_helpers.final_message(interaction, message)
-        # Log to Channel
+        ###################
+        #     LOGGING     #
+        ###################
+
+        match_date = await new_match_invite.get_field(MatchInviteFields.match_date)
+        match_time = await new_match_invite.get_field(MatchInviteFields.match_time_et)
+        match_timestamp = await new_match_invite.get_field(
+            MatchInviteFields.match_timestamp
+        )
         to_team_name = await new_match_invite.get_field(MatchInviteFields.vw_to_team)
         from_team_name = await new_match_invite.get_field(
             MatchInviteFields.vw_from_team
@@ -116,7 +124,7 @@ async def match_invite(
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Match Invite sent from {from_team_mention} to {to_team_mention}",
+            message=f"Match Proposal sent from {from_team_mention} to {to_team_mention} to be played on {match_date} at {match_time} ET ({match_timestamp}).",
         )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
