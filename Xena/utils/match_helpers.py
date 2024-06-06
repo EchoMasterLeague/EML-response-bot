@@ -78,8 +78,8 @@ async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, s
                 scores[i][j] = "   "
     # Populate the display_scores dict
     display_scores = {
-        "round_1": f"{scores[0][0]}: {scores[0][1]}",
-        "round_2": f"{scores[1][0]}: {scores[1][1]}",
-        "round_3": f"{scores[2][0]}: {scores[2][1]}",
+        "round_1": f"{scores[0][0]} : {scores[0][1]}",
+        "round_2": f"{scores[1][0]} : {scores[1][1]}",
+        "round_3": f"{scores[2][0]} : {scores[2][1]}",
     }
     return display_scores

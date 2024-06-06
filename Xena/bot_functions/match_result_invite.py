@@ -182,7 +182,6 @@ async def match_result_invite(
             "scores": await match_helpers.get_scores_display_dict(
                 await new_result_invite.get_scores()
             ),
-            "match_results_status": "waiting for opponent confirmation",
         }
         # code block
         response_code_block = await discord_helpers.code_block(
@@ -192,7 +191,7 @@ async def match_result_invite(
         # final message
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Match Result Invite sent to {opposing_team_name}.\n{response_code_block}",
+            message=f"Match Result Proposal sent to {opposing_team_name}.\n{response_code_block}\n\nYour opponent must confirm these results before they are officially recorded.",
         )
 
         ##################
