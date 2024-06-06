@@ -18,7 +18,7 @@ class CoreDatabase:
         _db_write_queue (list): A queue of write operations to commit to the database
     """
 
-    def __init__(self, gs_client: gspread.Client):
+    def __init__(self, gs_client: gspread.Client, spreadsheet_url: str):
         """Initialize the Database class"""
         self._gs_client = gs_client
         self._worksheets: dict[str, gspread.Worksheet] = {}
@@ -26,9 +26,7 @@ class CoreDatabase:
         self._db_local_cache: dict[str, list[list[int | float | str | None]]] = {}
         self._db_write_queue: list[list[int | float | str | None]] = []
         try:
-            self._db_spreadsheet = gs_client.open_by_url(
-                constants.LINK_DB_SPREADSHEET_URL
-            )
+            self._db_spreadsheet = gs_client.open_by_url(spreadsheet_url)
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
 

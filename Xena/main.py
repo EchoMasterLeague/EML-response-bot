@@ -22,11 +22,15 @@ BOT_PREFIX = os.environ.get("BOT_PREFIX")
 BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = os.environ.get("GUILD_ID")
+SPREADSHEET_URL = os.environ.get("SPREADSHEET_URL")
+SPREADSHEET_URL = (
+    SPREADSHEET_URL if SPREADSHEET_URL else constants.LINK_DB_SPREADSHEET_URL
+)
 
 # Google Sheets "Database"
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
-database_core = CoreDatabase(gs_client)
+database_core = CoreDatabase(gs_client, constants.LINK_DB_SPREADSHEET_URL)
 db = FullDatabase(database_core)
 
 # Discord Intents
