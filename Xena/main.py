@@ -52,7 +52,7 @@ async def on_ready():
         return
     bot_state["synced"] = True
     # Sync Commands
-    if GUILD_ID:
+    if GUILD_ID and False:
         guild = await bot.fetch_guild(int(GUILD_ID))
         bot.tree.copy_global_to(guild=guild)
         synced = await bot.tree.sync(guild=guild)
