@@ -8,7 +8,6 @@ async def team_cocaptain_promote(
     database: FullDatabase,
     interaction: discord.Interaction,
     player_name: str,
-    log_channel: discord.TextChannel = None,
 ):
     """Promote a Player to Team co-captain"""
     try:
@@ -76,7 +75,7 @@ async def team_cocaptain_promote(
         message = f"Player '{player_name}' promoted to co-captain"
         await discord_helpers.final_message(interaction, message)
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{player_discord_member.mention} is now Co-Captain",
         )
     except AssertionError as message:

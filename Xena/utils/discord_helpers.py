@@ -31,26 +31,35 @@ async def error_message(
     raise error
 
 
-async def log_to_channel(channel: discord.TextChannel, message: str):
+async def log_to_channel(
+    channel: discord.TextChannel = None,
+    interaction: discord.Interaction = None,
+    message: str = None,
+):
     """Send a log message to a channel"""
-    if not channel:
+    if not channel and not interaction:
         return False
+    if interaction:
+        channel = await get_log_channel(interaction=interaction)
     return await channel.send(content=message)
-    # embed stuff not being used because it doesn't ping players.
-    embed = discord.Embed(description=message) if message else embed
-    embed = discord.Embed.from_dict(dictionary) if dictionary else embed
-    if embed:
-        embed.color = discord.Color.green() if not embed.color else embed.color
-        return await channel.send(embed=embed)
-    return False
 
 
 ### Channels ###
 
 
-async def get_log_channel(guild: discord.Guild):
+async def get_log_channel(
+    guild: discord.Guild = None,
+    interaction: discord.Interaction = None,
+    channel_name: str = None,
+):
     """Get log channel"""
-    return discord.utils.get(guild.channels, name=constants.GUILD_CHANNEL_BOT_LOGS)
+    if not guild and not interaction:
+        raise ValueError("Guild or Interaction required")
+    if interaction:
+        guild = interaction.guild
+    if not channel_name:
+        channel_name = constants.GUILD_CHANNEL_BOT_LOGS
+    return discord.utils.get(guild.channels, name=channel_name)
 
 
 ### Members ###
@@ -58,12 +67,24 @@ async def get_log_channel(guild: discord.Guild):
 
 async def member_from_discord_id(guild: discord.Guild, discord_id: str):
     """Get a Guild Member from a Discord ID"""
-    member = guild.get_member(discord_id)
-    member = await guild.fetch_member(discord_id) if not member else member
-    return member
+    try:
+        member = guild.get_member(discord_id)
+        member = await guild.fetch_member(discord_id) if not member else member
+        return member
+    except discord.errors.NotFound:
+        return None
 
 
 ### Roles ###
+
+
+async def guild_role_get(guild: discord.Guild, role_name: str) -> discord.Role:
+    """Get a role from a Discord server"""
+    try:
+        existing_role = discord.utils.get(guild.roles, name=role_name)
+        return existing_role
+    except discord.errors.NotFound:
+        return None
 
 
 async def guild_role_get_or_create(
@@ -103,13 +124,47 @@ async def member_role_remove_by_prefix(
     return True
 
 
+async def role_mention(
+    guild: discord.Guild,
+    team_name: str = None,
+    discord_id: str = None,
+    player_name: str = None,
+    role_name: str = None,
+):
+    if team_name:
+        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    if role_name:
+        role = await guild_role_get(guild, role_name)
+        if role:
+            return role.mention
+        else:
+            return f"`{role_name}`"
+    if discord_id:
+        member = await member_from_discord_id(guild, discord_id)
+        if member:
+            return member.mention
+        if player_name:
+            return f"`{player_name}`"
+        return f"`({discord_id})`"
+    return f"`(unknown)`"
+
+
+async def role_mention_player(guild: discord.Guild, player_id: str):
+    member = await member_from_discord_id(guild, player_id)
+    return member.mention if member else f"`{player_id}`"
+
+
 ### Roles for Teams ###
 
 
 async def get_team_role(guild: discord.Guild, team_name: str):
     """Get a Team role from a Guild"""
-    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
-    return discord.utils.get(guild.roles, name=role_name)
+    try:
+        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+        role = await guild_role_get(guild, role_name)
+        return role
+    except discord.errors.NotFound:
+        return None
 
 
 async def member_add_team_role(member: discord.Member, team_name: str):

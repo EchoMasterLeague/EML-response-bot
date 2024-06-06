@@ -40,6 +40,13 @@ async def match_invite(
         # Verify time format (raises ValueError if incorrect format)
         datetime_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
         match_epoch = int(datetime_obj.timestamp())
+        # Normalize opposing_team_name
+        invitee_team_records = await database.table_team.get_team_records(
+            team_name=opposing_team_name
+        )
+        assert invitee_team_records, f"Team '{opposing_team_name}' not found."
+        invitee_team_record = invitee_team_records[0]
+        opposing_team_name = await invitee_team_record.get_field(TeamFields.team_name)
         # Get inviter player details from discord_id
         inviter_player = await database_helpers.get_player_details_from_discord_id(
             database, interaction.user.id
@@ -73,6 +80,11 @@ async def match_invite(
             vw_to_team=opposing_team_name,
         )
         assert new_match_invite, f"Error: Failed to create match invite."
+
+        ###################
+        #     RESPONSE    #
+        ###################
+
         fields_to_show = [
             MatchInviteFields.vw_from_team,
             MatchInviteFields.vw_to_team,
@@ -92,6 +104,34 @@ async def match_invite(
             f"Match Invite sent to {opposing_team_name}.\n{match_invite_code_block}"
         )
         await discord_helpers.final_message(interaction, message)
+
+        ###################
+        #     LOGGING     #
+        ###################
+
+        match_date = await new_match_invite.get_field(MatchInviteFields.match_date)
+        match_time = await new_match_invite.get_field(MatchInviteFields.match_time_et)
+        match_timestamp = await new_match_invite.get_field(
+            MatchInviteFields.match_timestamp
+        )
+        to_team_name = await new_match_invite.get_field(MatchInviteFields.vw_to_team)
+        from_team_name = await new_match_invite.get_field(
+            MatchInviteFields.vw_from_team
+        )
+        to_team_role = await discord_helpers.get_team_role(
+            guild=interaction.guild, team_name=to_team_name
+        )
+        to_team_mention = to_team_role.mention if to_team_role else f"`{to_team_name}`"
+        from_team_role = await discord_helpers.get_team_role(
+            guild=interaction.guild, team_name=from_team_name
+        )
+        from_team_mention = (
+            from_team_role.mention if from_team_role else f"`{from_team_name}`"
+        )
+        await discord_helpers.log_to_channel(
+            interaction=interaction,
+            message=f"Match Proposal sent from {from_team_mention} to {to_team_mention} to be played on `{match_date}` at `{match_time}` ET `({match_timestamp})`.",
+        )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except EmlRecordAlreadyExists as message:

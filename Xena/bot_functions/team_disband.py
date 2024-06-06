@@ -7,7 +7,6 @@ import discord
 async def team_disband(
     database: FullDatabase,
     interaction: discord.Interaction,
-    log_channel: discord.TextChannel = None,
 ):
     """Disband the requestor's Team"""
     try:
@@ -82,7 +81,7 @@ async def team_disband(
         discord_members.remove(captain_discord)
         players = ", ".join([member.mention for member in discord_members])
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"`{team_name}` has been disbanded by {captain_discord.mention}, removing [{players}]",
         )
     except AssertionError as message:

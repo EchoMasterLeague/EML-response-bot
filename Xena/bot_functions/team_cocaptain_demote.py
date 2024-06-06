@@ -8,7 +8,6 @@ async def team_cocaptain_demote(
     database: FullDatabase,
     interaction: discord.Interaction,
     player_name: str,
-    log_channel: discord.TextChannel = None,
 ):
     """Demote a Player from Team co-captain"""
     try:
@@ -72,7 +71,7 @@ async def team_cocaptain_demote(
         message = f"Player '{player_name}' demoted from co-captain"
         await discord_helpers.final_message(interaction, message)
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{player_discord_member.mention} is no longer Co-Captain",
         )
     except AssertionError as message:

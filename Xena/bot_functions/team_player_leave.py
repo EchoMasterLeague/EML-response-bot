@@ -7,7 +7,6 @@ import discord
 async def team_player_leave(
     database: FullDatabase,
     interaction: discord.Interaction,
-    log_channel: discord.TextChannel = None,
 ):
     """Remove the requestor from their Team"""
     try:
@@ -78,7 +77,7 @@ async def team_player_leave(
             guild=interaction.guild, team_name=team_name
         )
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{member.mention} has left {team_role.mention}",
         )
     except AssertionError as message:

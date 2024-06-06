@@ -9,7 +9,6 @@ import discord
 async def team_player_accept(
     database: FullDatabase,
     interaction: discord.Interaction,
-    log_channel: discord.TextChannel = None,
 ):
     """Add the requestor to their new Team"""
     try:
@@ -92,7 +91,7 @@ async def team_player_accept(
             guild=interaction.guild, team_name=team_name
         )
         await discord_helpers.log_to_channel(
-            channel=log_channel,
+            interaction=interaction,
             message=f"{interaction.user.mention} has joined {team_role.mention}",
         )
     except AssertionError as message:
