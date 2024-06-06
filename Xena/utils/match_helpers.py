@@ -71,25 +71,23 @@ async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, s
     output: scores[round] = "team_a_score : team_b_score"
     """
     # Convert each score to a 3 character string
-    scores = scores.copy()
-    print("scores", scores)
     for i in range(3):
         for j in range(2):
-            print(i, j, "before", scores[i][j])
+            if isinstance(scores[i][j], str):
+                if scores[i][j] == "":
+                    scores[i][j] = None
+                else:
+                    scores[i][j] = int(scores[i][j])
             if isinstance(scores[i][j], int):
-                print("int")
                 if j == 0:
-                    print("j=0")
                     scores[i][j] = str(scores[i][j]).rjust(3)
                 if j == 1:
-                    print("j=1")
                     scores[i][j] = str(scores[i][j]).rjust(3)
             else:
                 if j == 0:
                     scores[i][j] = "   "
                 if j == 1:
                     scores[i][j] = "   "
-            print(i, j, "after", scores[i][j])
     # Populate the display_scores dict
     display_scores = {
         "round_1": f"{scores[0][0]} :{scores[0][1]} ",
