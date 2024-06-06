@@ -124,7 +124,7 @@ async def match_invite(
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Match Proposal sent from {from_team_mention} to {to_team_mention} to be played on {match_date} at {match_time} ET ({match_timestamp}).",
+            message=f"Match Proposal sent from {from_team_mention} to {to_team_mention} to be played on `{match_date}` at `{match_time}` ET `({match_timestamp})`.",
         )
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
