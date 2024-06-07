@@ -8,8 +8,25 @@ import discord
 async def show_list_cooldown(database: FullDatabase, interaction: discord.Interaction):
     """Show all Players on cooldown"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get Cooldown info
         cooldowns = await database.table_cooldown.get_cooldown_records(
             expires_after=datetime.datetime.now().timestamp()
@@ -26,6 +43,8 @@ async def show_list_cooldown(database: FullDatabase, interaction: discord.Intera
         message = await discord_helpers.code_block(message, language="json")
         message = f"Players on cooldown:\n{message}"
         return await discord_helpers.final_message(interaction, message)
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

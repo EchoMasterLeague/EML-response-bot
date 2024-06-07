@@ -13,8 +13,25 @@ async def show_player_details(
 ):
     """Show Details of a Player"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get Player info
         if not discord_id and not player_name:
             discord_id = interaction.user.id
@@ -63,6 +80,8 @@ async def show_player_details(
         message = await general_helpers.format_json(message_data)
         message = await discord_helpers.code_block(message, language="json")
         return await discord_helpers.final_message(interaction, message)
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

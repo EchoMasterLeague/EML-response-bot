@@ -10,8 +10,25 @@ async def player_unregister(
 ):
     """Unregister a Player"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get Player info
         discord_id = interaction.user.id
         existing_players = await database.table_player.get_player_records(
@@ -38,6 +55,8 @@ async def player_unregister(
             interaction=interaction,
             message=f"{interaction.user.mention} has left the League.",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

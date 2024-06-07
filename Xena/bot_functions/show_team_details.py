@@ -9,8 +9,25 @@ async def show_team_details(
 ):
     """Show Details of a Team"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Determine desired team
         team = None
         if not team_name:
@@ -70,6 +87,8 @@ async def show_team_details(
         message = await general_helpers.format_json(message_dict)
         message = await discord_helpers.code_block(message, language="json")
         return await discord_helpers.final_message(interaction, message)
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

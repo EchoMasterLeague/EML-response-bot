@@ -17,8 +17,25 @@ async def team_create(
     - Update Discord roles
     """
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         allowed_chars = ""
         allowed_chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         allowed_chars += "abcdefghijklmnopqrstuvwxyz"
@@ -54,6 +71,8 @@ async def team_create(
             interaction=interaction,
             message=f"`{team_name}` has been created by {discord_member.mention}",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

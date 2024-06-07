@@ -27,22 +27,35 @@ async def epoch_timestamp(iso_timestamp: str = None) -> int:
     return int(epoch_timestamp)
 
 
-async def epoch_timestamp_from_date_time_zone(
-    date: str, time: str, timezone: str
-) -> int:
-    """Return the utc timestamp in epoch format (e.g. 1584661872)
+async def normalize_eml_datetime_string(date_time: str) -> str:
+    """Normalize a datetime string to 'YYYY-MM-DD HH:MMAM/PM' format"""
+    # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM"
+    try:
+        datetime_array = date_time.split(" ")
+        date = datetime_array[0]
+        time = "".join(datetime_array[1:])
+        date_time = f"{date} {time}"
+        return date_time
+    except Exception as e:
+        print(e)
+        return None
 
-    This function takes a date, time, and timezone and converts it to an epoch timestamp.
 
-    Args:
-        date (str): The date in the format 'YYYY-MM-DD'
-        time (str): The time in the format 'HH:MM' with AM/PM
-        timezone (str): The timezone in the format 'US/Eastern'
+async def epoch_from_eml_datetime_string(date_time: str) -> int:
+    """Return the epoch time from eml datetime string
+
+    From 'YYYY-MM-DD HH:MMAM/PM'
+    To epoch timestamp (e.g. 1584661872)
     """
-    date_time = f"{date} {time} {timezone}"
-    date_time_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M %p %Z")
-    epoch_timestamp = int(date_time_obj.timestamp())
-    return epoch_timestamp
+    try:
+        date_time = await normalize_eml_datetime_string(date_time)
+        date_time += f"US/Eastern"
+        date_time_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
+        epoch_timestamp = int(date_time_obj.timestamp())
+        return epoch_timestamp
+    except Exception as e:
+        print(e)
+        return None
 
 
 async def iso_timestamp(epoch_timestamp: int = None) -> str:

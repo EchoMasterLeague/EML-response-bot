@@ -2,6 +2,8 @@ from database.fields import (
     PlayerFields,
     TeamFields,
     MatchFields,
+    TeamPlayerFields,
+    MatchResultInviteFields,
 )
 from database.database_full import FullDatabase
 from database.enums import MatchType, MatchResult, MatchStatus
@@ -23,158 +25,162 @@ async def match_result_invite(
     try:
         # this could take a while, so defer the response
         await interaction.response.defer()
-        # Get inviter player details from discord_id
-        inviter_player = await database_helpers.get_player_details_from_discord_id(
-            database, interaction.user.id
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        # "From" Player
+        from_player_records = await database.table_player.get_player_records(
+            discord_id=interaction.user.id
         )
-        inviter_player_id = await inviter_player.get_field(PlayerFields.record_id)
-        # Get inviter team details from inviter player
-        inviter_team_details: database_helpers.TeamDetailsOfPlayer
-        inviter_team_details = await database_helpers.get_team_details_from_player(
-            database, player=inviter_player, assert_any_captain=True
+        assert from_player_records, f"You are not registered as a player."
+        from_player_record = from_player_records[0]
+        # "From" TeamPlayer
+        from_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await from_player_record.get_field(PlayerFields.record_id)
+            )
         )
-        inviter_team = inviter_team_details.team
-        inviter_team_id = await inviter_team.get_field(TeamFields.record_id)
-        inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
-        # Get invitee team details from opposing_team_name
-        invitee_team_matches = await database.table_team.get_team_records(
+        assert from_teamplayer_records, f"You are not a member of a team."
+        from_team_player_record = from_teamplayer_records[0]
+        assert await from_team_player_record.get_field(
+            TeamPlayerFields.is_captain
+        ) or await from_team_player_record.get_field(
+            TeamPlayerFields.is_co_captain
+        ), f"Only team captains can do this."
+        # "From" Team
+        from_team_records = await database.table_team.get_team_records(
+            record_id=await from_team_player_record.get_field(TeamPlayerFields.team_id)
+        )
+        assert from_team_records, f"Your team could not be found."
+        from_team_record = from_team_records[0]
+        # "To" Team
+        to_team_records = await database.table_team.get_team_records(
             team_name=opposing_team_name
         )
-        assert invitee_team_matches, f"Team '{opposing_team_name}' not found."
-        invitee_team = invitee_team_matches[0]
-        opposing_team_name = await invitee_team.get_field(TeamFields.team_name)
-        invitee_team_details = await database_helpers.get_team_details_from_team(
-            database, team=invitee_team
-        )
-        invitee_team_id = await invitee_team.get_field(TeamFields.record_id)
-        invitee_team_name = await invitee_team.get_field(TeamFields.team_name)
-        # parse outcome
-        outcome = match_helpers.get_normalized_outcome(outcome)
-        assert_message = f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
-        assert outcome, assert_message
-        # validate outcome against scores
-        scores_list = scores
-        win = 0
-        loss = 0
-        for round_scores in scores_list:
-            if round_scores[0] is None or round_scores[1] is None:
-                continue
-            if round_scores[0] > round_scores[1]:
-                win += 1
-            elif round_scores[0] < round_scores[1]:
-                loss += 1
-        # assert_message = f"{message_outcome_mistmatch}\n{message_score_format}"
-        assert_message = "The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
-        if win > loss:
-            assert outcome == MatchResult.WIN, assert_message
-        if win < loss:
-            assert outcome == MatchResult.LOSS, assert_message
-        if win == loss:
-            assert outcome == MatchResult.DRAW, assert_message
-        # find the relevant match record
-        match_record: MatchRecord = None
-        invitee_team_id = await invitee_team_details.team.get_field(
-            TeamFields.record_id
-        )
-        matches = await database.table_match.get_match_records(
-            team_a_id=inviter_team_id,
-            team_b_id=invitee_team_id,
-            match_type=match_type,
-            match_status=MatchStatus.PENDING.value,
-        )
-        reverse_matches = await database.table_match.get_match_records(
-            team_a_id=invitee_team_id,
-            team_b_id=inviter_team_id,
-            match_type=match_type,
-            match_status=MatchStatus.PENDING.value,
-        )
-        assert_message = f"No pending match found between `{inviter_team_name}` and `{invitee_team_name}` of type `{match_type}`."
-        assert matches or reverse_matches, assert_message
-        if matches:
-            match_record = matches[0]
-        elif reverse_matches:
-            match_record = reverse_matches[0]
-        assert match_record, f"Error: Failed to find match record."
+        assert to_team_records, f"Team `{opposing_team_name}` not found."
+        to_team_record = to_team_records[0]
+        # Match
+        match_type = await match_helpers.get_normalized_match_type(match_type)
         assert (
-            inviter_team_id != invitee_team_id
-        ), f"Cannot propose scores to your own team."
-        # create match result invite record
-        match_id = await match_record.get_field(MatchFields.record_id)
-        match_type = await match_record.get_field(MatchFields.match_type)
-        inviter_player_name = await inviter_player.get_field(PlayerFields.player_name)
+            match_type
+        ), f"Match type must be one of: [{', '.join([str(option.value) for option in MatchType])}]"
+        match_records = await database.table_match.get_match_records(
+            team_a_id=await from_team_record.get_field(TeamFields.record_id),
+            team_b_id=await to_team_record.get_field(TeamFields.record_id),
+            match_type=match_type,
+            match_status=MatchStatus.PENDING.value,
+        )
+        match_records += await database.table_match.get_match_records(
+            team_a_id=await to_team_record.get_field(TeamFields.record_id),
+            team_b_id=await from_team_record.get_field(TeamFields.record_id),
+            match_type=match_type,
+            match_status=MatchStatus.PENDING.value,
+        )
+        from_team_name = await from_team_record.get_field(TeamFields.team_name)
+        to_team_name = await to_team_record.get_field(TeamFields.team_name)
+        assert (
+            match_records
+        ), f"No pending match found between `{from_team_name}` and `{to_team_name}` of type `{match_type}`."
+        match_record = match_records[0]
+
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        # Existing Match Result Invites
+        existing_match_result_invite_records = (
+            await database.table_match_result_invite.get_match_result_invite_records(
+                from_team_id=await from_team_record.get_field(TeamFields.record_id),
+                to_team_id=await to_team_record.get_field(TeamFields.record_id),
+                match_type=await match_record.get_field(MatchFields.match_type),
+            )
+        )
+        from_team_name = await from_team_record.get_field(TeamFields.team_name)
+        to_team_name = await to_team_record.get_field(TeamFields.team_name)
+        assert (
+            not existing_match_result_invite_records
+        ), f"Match results already proposed to team `{to_team_name}` from `{from_team_name}`."
+
+        # Scores
+        is_sores_valid = await match_helpers.is_score_structure_valid(scores)
+        assert is_sores_valid, f"Error: Scores could not be parsed."
+        # Outcome
+        outcome = match_helpers.get_normalized_outcome(outcome)
+        assert (
+            outcome
+        ), f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
+        assert await match_helpers.is_outcome_consistent_with_scores(
+            outcome=outcome, scores=scores
+        ), f"The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
+        # Create Match Result Invite
+        to_team_id = await to_team_record.get_field(TeamFields.record_id)
+        from_team_id = await from_team_record.get_field(TeamFields.record_id)
+        assert to_team_id != from_team_id, f"Cannot propose scores to your own team."
         new_result_invite: MatchResultInviteRecord = (
             await database.table_match_result_invite.create_match_result_invite_record(
-                match_id=match_id,
-                match_type=match_type,
-                from_team_id=inviter_team_id,
-                from_player_id=inviter_player_id,
-                to_team_id=invitee_team_id,
+                scores=scores,
                 match_outcome=outcome,
-                scores=scores_list,
-                vw_from_team=inviter_team_name,
-                vw_to_team=opposing_team_name,
-                vw_from_player=inviter_player_name,
+                match_id=await match_record.get_field(MatchFields.record_id),
+                match_type=await match_record.get_field(MatchFields.match_type),
+                from_team_id=await from_team_record.get_field(TeamFields.record_id),
+                from_player_id=f"{await from_player_record.get_field(PlayerFields.record_id)}",
+                to_team_id=await to_team_record.get_field(TeamFields.record_id),
+                vw_from_team=await from_team_record.get_field(TeamFields.team_name),
+                vw_to_team=await to_team_record.get_field(TeamFields.team_name),
+                vw_from_player=f"{await from_player_record.get_field(PlayerFields.player_name)}",
             )
         )
         assert new_result_invite, f"Error: Failed to create match result invite."
 
-        ########################
-        #     RESPONSE         #
-        ########################
-
-        # gather details
-        winner = "draw"
-        winner = "my_team" if outcome == MatchResult.WIN else winner
-        winner = "to_team" if outcome == MatchResult.LOSS else winner
-        time_eml = (
-            await match_record.get_field(MatchFields.match_date)
-            + " "
-            + await match_record.get_field(MatchFields.match_time_et)
-        )
-        # Dictionary
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        response_outcomes = {
+            MatchResult.WIN: "my_team",
+            MatchResult.LOSS: "to_team",
+            MatchResult.DRAW: "draw",
+        }
+        winner = response_outcomes[outcome]
         response_dictionary = {
             "results_status": "pending confirmation",
-            "match_time_utc": await match_record.get_field(MatchFields.match_timestamp),
-            "match_time_eml": time_eml,
-            "match_type": await match_record.get_field(MatchFields.match_type),
-            "my_team": inviter_team_name,
-            "to_team": opposing_team_name,
+            "match_time_utc": f"{await match_record.get_field(MatchFields.match_timestamp)}",
+            "match_time_eml": f"{await match_record.get_field(MatchFields.match_date)} {await match_record.get_field(MatchFields.match_time_et)}",
+            "match_type": f"{await new_result_invite.get_field(MatchResultInviteFields.match_type)}",
+            "my_team": f"{await new_result_invite.get_field(MatchResultInviteFields.vw_from_team)}",
+            "to_team": f"{await new_result_invite.get_field(MatchResultInviteFields.vw_to_team)}",
             "winner": winner,
             "scores": await match_helpers.get_scores_display_dict(
                 await new_result_invite.get_scores()
             ),
         }
-        # code block
         response_code_block = await discord_helpers.code_block(
-            f"{await general_helpers.format_json(response_dictionary)}",
-            "json",
+            await general_helpers.format_json(response_dictionary), "json"
         )
-        # final message
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Match Result Proposal sent to team `{opposing_team_name}`.\n{response_code_block}\nYour opponent must confirm these results before they are officially recorded.",
+            message=(
+                f"Match Result Proposal sent to team `{opposing_team_name}`.\n{response_code_block}\n"
+                f"Your opponent must confirm these results before they are officially recorded.",
+            ),
         )
 
-        ##################
-        #     LOGGING    #
-        ##################
-
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         to_team_mention = await discord_helpers.role_mention(
             guild=interaction.guild,
-            team_name=opposing_team_name,
+            team_name=f"{await new_result_invite.get_field(MatchResultInviteFields.vw_to_team)}",
         )
         from_team_mention = await discord_helpers.role_mention(
             guild=interaction.guild,
-            team_name=inviter_team_name,
+            team_name=f"{await new_result_invite.get_field(MatchResultInviteFields.vw_from_team)}",
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"Match Results Proposal sent to {to_team_mention} from {from_team_mention}",
         )
-    # error handling
+
+    # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
-    except EmlRecordAlreadyExists as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

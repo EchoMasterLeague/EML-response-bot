@@ -11,8 +11,25 @@ async def team_player_remove(
 ):
     """Remove a Player from a Team by name"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get requestor's Team Details
         requestor_matches = await database.table_player.get_player_records(
             discord_id=interaction.user.id
@@ -57,6 +74,8 @@ async def team_player_remove(
             interaction=interaction,
             message=f"{player_discord_member.mention} has been removed from {team_role.mention}",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

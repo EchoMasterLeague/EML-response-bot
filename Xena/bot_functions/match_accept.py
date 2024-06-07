@@ -33,8 +33,13 @@ async def match_accept(
                 player_id=await to_player_record.get_field(PlayerFields.record_id)
             )
         )
-        assert to_teamplayer_records, f"You are not a member of any team."
+        assert to_teamplayer_records, f"You are not a member of a team."
         to_teamplayer_record = to_teamplayer_records[0]
+        assert await to_teamplayer_record.get_field(
+            TeamPlayerFields.is_captain
+        ) or await to_teamplayer_record.get_field(
+            TeamPlayerFields.is_co_captain
+        ), f"You are not a captain."
         # "To" Team
         to_team_records = await database.table_team.get_team_records(
             record_id=await to_teamplayer_record.get_field(TeamPlayerFields.team_id)
@@ -217,3 +222,23 @@ async def match_accept(
         await discord_helpers.final_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)
+
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
+    # Errors

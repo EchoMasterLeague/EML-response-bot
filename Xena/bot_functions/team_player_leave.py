@@ -10,8 +10,25 @@ async def team_player_leave(
 ):
     """Remove the requestor from their Team"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get info about the requestor
         requestor_matches = await database.table_player.get_player_records(
             discord_id=interaction.user.id
@@ -80,6 +97,8 @@ async def team_player_leave(
             interaction=interaction,
             message=f"{member.mention} has left {team_role.mention}",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

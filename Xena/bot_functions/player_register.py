@@ -12,22 +12,36 @@ async def player_register(
 ):
     """Register a new Player"""
     try:
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get region
-        if region:
-            # This could take a while
-            await interaction.response.defer()
-        else:
-            options_dict = {
-                Regions.EU.value: "Europe",
-                Regions.NA.value: "North America",
-                Regions.OCE.value: "Oceania",
-            }
-            view = choices.QuestionPromptView(options_dict=options_dict)
-            await interaction.response.send_message(
-                content="Choose a region", view=view, ephemeral=True
-            )
-            await view.wait()
-            region = view.value
+        options_dict = {
+            Regions.EU.value: "Europe",
+            Regions.NA.value: "North America",
+            Regions.OCE.value: "Oceania",
+        }
+        view = choices.QuestionPromptView(options_dict=options_dict)
+        await interaction.response.send_message(
+            content="Choose a region", view=view, ephemeral=True
+        )
+        await view.wait()
+        region = view.value
         # Get player info
         discord_id = interaction.user.id
         player_name = interaction.user.display_name
@@ -56,6 +70,7 @@ async def player_register(
             interaction=interaction,
             message=f"{interaction.user.mention} has joined the League.",
         )
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:

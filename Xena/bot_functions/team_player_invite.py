@@ -12,8 +12,25 @@ async def team_player_invite(
 ):
     """Invite a Player to a Team by name"""
     try:
-        # This could take a while
         await interaction.response.defer()
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         # Get Player Record for inviter
         inviter_matches = await database.table_player.get_player_records(
             discord_id=interaction.user.id
@@ -80,6 +97,8 @@ async def team_player_invite(
             interaction=interaction,
             message=f"Team invite sent to {invitee_mention} by {interaction.user.mention} for {role_mention}.",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:
