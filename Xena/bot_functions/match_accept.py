@@ -175,7 +175,7 @@ async def match_accept(
         await database.table_match_invite.delete_match_invite_record(selected_invite)
 
         #######################################################################
-        #                             RESPONSE                                #
+        #                              RESPONSE                               #
         #######################################################################
         response_dictionary = {
             "match_status": "scheduled",
@@ -197,7 +197,7 @@ async def match_accept(
         )
 
         #######################################################################
-        #                              LOGGING                                #
+        #                               LOGGING                               #
         #######################################################################
         team_a_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await new_match_record.get_field(MatchFields.vw_team_a))}"
         team_b_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await new_match_record.get_field(MatchFields.vw_team_b))}"

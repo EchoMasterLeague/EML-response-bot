@@ -10,7 +10,7 @@ async def command_is_enabled(database: FullDatabase, interaction: discord.Intera
         command_name = interaction.command.name
 
         #######################################################################
-        #                              RECORDS                                #
+        #                               RECORDS                               #
         #######################################################################
         # Command Lock
         command_lock_records = (

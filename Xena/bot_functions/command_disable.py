@@ -13,7 +13,7 @@ async def command_disable(
         interaction.response.defer()
 
         #######################################################################
-        #                              RECORDS                                #
+        #                               RECORDS                               #
         #######################################################################
         # Command Lock
         command_lock_records = (

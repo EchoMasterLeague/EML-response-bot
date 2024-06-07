@@ -14,7 +14,7 @@ async def team_player_accept(
     """Add the requestor to their new Team"""
     try:
         #######################################################################
-        #                              RECORDS                                #
+        #                               RECORDS                               #
         #######################################################################
         # "To" Player
         to_player_records = await database.table_player.get_player_records(
@@ -36,7 +36,7 @@ async def team_player_accept(
         assert team_invite_records, f"No invites found."
 
         #######################################################################
-        #                              OPTIONS                                #
+        #                               OPTIONS                               #
         #######################################################################
         # Get Options
         descriptions = {}
@@ -192,19 +192,33 @@ async def team_player_accept(
         #                              RESPONSE                               #
         #######################################################################
         team_name = f"{await new_teamplayer_record.get_field(TeamPlayerFields.vw_team)}"
+        captain = None
+        cocaptain = None
+        players = []
+        for player in from_teamplayer_records:
+            if await player.get_field(TeamPlayerFields.is_captain):
+                captain = await player.get_field(TeamPlayerFields.vw_player)
+            elif await player.get_field(TeamPlayerFields.is_co_captain):
+                cocaptain = await player.get_field(TeamPlayerFields.vw_player)
+            else:
+                players.append(await player.get_field(TeamPlayerFields.vw_player))
         response_dictionary = {
-            "team_name": team_name,
+            "team_name": f"{await new_teamplayer_record.get_field(TeamPlayerFields.vw_team)}",
+            "is_active": f"{await from_team_record.get_field(TeamFields.status)}",
+            "captain": captain,
+            "co-captain": cocaptain,
+            "players": sorted(players),
         }
         response_code_block = await discord_helpers.code_block(
             await general_helpers.format_json(response_dictionary), "json"
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(f"You have joined Team `{team_name}`."),
+            message=(f"You have joined Team `{team_name}`.\n{response_code_block}"),
         )
 
         #######################################################################
-        #                              LOGGING                                #
+        #                               LOGGING                               #
         #######################################################################
         to_player_mention = interaction.user.mention
         team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=team_name)}"
