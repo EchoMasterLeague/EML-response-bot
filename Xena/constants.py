@@ -69,7 +69,7 @@ LINK_ECHO_VR_LOUNGE = "https://discord.gg/echo-vr-lounge"
 LINK_ECHO_VR_LOUNGE_TICKETS = "https://discord.com/channels/779349159852769310/1175645368806035518"  # Comment added to keep line long enough for the formatter to ignore
 LINK_EML_WEBSITE = "https://echomasterleague.com/"
 LINK_LEAGUE_MATCHES = "https://echomasterleague.com/current-week-matches-and-results/"
-LINK_LEAGUE_ROSTER = "https://docs.google.com/spreadsheets/d/1oQ6wdNFd8neCMh20frV5UQ0gLoF6ahrF9e4poz4qGJs/edit?pli=1&gid=577240611#gid=577240611"
+LINK_LEAGUE_ROSTER = "https://echomasterleague.com/2024-season-1-team-rosters/"
 LINK_LEAGUE_RULES = "https://echomasterleague.com/eml-league-rules/"
 LINK_STAFF_APPLICATION = "https://echomasterleague.com/staff-application/"
 LINK_TEAM_RANKINGS = "https://echomasterleague.com/team-rankings-2/"
