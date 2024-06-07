@@ -146,6 +146,7 @@ async def team_player_accept(
                 team_id=await from_team_record.get_field(TeamFields.record_id)
             )
         )
+        assert from_teamplayer_records, f"Team was disbanded"
         assert (
             len(from_teamplayer_records) + 1 <= constants.TEAM_PLAYERS_MAX
         ), f"Team already has the maximum number of players ({constants.TEAM_PLAYERS_MAX})."
@@ -160,14 +161,7 @@ async def team_player_accept(
             )
         )
         assert new_teamplayer_record, f"Error: Failed to add player to team."
-
-        # Delete Team Invites
-        for intive in team_invite_records:
-            invite_id = await intive.get_field(TeamInviteFields.record_id)
-            selected_id = await selected_invite.get_field(TeamInviteFields.record_id)
-            if invite_id != selected_id:
-                await database.table_team_invite.delete_team_invite_record(intive)
-        await database.table_team_invite.delete_team_invite_record(selected_invite)
+        from_teamplayer_records.append(new_teamplayer_record)
 
         # Update Team Active Status
         if len(from_teamplayer_records) + 1 >= constants.TEAM_PLAYERS_MIN:
@@ -185,8 +179,17 @@ async def team_player_accept(
             database=database,
             team_id=new_teamplayer_record.get_field(TeamPlayerFields.team_id),
         )
+
+        # Delete Team Invites
+        for intive in team_invite_records:
+            invite_id = await intive.get_field(TeamInviteFields.record_id)
+            selected_id = await selected_invite.get_field(TeamInviteFields.record_id)
+            if invite_id != selected_id:
+                await database.table_team_invite.delete_team_invite_record(intive)
+        await database.table_team_invite.delete_team_invite_record(selected_invite)
+
         #######################################################################
-        #                             RESPONSE                                #
+        #                              RESPONSE                               #
         #######################################################################
         team_name = f"{await new_teamplayer_record.get_field(TeamPlayerFields.vw_team)}"
         response_dictionary = {
