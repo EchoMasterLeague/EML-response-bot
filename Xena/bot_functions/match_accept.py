@@ -47,7 +47,9 @@ async def match_accept(
                 to_team_id=await to_team_record.get_field(TeamFields.record_id)
             )
         )
-        assert match_invite_records, f"No invites found."
+        assert (
+            match_invite_records
+        ), f"No match proposals found. You may want to create one to play another team."
 
         #######################################################################
         #                               OPTIONS                               #
@@ -191,7 +193,7 @@ async def match_accept(
         await discord_helpers.final_message(
             interaction=interaction,
             message=(
-                f"Match Invite accepted:\n{response_code_block}\nMatch scheduled.\n\n"
+                f"Match accepted:\n{response_code_block}\nMatch scheduled.\n\n"
                 f"Remember: This cannot be undone. Failure to show will result in automatic forfeiture.",
             ),
         )

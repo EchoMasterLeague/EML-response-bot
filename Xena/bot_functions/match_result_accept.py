@@ -3,6 +3,7 @@ from database.fields import (
     MatchResultInviteFields as ResultFields,
     PlayerFields,
     TeamFields,
+    TeamPlayerFields,
 )
 from bot_dialogues import choices
 from database.database_full import FullDatabase
@@ -18,39 +19,49 @@ async def match_result_accept(
 ):
     """Accept a Match Result Invite"""
     try:
-        # Cannot defer because this is interactive
-        # Get invitee player details from discord_id
-        invitee_player = await database_helpers.get_player_details_from_discord_id(
-            database, interaction.user.id
+        #######################################################################
+        #                               RECORDS                               #
+        #######################################################################
+        # "To" Player
+        to_player_records = await database.table_player.get_player_records(
+            discord_id=interaction.user.id
         )
-        invitee_player_id = await invitee_player.get_field(PlayerFields.record_id)
-        invitee_player_name = await invitee_player.get_field(PlayerFields.player_name)
-        # Get invitee team details from invitee player
-        invitee_details: database_helpers.TeamDetailsOfPlayer
-        invitee_details = await database_helpers.get_team_details_from_player(
-            database, player=invitee_player, assert_any_captain=True
+        assert to_player_records, f"You are not registered as a player."
+        to_player_record = to_player_records[0]
+        # "To" TeamPlayer
+        to_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await to_player_record.get_field(PlayerFields.record_id)
+            )
         )
-        invitee_team = invitee_details.team
-        to_team_id = await invitee_team.get_field(TeamFields.record_id)
-        # Get match result invites for invitee team
-        match_result_invites = (
+        assert to_teamplayer_records, f"You are not a member of any team."
+        to_teamplayer_record = to_teamplayer_records[0]
+        # "To" Team
+        to_team_records = await database.table_team.get_team_records(
+            record_id=await to_teamplayer_record.get_field(TeamPlayerFields.team_id)
+        )
+        assert to_team_records, f"Your team could not be found."
+        to_team_record = to_team_records[0]
+
+        # Match Result Invites
+        match_result_invite_records = (
             await database.table_match_result_invite.get_match_result_invite_records(
-                to_team_id=to_team_id
+                to_team_id=await to_team_record.get_field(TeamFields.record_id)
             )
         )
         assert (
-            match_result_invites
-        ), f"No match results available to confirm. You may want to create a result offer for another team."
+            match_result_invite_records
+        ), f"No match results available to confirm, You may want to propose match results for another team to confirm."
 
-        ############################
-        #          OPTIONS         #
-        ############################
+        #######################################################################
+        #                               OPTIONS                               #
+        #######################################################################
 
         # Get Options
         descriptions = {}
         options_dict = {}
         option_number = 0
-        for invite in match_result_invites:
+        for invite in match_result_invite_records:
             option_number += 1
             invite_id = await invite.get_field(ResultFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
@@ -96,20 +107,20 @@ async def match_result_accept(
             ephemeral=True,
         )
 
-        ############################
-        #        CHOICE            #
-        ############################
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
         # Wait for Choice
         await options_view.wait()
         # Get Choice
         choice = options_view.value
         if not choice or choice == "cancel":
             return await discord_helpers.final_message(
-                interaction, message=f"No match result selected."
+                interaction, message=f"No match results selected."
             )
         # Choice: Clear all invites
         if choice == "clearall":
-            for invite in match_result_invites:
+            for invite in match_result_invite_records:
                 await invite.set_field(
                     ResultFields.invite_status, InviteStatus.DECLINED
                 )
@@ -123,63 +134,71 @@ async def match_result_accept(
             return await discord_helpers.final_message(interaction, message)
         # Choice: Accept (#)
         selected_invite = None
-        for invite in match_result_invites:
+        for invite in match_result_invite_records:
             invite_id = await invite.get_field(ResultFields.record_id)
             if invite_id == choice:
                 selected_invite = invite
                 break
         assert selected_invite, f"Match Result Invite not found."
 
-        ############################
-        #        PROCESSING        #
-        ############################
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
 
-        # Get details from the selected invite record
+        # Update Match Result Invite
+        await selected_invite.set_field(
+            ResultFields.invite_status, InviteStatus.ACCEPTED
+        )
+        await selected_invite.set_field(
+            ResultFields.to_player_id,
+            await to_player_record.get_field(PlayerFields.record_id),
+        )
         from_team_id = await selected_invite.get_field(ResultFields.from_team_id)
         to_team_id = await selected_invite.get_field(ResultFields.to_team_id)
-        outcome = await selected_invite.get_field(ResultFields.match_outcome)
-        scores = await selected_invite.get_scores()
-        # Get details from the associated match record
-        match_id = await selected_invite.get_field(ResultFields.match_id)
-        match_records = await database.table_match.get_match_records(record_id=match_id)
+        assert from_team_id != to_team_id, f"Cannot accept your own invites."
+        await database.table_match_result_invite.update_match_result_invite_record(
+            selected_invite
+        )
+
+        # Get Match
+        match_records = await database.table_match.get_match_records(
+            record_id=await selected_invite.get_field(ResultFields.match_id)
+        )
         assert match_records, f"Error: Failed to find match record."
         match_record = match_records[0]
+
+        # Get Scores
+        scores = await selected_invite.get_scores()
+        outcome = await selected_invite.get_field(ResultFields.match_outcome)
+        from_team_id = await selected_invite.get_field(ResultFields.from_team_id)
         team_a_id = await match_record.get_field(MatchFields.team_a_id)
-        team_b_id = await match_record.get_field(MatchFields.team_b_id)
-        assert team_a_id != team_b_id, f"Cannot accept scores sent by your own team."
-        # reverse scores and oucome if the teams are listed the other way in the match record
         if team_a_id != from_team_id:
-            outcome = await match_helpers.get_reversed_outcome(outcome)
             scores = await match_helpers.get_reversed_scores(scores)
-        # Update Match Record
-        await match_record.set_field(
-            MatchFields.match_status, MatchStatus.COMPLETED.value
-        )
+            outcome = await match_helpers.get_reversed_outcome(outcome)
+
+        # Update Match
+        await match_record.set_field(MatchFields.match_status, MatchStatus.COMPLETED)
         await match_record.set_scores(scores)
         await match_record.set_field(MatchFields.outcome, outcome)
         match_record = MatchRecord(await match_record.to_list())  # normalize
         await database.table_match.update_match_record(match_record)
-        # Update Match Result Invite record
-        await selected_invite.set_field(ResultFields.to_player_id, invitee_player_id)
-        await selected_invite.set_field(
-            ResultFields.invite_status, InviteStatus.ACCEPTED
-        )
-        await database.table_match_result_invite.update_match_result_invite_record(
-            selected_invite
-        )
+
+        # Delete Match Result Invite
         await database.table_match_result_invite.delete_match_result_invite_record(
             selected_invite
         )
 
-        ############################
-        #        RESPONSE          #
-        ############################
-
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
         response_outcomes = {
             MatchResult.WIN: "team_a",
             MatchResult.LOSS: "team_b",
             MatchResult.DRAW: "draw",
         }
+        response_outcome = (
+            f"{response_outcomes[await match_record.get_field(MatchFields.outcome)]}"
+        )
         response_dictionary = {
             "results_status": "confirmed",
             "match_time_utc": f"{await match_record.get_field(MatchFields.match_timestamp)}",
@@ -187,7 +206,7 @@ async def match_result_accept(
             "match_type": f"{await match_record.get_field(MatchFields.match_type)}",
             "team_a": f"{await match_record.get_field(MatchFields.vw_team_a)}",
             "team_b": f"{await match_record.get_field(MatchFields.vw_team_b)}",
-            "winner": f"{response_outcomes[outcome]}",
+            "winner": f"{response_outcome}",
             "scores": await match_helpers.get_scores_display_dict(
                 await match_record.get_scores()
             ),
@@ -198,29 +217,32 @@ async def match_result_accept(
         await discord_helpers.final_message(
             interaction=interaction,
             message=(
-                f"Match Result Invite accepted:\n"
+                f"Match Results accepted:\n"
                 f"{response_code_block}\n"
                 f"Match results confirmed."
             ),
         )
 
-        ############################
-        #        LOGGING           #
-        ############################
-
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
         log_outcomes = {
             MatchResult.WIN: "wins against",
             MatchResult.LOSS: "loses to",
             MatchResult.DRAW: "draws with",
         }
-        match_type = f"{await match_record.get_field(MatchFields.match_type)}"
+        log_outcome = (
+            f"{log_outcomes[await match_record.get_field(MatchFields.outcome)]}"
+        )
         team_a_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await match_record.get_field(MatchFields.vw_team_a))}"
         team_b_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await match_record.get_field(MatchFields.vw_team_b))}"
+        match_type = f"{await match_record.get_field(MatchFields.match_type)}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{team_a_mention} {log_outcomes[outcome]} {team_b_mention} in a `{match_type}` match",
+            message=f"{team_a_mention} {log_outcome} {team_b_mention} in a `{match_type}` match",
         )
-    # Error Handling
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:
