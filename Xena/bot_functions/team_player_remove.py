@@ -72,8 +72,12 @@ async def team_player_remove(
         #                             PROCESSING                              #
         #######################################################################
 
-        # Delete "Their" TeamPlayer
-        await database.table_team_player.delete_record(their_teamplayer_record)
+        # Remove "Their" Discord roles
+        their_discord_id = await their_player_record.get_field(PlayerFields.discord_id)
+        their_discord_member = await discord_helpers.member_from_discord_id(
+            guild=interaction.guild, discord_id=their_discord_id
+        )
+        await discord_helpers.member_remove_team_roles(their_discord_member)
 
         # Create "Their" Cooldown
         new_cooldown = await database.table_cooldown.create_cooldown_record(
@@ -84,12 +88,8 @@ async def team_player_remove(
         )
         assert new_cooldown, "Error: Could not apply cooldown."
 
-        # Remove "Their" Discord roles
-        their_discord_id = await their_player_record.get_field(PlayerFields.discord_id)
-        their_discord_member = await discord_helpers.member_from_discord_id(
-            guild=interaction.guild, discord_id=their_discord_id
-        )
-        await discord_helpers.member_remove_team_roles(their_discord_member)
+        # Delete "Their" TeamPlayer
+        await database.table_team_player.delete_record(their_teamplayer_record)
 
         # Update "Our" Team Active Status
         if len(our_teamplayer_records) - 1 < constants.TEAM_PLAYERS_MIN:

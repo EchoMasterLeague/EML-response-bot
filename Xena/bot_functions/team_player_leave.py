@@ -48,6 +48,19 @@ async def team_player_leave(
         #                             PROCESSING                              #
         #######################################################################
 
+        # Remove "My" Discord roles
+        member = interaction.user
+        await discord_helpers.member_remove_team_roles(member)
+
+        # Create "My" Cooldown record
+        new_cooldown = await database.table_cooldown.create_cooldown_record(
+            player_id=await my_player_record.get_field(PlayerFields.record_id),
+            old_team_id=await our_team_record.get_field(TeamFields.record_id),
+            player_name=await my_player_record.get_field(PlayerFields.player_name),
+            old_team_name=await our_team_record.get_field(TeamFields.team_name),
+        )
+        assert new_cooldown, "Error: Could not apply cooldown."
+
         # Delete "My" TeamPlayer
         if await my_teamplayer_record.get_field(TeamPlayerFields.is_captain):
             # Get co-captain record
@@ -63,19 +76,6 @@ async def team_player_leave(
             await cocaptain_record.set_field(TeamPlayerFields.is_co_captain, False)
             await database.table_team_player.update_team_player_record(cocaptain_record)
         await database.table_team_player.delete_team_player_record(my_teamplayer_record)
-
-        # Create "My" Cooldown record
-        new_cooldown = await database.table_cooldown.create_cooldown_record(
-            player_id=await my_player_record.get_field(PlayerFields.record_id),
-            old_team_id=await our_team_record.get_field(TeamFields.record_id),
-            player_name=await my_player_record.get_field(PlayerFields.player_name),
-            old_team_name=await our_team_record.get_field(TeamFields.team_name),
-        )
-        assert new_cooldown, "Error: Could not apply cooldown."
-
-        # Remove "My" Discord roles
-        member = interaction.user
-        await discord_helpers.member_remove_team_roles(member)
 
         # Update "Our" Team Active Status
         if len(our_teamplayer_records) - 1 < constants.TEAM_PLAYERS_MIN:

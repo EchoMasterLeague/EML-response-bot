@@ -90,3 +90,4 @@ TEAM_PLAYERS_MAX = 6
 TEAM_PLAYERS_MIN = 4
 TIME_ENTRY_FORMAT = "YYYY-MM-DD HH:MM AM/PM"
 TIMEZONE_ENCOURAGEMENT_MESSAGE = "Please enter times in Eastern Time, or Get rekkt"
+INPUT_ALLOWED_CHARS_TEAM_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_ "  # Comment added to keep line long enough for the formatter to ignore

@@ -1,6 +1,7 @@
 from database.database_full import FullDatabase
-from database.fields import PlayerFields, TeamPlayerFields
-from utils import discord_helpers, database_helpers
+from database.fields import PlayerFields, TeamPlayerFields, TeamFields
+from database.records import TeamPlayerRecord
+from utils import discord_helpers, database_helpers, general_helpers
 import discord
 
 
@@ -15,6 +16,59 @@ async def team_cocaptain_promote(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "My" Player
+        my_player_records = await database.table_player.get_player_records(
+            discord_id=interaction.user.id
+        )
+        assert my_player_records, "You are not registered as a player."
+        my_player = my_player_records[0]
+        # "Their" Player
+        their_player_records = await database.table_player.get_player_records(
+            player_name=player_name
+        )
+        assert their_player_records, "Player not found."
+        their_player = their_player_records[0]
+        # "My" TeamPlayer
+        my_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await my_player.get_field(PlayerFields.record_id)
+            )
+        )
+        assert my_teamplayer_records, "You are not a member of a team."
+        my_teamplayer = my_teamplayer_records[0]
+        assert await my_teamplayer.get_field(
+            TeamPlayerFields.is_captain
+        ), "You are not a captain."
+        # "Our" TeamPlayer
+        our_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await my_teamplayer.get_field(TeamPlayerFields.team_id)
+            )
+        )
+        assert our_teamplayer_records, "No teammates found."
+        # "Their" TeamPlayer
+        their_teamplayer_records: list[TeamPlayerRecord] = []
+        for teamplayer in our_teamplayer_records:
+            their_id = await teamplayer.get_field(TeamPlayerFields.player_id)
+            if their_id == teamplayer.get_field(TeamPlayerFields.player_id):
+                their_teamplayer_records.append(teamplayer)
+        assert their_teamplayer_records, "Player is not your team."
+        their_teamplayer = their_teamplayer_records[0]
+        assert not await their_teamplayer.get_field(
+            TeamPlayerFields.is_co_captain
+        ), "Player is already co-captain."
+        assert await their_teamplayer.get_field(
+            TeamPlayerFields.player_id
+        ) != await my_teamplayer.get_field(
+            TeamPlayerFields.player_id
+        ), "Cannot promote yourself."
+        # "Our" Team
+        our_team_records = await database.table_team.get_team_records(
+            record_id=await my_teamplayer.get_field(TeamPlayerFields.team_id)
+        )
+        assert our_team_records, "Your team could not be found."
+        our_team = our_team_records[0]
+
         #######################################################################
         #                               OPTIONS                               #
         #######################################################################
@@ -24,76 +78,62 @@ async def team_cocaptain_promote(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+
+        # Update "Their" Discord roles
+        await discord_helpers.member_remove_captain_roles(
+            await discord_helpers.member_from_discord_id(
+                guild=interaction.guild,
+                discord_id=await their_player.get_field(PlayerFields.discord_id),
+            )
+        )
+
+        # Update "Their" TeamPlayer record
+        await their_teamplayer.set_field(TeamPlayerFields.is_co_captain, True)
+        await database.table_team_player.update_team_player_record(their_teamplayer)
+
+        # Update roster view
+        await database_helpers.update_roster_view(
+            db=database, team_id=await our_team.get_field(TeamFields.record_id)
+        )
+
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        captain = None
+        cocaptain = None
+        players = []
+        for player in our_teamplayer_records:
+            if await player.get_field(TeamPlayerFields.is_captain):
+                captain = await player.get_field(TeamPlayerFields.vw_player)
+            elif await player.get_field(TeamPlayerFields.is_co_captain):
+                cocaptain = await player.get_field(TeamPlayerFields.vw_player)
+            else:
+                players.append(await player.get_field(TeamPlayerFields.vw_player))
+        response_dictionary = {
+            "team_name": f"{await our_team.get_field(TeamFields.team_name)}",
+            "is_active": f"{await our_team.get_field(TeamFields.status)}",
+            "captain": captain,
+            "co-captain": cocaptain,
+            "players": sorted(players),
+        }
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=(
+                f"Player `{player_name}` promoted to co-captain:\n{response_code_block}\n"
+            ),
+        )
+
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        # Get info about the requestor
-        requestor_matches = await database.table_player.get_player_records(
-            discord_id=interaction.user.id
-        )
-        assert (
-            requestor_matches
-        ), f"You must be registered as a player to promote players."
-        requestor = requestor_matches[0]
-        requestor_id = await requestor.get_field(PlayerFields.record_id)
-        requestor_team_players = (
-            await database.table_team_player.get_team_player_records(
-                player_id=requestor_id
-            )
-        )
-        assert requestor_team_players, f"You must be on a team to promote players."
-        requestor_team_player = requestor_team_players[0]
-        requestor_is_captain = await requestor_team_player.get_field(
-            TeamPlayerFields.is_captain
-        )
-        assert requestor_is_captain, f"You must be team captain to promote players."
-        # Get info about the Team
-        team_id = await requestor_team_player.get_field(TeamPlayerFields.team_id)
-        team_players = await database.table_team_player.get_team_player_records(
-            team_id=team_id
-        )
-        # Get info about co-captain
-        co_captain_id = None
-        for team_player in team_players:
-            if await team_player.get_field(TeamPlayerFields.is_co_captain):
-                co_captain_id = await team_player.get_field(TeamPlayerFields.player_id)
-        assert not co_captain_id, f"Team already has a co-captain."
-        # Get info about the Player
-        players = await database.table_player.get_player_records(
-            player_name=player_name
-        )
-        assert players, f"Player not found."
-        player = players[0]
-        player_name = await player.get_field(PlayerFields.player_name)
-        player_id = await player.get_field(PlayerFields.record_id)
-        player_team_player = None
-        for team_player in team_players:
-            if await team_player.get_field(TeamPlayerFields.player_id) == player_id:
-                player_team_player = team_player
-        assert player_team_player, f"Player is not on the team."
-        assert player_id != requestor_id, f"Cannot promote yourself."
-        # Update Player's TeamPlayer record
-        await player_team_player.set_field(TeamPlayerFields.is_co_captain, True)
-        await database.table_team_player.update_team_player_record(player_team_player)
-        # Update Player's Discord roles
-        region = await requestor.get_field(PlayerFields.region)
-        player_discord_id = await player.get_field(PlayerFields.discord_id)
-        player_discord_member = await discord_helpers.member_from_discord_id(
-            guild=interaction.guild,
-            discord_id=player_discord_id,
-        )
-        await discord_helpers.member_add_co_captain_role(player_discord_member, region)
-        # Update roster view
-        await database_helpers.update_roster_view(database, team_id)
-        # Success
-        message = f"Player '{player_name}' promoted to co-captain"
-        await discord_helpers.final_message(interaction, message)
+        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await their_player.get_field(PlayerFields.discord_id))}"
+        team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await our_team.get_field(TeamFields.team_name))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{player_discord_member.mention} is now Co-Captain",
+            message=f"{their_player_mention} is now Co-Captain of {team_mention}",
         )
 
     # Errors

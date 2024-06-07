@@ -214,7 +214,7 @@ async def team_player_accept(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(f"You have joined Team `{team_name}`.\n{response_code_block}"),
+            message=f"You have joined Team `{team_name}`.\n{response_code_block}",
         )
 
         #######################################################################
