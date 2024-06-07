@@ -47,14 +47,14 @@ async def match_result_accept(
         ############################
 
         # Get Options
-        match_result_offers = {}
+        descriptions = {}
         options_dict = {}
         option_number = 0
         for invite in match_result_invites:
             option_number += 1
             invite_id = await invite.get_field(ResultFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
-            match_result_offers[str(option_number)] = {
+            descriptions[str(option_number)] = {
                 "invite_id": invite_id,
                 "created_at": f"{await invite.get_field(ResultFields.created_at)}",
                 "expires_at": f"{await invite.get_field(ResultFields.invite_expires_at)}",
@@ -66,12 +66,12 @@ async def match_result_accept(
                 ),
             }
         # Options View
-        view = choices.QuestionPromptView(
+        options_view = choices.QuestionPromptView(
             options_dict=options_dict,
             initial_button_style=discord.ButtonStyle.success,
         )
         # Button: Clear all invites
-        view.add_item(
+        options_view.add_item(
             choices.QuestionOptionButton(
                 label="Clear all invites",
                 style=discord.ButtonStyle.danger,
@@ -79,7 +79,7 @@ async def match_result_accept(
             )
         )
         # Button: Cancel
-        view.add_item(
+        options_view.add_item(
             choices.QuestionOptionButton(
                 label="Cancel",
                 style=discord.ButtonStyle.primary,
@@ -87,12 +87,12 @@ async def match_result_accept(
             )
         )
         # Show Options
-        match_result_offers_block = await discord_helpers.code_block(
-            await general_helpers.format_json(match_result_offers), "json"
+        descriptions_block = await discord_helpers.code_block(
+            await general_helpers.format_json(descriptions), "json"
         )
         await interaction.response.send_message(
-            content=f"Match Result Invites:\n{match_result_offers_block}\n\nWarning: Once accepted, this cannot be undone.",
-            view=view,
+            content=f"Match Result Invites:\n{descriptions_block}\n\nWarning: Once accepted, this cannot be undone.",
+            view=options_view,
             ephemeral=True,
         )
 
@@ -100,9 +100,9 @@ async def match_result_accept(
         #        CHOICE            #
         ############################
         # Wait for Choice
-        await view.wait()
+        await options_view.wait()
         # Get Choice
-        choice = view.value
+        choice = options_view.value
         if not choice or choice == "cancel":
             return await discord_helpers.final_message(
                 interaction, message=f"No match result selected."
@@ -110,6 +110,12 @@ async def match_result_accept(
         # Choice: Clear all invites
         if choice == "clearall":
             for invite in match_result_invites:
+                await invite.set_field(
+                    ResultFields.invite_status, InviteStatus.DECLINED
+                )
+                await database.table_match_result_invite.update_match_result_invite_record(
+                    invite
+                )
                 await database.table_match_result_invite.delete_match_result_invite_record(
                     invite
                 )

@@ -8,7 +8,7 @@ from database.fields import (
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import InviteStatus
-from utils import discord_helpers, database_helpers, general_helpers, match_helpers
+from utils import discord_helpers, general_helpers
 import discord
 
 
@@ -53,14 +53,14 @@ async def match_accept(
         #                               OPTIONS                               #
         #######################################################################
         # Get Options
-        match_offers = {}
+        descriptions = {}
         options_dict = {}
         option_number = 0
         for invite in match_invite_records:
             option_number += 1
             invite_id = await invite.get_field(MatchInviteFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
-            match_offers[str(option_number)] = {
+            descriptions[str(option_number)] = {
                 "invite_id": invite_id,
                 "created_at": f"{await invite.get_field(MatchInviteFields.created_at)}",
                 "expires_at": f"{await invite.get_field(MatchInviteFields.invite_expires_at)}",
@@ -91,12 +91,12 @@ async def match_accept(
             )
         )
         # Show Options
-        match_offers_block = await discord_helpers.code_block(
-            await general_helpers.format_json(match_offers), "json"
+        descriptions_block = await discord_helpers.code_block(
+            await general_helpers.format_json(descriptions), "json"
         )
         await interaction.response.send_message(
             content=(
-                f"Match Invites:\n{match_offers_block}\nNote: All times in United States Eastern Time (ET).\n\n"
+                f"Match Invites:\n{descriptions_block}\nNote: All times in United States Eastern Time (ET).\n\n"
                 f"Warning: Once accepted, this cannot be undone.\nFailure to show at scheduled time will result in automatic forfeiture."
             ),
             view=options_view,
@@ -118,6 +118,10 @@ async def match_accept(
         # Choice: Clear all invites
         if choice == "clearall":
             for invite in match_invite_records:
+                await invite.set_field(
+                    MatchInviteFields.invite_status, InviteStatus.DECLINED
+                )
+                await database.table_match_invite.update_match_invite_record(invite)
                 await database.table_match_invite.delete_match_invite_record(invite)
             return await discord_helpers.final_message(
                 interaction=interaction, message=f"Match Invites cleared."
@@ -187,9 +191,7 @@ async def match_accept(
         await discord_helpers.final_message(
             interaction=interaction,
             message=(
-                f"Match Invite accepted:\n"
-                f"{response_code_block}\n"
-                f"Match scheduled.\n\n"
+                f"Match Invite accepted:\n{response_code_block}\nMatch scheduled.\n\n"
                 f"Remember: This cannot be undone. Failure to show will result in automatic forfeiture.",
             ),
         )

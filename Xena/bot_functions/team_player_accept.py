@@ -1,9 +1,10 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
-from database.enums import InviteStatus
-from database.fields import TeamInviteFields, PlayerFields, TeamFields
-from utils import discord_helpers, database_helpers
+from database.enums import InviteStatus, TeamStatus
+from database.fields import TeamInviteFields, PlayerFields, TeamFields, TeamPlayerFields
+from utils import discord_helpers, database_helpers, general_helpers
 import discord
+import constants
 
 
 async def team_player_accept(
@@ -12,88 +13,204 @@ async def team_player_accept(
 ):
     """Add the requestor to their new Team"""
     try:
-        # Get info about the Player
-        players = await database.table_player.get_player_records(
+        #######################################################################
+        #                              RECORDS                                #
+        #######################################################################
+        # "To" Player
+        to_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
         )
-        assert players, f"You must be registered as a Player to accept an invite."
-        player = players[0]
-        player_id = await player.get_field(PlayerFields.record_id)
-        # Gather Invites
-        invites = await database.table_team_invite.get_team_invite_records(
-            to_player_id=player_id
+        assert to_player_records, f"You are not registered as a player."
+        to_player_record = to_player_records[0]
+        # "To" Team Player
+        to_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await to_player_record.get_field(PlayerFields.record_id)
+            )
         )
-        assert invites, f"No invites found."
-        # Gather Team options
+        assert not to_teamplayer_records, f"You are already on a team."
+        # Team Invites
+        team_invite_records = await database.table_team_invite.get_team_invite_records(
+            to_player_id=await to_player_record.get_field(PlayerFields.record_id)
+        )
+        assert team_invite_records, f"No invites found."
+
+        #######################################################################
+        #                              OPTIONS                                #
+        #######################################################################
+        # Get Options
+        descriptions = {}
         options_dict = {}
-        all_teams = await database.table_team.get_table_data()
-        for invite in invites:
-            team_id = await invite.get_field(TeamInviteFields.from_team_id)
-            for team in all_teams:
-                if team[TeamFields.record_id] == team_id:
-                    team_name = team[TeamFields.team_name]
-                    options_dict[team_id] = team_name
-        # Create the view to display the options
-        view = choices.QuestionPromptView(
+        option_number = 0
+        for invite in team_invite_records:
+            option_number += 1
+            invite_id = await invite.get_field(TeamInviteFields.record_id)
+            options_dict[invite_id] = f"Accept ({option_number})"
+            descriptions[str(option_number)] = {
+                "invite_id": invite_id,
+                "created_at": f"{await invite.get_field(TeamInviteFields.created_at)}",
+                "expires_at": f"{await invite.get_field(TeamInviteFields.invite_expires_at)}",
+                "team_name": f"{await invite.get_field(TeamInviteFields.vw_team)}",
+                "captain": f"{await invite.get_field(TeamInviteFields.vw_from_player)}({await invite.get_field(TeamInviteFields.from_player_id)})",
+            }
+        # Options View
+        options_view = choices.QuestionPromptView(
             options_dict=options_dict,
             initial_button_style=discord.ButtonStyle.success,
         )
-        # Add option to clear invites
-        clearall_button = choices.QuestionOptionButton(
-            label="Decline All",
-            style=discord.ButtonStyle.danger,
-            custom_id="clearall",
+        # Button: Clear all invites
+        options_view.add_item(
+            choices.QuestionOptionButton(
+                label="Clear all invites",
+                style=discord.ButtonStyle.danger,
+                custom_id="clearall",
+            )
         )
-        view.add_item(clearall_button)
-        # Add option to cancel without making a choice
-        cancel_button = choices.QuestionOptionButton(
-            label="Cancel",
-            style=discord.ButtonStyle.primary,
-            custom_id="cancel",
+        # Button: Cancel
+        options_view.add_item(
+            choices.QuestionOptionButton(
+                label="Cancel",
+                style=discord.ButtonStyle.primary,
+                custom_id="cancel",
+            )
         )
-        view.add_item(cancel_button)
-        # Send the message with the options
+        # Show Options
+        descriptions_block = await discord_helpers.code_block(
+            await general_helpers.format_json(descriptions), "json"
+        )
         await interaction.response.send_message(
-            content="Choose a team", view=view, ephemeral=True
+            content=(
+                f"Team Invites:\n{descriptions_block}\n\n"
+                f"Which team invite would you like to accept?"
+            ),
+            view=options_view,
+            ephemeral=True,
         )
-        # Wait for the user to make a choice
-        await view.wait()
-        # Process the user's choice
-        choice = view.value
+
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        # Wait for Choice
+        await options_view.wait()
+        # Get Choice
+        choice = options_view.value
+        # Choice: Cancel (default)
         if not choice or choice == "cancel":
-            return await interaction.followup.send("No team selected.")
-        # clear invites
-        for invite in invites:
-            if await invite.get_field(TeamInviteFields.from_team_id) != choice:
+            return await discord_helpers.final_message(
+                interaction=interaction, message=f"No team selected."
+            )
+        # Choice: Clear all invites
+        if choice == "clearall":
+            for invite in team_invite_records:
                 await invite.set_field(
                     TeamInviteFields.invite_status, InviteStatus.DECLINED
                 )
-            else:
-                await invite.set_field(
-                    TeamInviteFields.invite_status, InviteStatus.ACCEPTED
-                )
-            await database.table_team_invite.update_team_invite_record(invite)
-            await database.table_team_invite.delete_team_invite_record(invite)
-        if choice == "clearall":
-            # We are done here if no team was selected
-            return await interaction.followup.send("Invites cleared.")
-        # Add player to the team
-        team_id = choice
-        team_name = options_dict[team_id]
-        await database_helpers.add_player_to_team(database, player_id, team_name)
-        await discord_helpers.add_member_to_team(interaction.user, team_name)
-        # Update roster view
-        await database_helpers.update_roster_view(database, team_id)
-        # Success
-        message = f"You have joined Team '{team_name}'"
-        await discord_helpers.final_message(interaction, message)
-        team_role = await discord_helpers.get_team_role(
-            guild=interaction.guild, team_name=team_name
+                await database.table_team_invite.update_team_invite_record(invite)
+                await database.table_team_invite.delete_team_invite_record(invite)
+            return await discord_helpers.final_message(
+                interaction=interaction, message=f"Team Invites cleared."
+            )
+        # Choice: Accept (#)
+        selected_invite = None
+        for invite in team_invite_records:
+            if choice == await invite.get_field(TeamInviteFields.record_id):
+                selected_invite = invite
+                break
+        assert selected_invite, f"Team Invite not found."
+
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+
+        # Update Team Invite
+        await selected_invite.set_field(
+            TeamInviteFields.invite_status, InviteStatus.ACCEPTED
         )
+        from_player_id = await selected_invite.get_field(
+            TeamInviteFields.from_player_id
+        )
+        to_player_id = await selected_invite.get_field(TeamInviteFields.to_player_id)
+        assert from_player_id != to_player_id, f"Cannot accept your own invites."
+        await database.table_team_invite.update_team_invite_record(selected_invite)
+
+        # "From" Team
+        from_team_records = await database.table_team.get_team_records(
+            record_id=await selected_invite.get_field(TeamInviteFields.from_team_id)
+        )
+        assert from_team_records, f"Team not found."
+        from_team_record = from_team_records[0]
+
+        # "From" TeamPlayers
+        from_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await from_team_record.get_field(TeamFields.record_id)
+            )
+        )
+        assert (
+            len(from_teamplayer_records) + 1 <= constants.TEAM_PLAYERS_MAX
+        ), f"Team already has the maximum number of players ({constants.TEAM_PLAYERS_MAX})."
+
+        # Add Player to Team
+        new_teamplayer_record = (
+            await database.table_team_player.create_team_player_record(
+                team_id=await from_team_record.get_field(TeamFields.record_id),
+                team_name=await from_team_record.get_field(TeamFields.team_name),
+                player_id=await to_player_record.get_field(PlayerFields.record_id),
+                player_name=await to_player_record.get_field(PlayerFields.player_name),
+            )
+        )
+        assert new_teamplayer_record, f"Error: Failed to add player to team."
+
+        # Delete Team Invites
+        for intive in team_invite_records:
+            invite_id = await intive.get_field(TeamInviteFields.record_id)
+            selected_id = await selected_invite.get_field(TeamInviteFields.record_id)
+            if invite_id != selected_id:
+                await database.table_team_invite.delete_team_invite_record(intive)
+        await database.table_team_invite.delete_team_invite_record(selected_invite)
+
+        # Update Team Active Status
+        if len(from_teamplayer_records) + 1 >= constants.TEAM_PLAYERS_MIN:
+            await from_team_record.set_field(TeamFields.status, TeamStatus.ACTIVE)
+            await database.table_team.update_team_record(from_team_record)
+
+        # Update Discord Roles
+        await discord_helpers.add_member_to_team(
+            member=interaction.user,
+            team_name=await new_teamplayer_record.get_field(TeamPlayerFields.vw_team),
+        )
+
+        # Update roster view
+        await database_helpers.update_roster_view(
+            database=database,
+            team_id=new_teamplayer_record.get_field(TeamPlayerFields.team_id),
+        )
+        #######################################################################
+        #                             RESPONSE                                #
+        #######################################################################
+        team_name = f"{await new_teamplayer_record.get_field(TeamPlayerFields.vw_team)}"
+        response_dictionary = {
+            "team_name": team_name,
+        }
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=(f"You have joined Team `{team_name}`."),
+        )
+
+        #######################################################################
+        #                              LOGGING                                #
+        #######################################################################
+        to_player_mention = interaction.user.mention
+        team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=team_name)}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{interaction.user.mention} has joined {team_role.mention}",
+            message=f"{to_player_mention} has joined {team_mention}",
         )
+
+    # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)
     except Exception as error:
