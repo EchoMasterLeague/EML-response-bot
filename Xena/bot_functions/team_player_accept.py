@@ -151,7 +151,7 @@ async def team_player_accept(
             len(from_teamplayer_records) + 1 <= constants.TEAM_PLAYERS_MAX
         ), f"Team already has the maximum number of players ({constants.TEAM_PLAYERS_MAX})."
 
-        # Add Player to Team
+        # Add "To" Player to Team
         new_teamplayer_record = (
             await database.table_team_player.create_team_player_record(
                 team_id=await from_team_record.get_field(TeamFields.record_id),
@@ -163,16 +163,16 @@ async def team_player_accept(
         assert new_teamplayer_record, f"Error: Failed to add player to team."
         from_teamplayer_records.append(new_teamplayer_record)
 
-        # Update Team Active Status
-        if len(from_teamplayer_records) + 1 >= constants.TEAM_PLAYERS_MIN:
-            await from_team_record.set_field(TeamFields.status, TeamStatus.ACTIVE)
-            await database.table_team.update_team_record(from_team_record)
-
-        # Update Discord Roles
+        # Update "To" Discord Roles
         await discord_helpers.add_member_to_team(
             member=interaction.user,
             team_name=await new_teamplayer_record.get_field(TeamPlayerFields.vw_team),
         )
+
+        # Update "From" Team Active Status
+        if len(from_teamplayer_records) + 1 >= constants.TEAM_PLAYERS_MIN:
+            await from_team_record.set_field(TeamFields.status, TeamStatus.ACTIVE)
+            await database.table_team.update_team_record(from_team_record)
 
         # Update roster view
         await database_helpers.update_roster_view(
@@ -220,8 +220,8 @@ async def team_player_accept(
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        to_player_mention = interaction.user.mention
-        team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=team_name)}"
+        to_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await new_teamplayer_record.get_field(TeamPlayerFields.player_id))}"
+        team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await new_teamplayer_record.get_field(TeamPlayerFields.vw_team))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"{to_player_mention} has joined {team_mention}",

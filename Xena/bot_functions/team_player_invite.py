@@ -1,6 +1,6 @@
 from database.database_full import FullDatabase
 from utils import discord_helpers, database_helpers, general_helpers
-from database.fields import PlayerFields, TeamFields, TeamPlayerFields
+from database.fields import PlayerFields, TeamFields, TeamPlayerFields, TeamInviteFields
 import discord
 
 
@@ -16,86 +16,111 @@ async def team_player_invite(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        #######################################################################
-        #                               OPTIONS                               #
-        #######################################################################
-        #######################################################################
-        #                               CHOICE                                #
-        #######################################################################
-        #######################################################################
-        #                             PROCESSING                              #
-        #######################################################################
-        #######################################################################
-        #                              RESPONSE                               #
-        #######################################################################
-        #######################################################################
-        #                               LOGGING                               #
-        #######################################################################
-        # Get Player Record for inviter
-        inviter_matches = await database.table_player.get_player_records(
+        # "From" Player
+        from_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
         )
-        assert inviter_matches, f"You must be registered as a player to invite players."
-        inviter = inviter_matches[0]
-        # check permissions
-        inviter_team_players = await database.table_team_player.get_team_player_records(
-            player_id=await inviter.get_field(PlayerFields.record_id)
+        assert from_player_records, "You are not registered as a player."
+        from_player_record = from_player_records[0]
+        # "From" TeamPlayer
+        from_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await from_player_record.get_field(PlayerFields.record_id)
+            )
         )
-        assert (
-            inviter_team_players
-        ), f"You must be a player on a team to invite players."
-        inviter_team_player = inviter_team_players[0]
-        inviter_teams = await database.table_team.get_team_records(
-            record_id=await inviter_team_player.get_field(TeamPlayerFields.team_id)
+        assert from_teamplayer_records, "You are not a member of a team."
+        from_teamplayer_record = from_teamplayer_records[0]
+        assert await from_teamplayer_record.get_field(
+            TeamPlayerFields.is_captain
+        ), f"You are not a captain."
+        from_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await from_teamplayer_record.get_field(TeamPlayerFields.team_id)
+            )
         )
-        assert inviter_teams, f"You must be a player on a team to invite players."
-        inviter_team = inviter_teams[0]
-        team_details = await database_helpers.get_team_details_from_player(
-            database, inviter, assert_captain=True
+        assert from_teamplayer_records, "No teammates found."
+        # "From" Team
+        from_team_records = await database.table_team.get_team_records(
+            record_id=await from_teamplayer_record.get_field(TeamPlayerFields.team_id)
         )
-        assert team_details, f"You must be a captain to invite players."
-        # Get player record for invitee
-        assert player_name or player_discord_id, f"Please specify a player to invite."
-        invitee_matches = await database.table_player.get_player_records(
+        assert from_team_records, "Your team could not be found."
+        from_team_record = from_team_records[0]
+        # "To" Player
+        assert player_name or player_discord_id, "Please specify a player to invite."
+        to_player_records = await database.table_player.get_player_records(
             player_name=player_name, discord_id=player_discord_id
         )
         assert (
-            invitee_matches
-        ), f"Player not found. Please verify the player is registered."
+            to_player_records
+        ), "Player not found. Please verify the player is registered."
         assert (
-            len(invitee_matches) == 1
-        ), f"Multiple players found. Please specify the player's Discord ID (nubmers only) to invite them."
-        invitee = invitee_matches[0]
+            len(to_player_records) == 1
+        ), "Multiple players found. Please specify the player's Discord ID (nubmers only) to invite them."
+        to_player_record = to_player_records[0]
+
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
         # Create Invite record
-        new_invite = await database_helpers.create_team_invite(
-            database, inviter, invitee
+        new_teaminvite_record = (
+            await database.table_team_invite.create_team_invite_record(
+                from_team_id=await from_team_record.get_field(TeamFields.record_id),
+                from_team_name=await from_team_record.get_field(TeamFields.team_name),
+                from_player_id=await from_player_record.get_field(
+                    PlayerFields.record_id
+                ),
+                from_player_name=await from_player_record.get_field(
+                    PlayerFields.player_name
+                ),
+                to_player_id=await to_player_record.get_field(PlayerFields.record_id),
+                to_player_name=await to_player_record.get_field(
+                    PlayerFields.player_name
+                ),
+            )
         )
-        # Success
-        new_invite_dict = await new_invite.to_dict()
-        new_invite_json = await general_helpers.format_json(new_invite_dict)
-        new_invite_block = await discord_helpers.code_block(new_invite_json, "json")
-        message = f"Team invite sent.\n{new_invite_block}"
-        await discord_helpers.final_message(interaction, message)
-        # Log to Channel
-        invitee_name = await invitee.get_field(PlayerFields.player_name)
-        invitee_discord_id = await invitee.get_field(PlayerFields.discord_id)
-        invitee_discord_member = await discord_helpers.member_from_discord_id(
-            guild=interaction.guild, discord_id=invitee_discord_id
+        assert new_teaminvite_record, "Error: Failed to create invite."
+
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        player_name = await to_player_record.get_field(PlayerFields.player_name)
+        captain = None
+        cocaptain = None
+        players = []
+        for player in from_teamplayer_records:
+            if await player.get_field(TeamPlayerFields.is_captain):
+                captain = await player.get_field(TeamPlayerFields.vw_player)
+            elif await player.get_field(TeamPlayerFields.is_co_captain):
+                cocaptain = await player.get_field(TeamPlayerFields.vw_player)
+            else:
+                players.append(await player.get_field(TeamPlayerFields.vw_player))
+        response_dictionary = {
+            "team_name": f"{await new_teaminvite_record.get_field(TeamInviteFields.vw_team)}",
+            "is_active": f"{await from_team_record.get_field(TeamFields.status)}",
+            "captain": captain,
+            "co-captain": cocaptain,
+            "players": sorted(players),
+        }
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
         )
-        inviter_team_name = await inviter_team.get_field(TeamFields.team_name)
-        team_role = await discord_helpers.get_team_role(
-            guild=interaction.guild,
-            team_name=inviter_team_name,
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=(
+                f"Team invite sent to `{player_name}`.\n{response_code_block}\n"
+                f"They still need to accept the invite to join the team."
+            ),
         )
-        invitee_mention = (
-            invitee_discord_member.mention
-            if invitee_discord_member
-            else f"`{invitee_name}({invitee_discord_id})`"
-        )
-        role_mention = team_role.mention if team_role else f"`{inviter_team_name}`"
+
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
+        to_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await new_teaminvite_record.get_field(TeamInviteFields.to_player_id))}"
+        from_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await new_teaminvite_record.get_field(TeamInviteFields.from_player_id))}"
+        team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await new_teaminvite_record.get_field(TeamInviteFields.vw_team))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Team invite sent to {invitee_mention} by {interaction.user.mention} for {role_mention}.",
+            message=f"Team invite sent to {to_player_mention} by {from_player_mention} for {team_mention}",
         )
 
     # Errors
