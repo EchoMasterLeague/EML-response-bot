@@ -126,10 +126,10 @@ async def member_role_remove_by_prefix(
 
 async def role_mention(
     guild: discord.Guild,
-    team_name: str = None,
     discord_id: str = None,
-    player_name: str = None,
     role_name: str = None,
+    team_name: str = None,
+    player_name: str = None,
 ):
     if team_name:
         role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
@@ -143,9 +143,9 @@ async def role_mention(
         member = await member_from_discord_id(guild, discord_id)
         if member:
             return member.mention
-        if player_name:
-            return f"`{player_name}`"
         return f"`({discord_id})`"
+    if player_name:
+        return f"`{player_name}`"
     return f"`(unknown)`"
 
 

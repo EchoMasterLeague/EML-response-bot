@@ -115,7 +115,7 @@ async def player_register(
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        my_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, player_name=await new_player_record.get_field(PlayerFields.player_name))}"
+        my_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await new_player_record.get_field(PlayerFields.discord_id))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"{my_player_mention} has joined the League.",
