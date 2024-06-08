@@ -10,28 +10,27 @@ async def system_list_writes(database: FullDatabase, interaction: discord.Intera
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        #######################################################################
-        #                               OPTIONS                               #
-        #######################################################################
-        #######################################################################
-        #                               CHOICE                                #
-        #######################################################################
+        # Pending Writes
+        pending_writes = await database.core_database.get_pending_writes()
+
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        response_dictionary = pending_writes
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), language="json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=f"Pending writes:\n{response_code_block}",
+        )
+
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        pending_writes = await database.core_database.get_pending_writes()
-        pending_writes_json = await general_helpers.format_json(pending_writes)
-        code_block = await discord_helpers.code_block(
-            pending_writes_json, language="json"
-        )
-        message = f"Pending writes: {code_block}"
-        return await discord_helpers.final_message(interaction, message)
 
     # Errors
     except AssertionError as message:

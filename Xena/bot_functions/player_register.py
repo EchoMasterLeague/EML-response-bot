@@ -1,7 +1,8 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import Regions
-from utils import discord_helpers, player_helpers
+from database.fields import PlayerFields
+from utils import discord_helpers, player_helpers, general_helpers
 import discord
 
 
@@ -15,61 +16,111 @@ async def player_register(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "My" Player
+        my_player_records = await database.table_player.get_player_records(
+            discord_id=interaction.user.id
+        )
+        assert not my_player_records, "You are already registered."
+        my_player_records = await database.table_player.get_player_records(
+            player_name=interaction.user.display_name
+        )
+        assert (
+            not my_player_records
+        ), f"Player name `{interaction.user.display_name}` already in use."
         #######################################################################
         #                               OPTIONS                               #
         #######################################################################
-        #######################################################################
-        #                               CHOICE                                #
-        #######################################################################
-        #######################################################################
-        #                             PROCESSING                              #
-        #######################################################################
-        #######################################################################
-        #                              RESPONSE                               #
-        #######################################################################
-        #######################################################################
-        #                               LOGGING                               #
-        #######################################################################
-        # Get region
+        # Get Options
         options_dict = {
             Regions.EU.value: "Europe",
             Regions.NA.value: "North America",
             Regions.OCE.value: "Oceania",
         }
-        view = choices.QuestionPromptView(options_dict=options_dict)
+        # Options View
+        options_view = choices.QuestionPromptView(
+            options_dict=options_dict,
+            initial_button_style=discord.ButtonStyle.success,
+        )
+        # Button: Cancel
+        options_view.add_item(
+            choices.QuestionOptionButton(
+                label="Cancel",
+                style=discord.ButtonStyle.primary,
+                custom_id="cancel",
+            )
+        )
+        # Show Options
         await interaction.response.send_message(
-            content="Choose a region", view=view, ephemeral=True
+            content="Choose a region", view=options_view, ephemeral=True
         )
-        await view.wait()
-        region = view.value
-        # Get player info
-        discord_id = interaction.user.id
-        player_name = interaction.user.display_name
-        allowed_regions = [r.value for r in Regions]
-        region = await player_helpers.normalize_region(region)
-        assert region, f"Region must be in {allowed_regions}"
-        # Check for existing Players with the same DisplayName or Discord ID
-        existing_players = await database.table_player.get_player_records(
-            discord_id=discord_id
-        )
-        assert not existing_players, "You are already registered."
-        existing_players = await database.table_player.get_player_records(
-            player_name=player_name
-        )
-        assert not existing_players, f"Player name {player_name} already in use."
+        #######################################################################
+        #                               CHOICE                                #
+        #######################################################################
+        # Wait for Choice
+        await options_view.wait()
+        # Get Choice
+        choice = options_view.value
+        # Choice: Cancel (default)
+        if not choice or choice == "cancel":
+            return await discord_helpers.final_message(
+                interaction=interaction, message=f"No region selected."
+            )
+        # Choice: [Region]
+        selected_region = None
+        for region in Regions:
+            if choice == region.value:
+                selected_region = region
+                break
+        assert selected_region, f"Region not found."
+
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
+
+        # Normalize Region
+        region = await player_helpers.normalize_region(selected_region)
+        assert region, f"Region must be in {[r.value for r in Regions]}"
+
         # Create Player record
-        await database.table_player.create_player_record(
-            discord_id=discord_id, player_name=player_name, region=region
+        new_player_record = await database.table_player.create_player_record(
+            discord_id=interaction.user.id,
+            player_name=interaction.user.display_name,
+            region=region,
         )
+
         # Add Player role
         await player_helpers.member_add_player_role(interaction.user, region=region)
-        # Success
-        message = f"Player '{player_name}' registered for region '{region}'"
-        await discord_helpers.final_message(interaction, message)
+
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        player_name = await new_player_record.get_field(PlayerFields.player_name)
+        region = await new_player_record.get_field(PlayerFields.region)
+        response_dictionary = {
+            "player": f"{await new_player_record.get_field(PlayerFields.player_name)}",
+            "region": f"{await new_player_record.get_field(PlayerFields.region)}",
+            "team": None,
+            "team_role": None,
+        }
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=(
+                f"Player `{player_name}` registered for region `{region}`:\n{response_code_block}",
+            ),
+        )
+
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
+        my_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, player_name=await new_player_record.get_field(PlayerFields.player_name))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{interaction.user.mention} has joined the League.",
+            message=f"{my_player_mention} has joined the League.",
         )
+
     # Errors
     except AssertionError as message:
         await discord_helpers.final_message(interaction, message)

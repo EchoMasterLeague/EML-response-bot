@@ -12,37 +12,36 @@ async def show_list_cooldown(database: FullDatabase, interaction: discord.Intera
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        #######################################################################
-        #                               OPTIONS                               #
-        #######################################################################
-        #######################################################################
-        #                               CHOICE                                #
-        #######################################################################
-        #######################################################################
-        #                             PROCESSING                              #
-        #######################################################################
-        #######################################################################
-        #                              RESPONSE                               #
-        #######################################################################
-        #######################################################################
-        #                               LOGGING                               #
-        #######################################################################
-        # Get Cooldown info
+        # Cooldown
         cooldowns = await database.table_cooldown.get_cooldown_records(
             expires_after=datetime.datetime.now().timestamp()
         )
         assert cooldowns, "No players on cooldown."
+        #######################################################################
+        #                             PROCESSING                              #
+        #######################################################################
         cooldown_players = {}
         for cooldown in cooldowns:
             player_name = await cooldown.get_field(CooldownFields.vw_player)
             former_team = await cooldown.get_field(CooldownFields.vw_old_team)
             created_at = await cooldown.get_field(CooldownFields.created_at)
             cooldown_players[player_name] = f"{former_team} ({created_at})"
-        # Create Response
-        message = await general_helpers.format_json(cooldown_players)
-        message = await discord_helpers.code_block(message, language="json")
-        message = f"Players on cooldown:\n{message}"
-        return await discord_helpers.final_message(interaction, message)
+
+        #######################################################################
+        #                              RESPONSE                               #
+        #######################################################################
+        response_dictionary = cooldown_players
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=f"Players on cooldown:\n{response_code_block}",
+        )
+
+        #######################################################################
+        #                               LOGGING                               #
+        #######################################################################
 
     # Errors
     except AssertionError as message:

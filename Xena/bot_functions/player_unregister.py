@@ -1,6 +1,6 @@
 from database.database_full import FullDatabase
 from database.fields import PlayerFields
-from utils import discord_helpers, player_helpers
+from utils import discord_helpers, player_helpers, general_helpers
 import discord
 
 
@@ -14,46 +14,63 @@ async def player_unregister(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        #######################################################################
-        #                               OPTIONS                               #
-        #######################################################################
-        #######################################################################
-        #                               CHOICE                                #
-        #######################################################################
+        # "My" Player
+        my_player_records = await database.table_player.get_player_records(
+            discord_id=interaction.user.id
+        )
+        assert my_player_records, "You are not registered."
+        my_player_record = my_player_records[0]
+        # "My" Team Player
+        my_team_player_records = (
+            await database.table_team_player.get_team_player_records(
+                player_id=await my_player_record.get_field(PlayerFields.record_id)
+            )
+        )
+        assert not my_team_player_records, "You must leave your team first."
+
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+
+        # Remove Discord Roles
+        await player_helpers.member_remove_player_role(
+            await discord_helpers.member_from_discord_id(
+                guild=interaction.guild,
+                discord_id=await my_player_record.get_field(PlayerFields.discord_id),
+            )
+        )
+
+        # Delete Player record
+        await database.table_player.delete_player_record(my_player_record)
+
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        response_dictionary = {
+            "player": f"{await my_player_record.get_field(PlayerFields.player_name)}",
+            "region": f"{await my_player_record.get_field(PlayerFields.region)}",
+            "team": None,
+            "team_role": None,
+        }
+        response_code_block = await discord_helpers.code_block(
+            await general_helpers.format_json(response_dictionary), "json"
+        )
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message=(
+                f"You are no longer registered as a player:\n{response_code_block}\n",
+                f"This registration has been removed from the League.",
+                f"Please register again if you wish to participate.",
+            ),
+        )
+
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        # Get Player info
-        discord_id = interaction.user.id
-        existing_players = await database.table_player.get_player_records(
-            discord_id=discord_id
-        )
-
-        assert existing_players, "You are not registered."
-        existing_player = existing_players[0]
-        existing_player_id = await existing_player.get_field(PlayerFields.record_id)
-        existing_team_players = (
-            await database.table_team_player.get_team_player_records(
-                player_id=existing_player_id
-            )
-        )
-        assert not existing_team_players, "You must leave your team first."
-        # Remove Player role
-        await player_helpers.member_remove_player_role(interaction.user)
-        # Delete Player record
-        await database.table_player.delete_player_record(existing_player)
-        # Success
-        message = f"You are no longer registered as a player"
-        await discord_helpers.final_message(interaction, message)
+        my_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await my_player_record.get_field(PlayerFields.discord_id))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{interaction.user.mention} has left the League.",
+            message=f"{my_player_mention} has left the League.",
         )
 
     # Errors

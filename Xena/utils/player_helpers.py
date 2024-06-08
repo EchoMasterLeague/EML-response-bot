@@ -5,7 +5,7 @@ import discord
 
 
 async def member_add_player_role(member: discord.Member, region: str):
-    """Add a Captain role to a Guild Member"""
+    """Add a Player role to a Guild Member"""
     role_name = f"{constants.ROLE_PREFIX_PLAYER}{region}"
     role = await discord_helpers.guild_role_get_or_create(member.guild, role_name)
     await member.add_roles(role)
@@ -13,7 +13,7 @@ async def member_add_player_role(member: discord.Member, region: str):
 
 
 async def member_remove_player_role(member: discord.Member):
-    """Remove a Captain role from a Guild Member"""
+    """Remove a Player role from a Guild Member"""
     prefixes = [constants.ROLE_PREFIX_PLAYER]
     for role in member.roles:
         if any(role.name.startswith(prefix) for prefix in prefixes):
