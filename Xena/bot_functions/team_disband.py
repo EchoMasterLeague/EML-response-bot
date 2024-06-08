@@ -137,7 +137,7 @@ async def team_disband(
             if my_id != await player.get_field(PlayerFields.discord_id):
                 player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await player.get_field(PlayerFields.discord_id))}"
                 player_mentions.append(player_mention)
-        player_mentions = ", ".join[player_mentions]
+        player_mentions = ", ".join(player_mentions)
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"`{team_name}` has been disbanded by {my_player_mention}, removing [{player_mentions}]",
