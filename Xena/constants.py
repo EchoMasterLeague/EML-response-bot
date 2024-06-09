@@ -36,6 +36,7 @@ COMMAND_TICKET = "ticket"
 COMMAND_WEBSITE = "website"
 COMMAND_ZDEBUGDBCACHE = "zdebugdbcache"
 COMMAND_ZDEBUGDBQUEUE = "zdebugdbqueue"
+GUILD_CHANNEL_BOT_COMMANDS = "bot-commands"
 GUILD_CHANNEL_BOT_LOGS = "bot-reports"
 INPUT_ALLOWED_CHARS_TEAM_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_ "  # Comment added to keep line long enough for the formatter to ignore
 LEAGUE_DB_CACHE_DURATION_SECONDS = 300

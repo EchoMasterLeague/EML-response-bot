@@ -1,6 +1,7 @@
 from database.database_full import FullDatabase
 from database.fields import CommandLockFields
 from utils import discord_helpers
+import constants
 import discord
 
 
@@ -9,6 +10,7 @@ async def command_is_enabled(
     interaction: discord.Interaction,
     default_enabled: bool = True,
     skip_db: bool = False,
+    skip_channel: bool = False,
 ):
     """Command availablity check"""
     try:
@@ -19,21 +21,37 @@ async def command_is_enabled(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        # Command Lock
-        command_lock_records = (
-            await database.table_command_lock.get_command_lock_records(
-                command_name=command_name
+        if not skip_db:
+            # Command Lock
+            command_lock_records = (
+                await database.table_command_lock.get_command_lock_records(
+                    command_name=command_name
+                )
             )
-        )
-        record = command_lock_records[0] if command_lock_records else None
-        if not record:
-            record = await database.table_command_lock.create_command_lock_record(
-                command_name, True
-            )
+            record = command_lock_records[0] if command_lock_records else None
+            if not record:
+                record = await database.table_command_lock.create_command_lock_record(
+                    command_name, True
+                )
 
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+
+        # Channel Availability
+        if not skip_channel:
+            bot_channel = await discord_helpers.get_guild_channel(
+                interaction=interaction,
+                channel_name=constants.GUILD_CHANNEL_BOT_COMMANDS,
+            )
+            this_channel = interaction.channel
+            if bot_channel != this_channel:
+                await discord_helpers.final_message(
+                    interaction,
+                    f"Command `{command_name}` is only available in the channel {bot_channel.mention}.",
+                )
+                return False
+
         # Command Availability
         is_allowed = default_enabled
         if record:
@@ -43,7 +61,7 @@ async def command_is_enabled(
         #                              RESPONSE                               #
         #######################################################################
         # Command Disabled
-        if is_allowed == False:
+        if not is_allowed:
             await discord_helpers.final_message(
                 interaction, f"Command `{command_name}`is currently disabled."
             )

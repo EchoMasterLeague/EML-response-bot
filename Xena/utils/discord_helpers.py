@@ -40,14 +40,16 @@ async def log_to_channel(
     if not channel and not interaction:
         return False
     if interaction:
-        channel = await get_log_channel(interaction=interaction)
+        channel = await get_guild_channel(
+            interaction=interaction, channel_name=constants.GUILD_CHANNEL_BOT_LOGS
+        )
     return await channel.send(content=message)
 
 
 ### Channels ###
 
 
-async def get_log_channel(
+async def get_guild_channel(
     guild: discord.Guild = None,
     interaction: discord.Interaction = None,
     channel_name: str = None,
@@ -58,7 +60,7 @@ async def get_log_channel(
     if interaction:
         guild = interaction.guild
     if not channel_name:
-        channel_name = constants.GUILD_CHANNEL_BOT_LOGS
+        raise ValueError("Channel name required")
     return discord.utils.get(guild.channels, name=channel_name)
 
 
