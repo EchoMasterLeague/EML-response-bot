@@ -72,6 +72,10 @@ async def team_disband(
                 discord_id=await player.get_field(PlayerFields.discord_id),
             )
             await discord_helpers.member_remove_team_roles(member)
+        await discord_helpers.guild_remove_team_role(
+            guild=interaction.guild,
+            team_name=await our_team.get_field(TeamFields.team_name),
+        )
 
         # Delete "Our" TeamPlayer
         for teamplayer in our_teamplayer_records:
