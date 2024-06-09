@@ -223,7 +223,7 @@ async def match_accept(
         match_timestamp = await new_match_record.get_field(MatchFields.match_timestamp)
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{team_a_mention} and {team_b_mention} have a `{match_type}` match scheduled for `{eml_date}` at `{eml_time}` (`{match_timestamp}`)",
+            message=f"{team_a_mention} and {team_b_mention} have a `{match_type}` match scheduled for `{eml_date}` at `{eml_time}` ET (`{match_timestamp}`)",
         )
 
     # Errors
