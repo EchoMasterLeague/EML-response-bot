@@ -178,7 +178,7 @@ async def team_player_accept(
         # Update roster view
         await database_helpers.update_roster_view(
             database=database,
-            team_id=new_teamplayer_record.get_field(TeamPlayerFields.team_id),
+            team_id=await new_teamplayer_record.get_field(TeamPlayerFields.team_id),
         )
 
         # Delete Team Invites
