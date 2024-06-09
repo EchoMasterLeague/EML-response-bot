@@ -1,7 +1,7 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
 from database.fields import ExampleFields
-from database.records import BaseRecord, ExampleRecord
+from database.records import ExampleRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -23,10 +23,12 @@ class ExmapleTable(BaseTable):
             db, constants.LEAGUE_DB_TAB_EXAMPLE, ExampleRecord, ExampleFields
         )
 
-    async def create_example(self, example_a: str, example_b: str) -> ExampleRecord:
+    async def create_example_record(
+        self, example_a: str, example_b: str
+    ) -> ExampleRecord:
         """Create a new Example record"""
         # Check for existing records to avoid duplication
-        existing_record = await self.get_example(
+        existing_record = await self.get_example_records(
             example_a=example_a, example_b=example_b
         )
         if existing_record:
@@ -42,16 +44,16 @@ class ExmapleTable(BaseTable):
         await self.insert_record(new_record)
         return new_record
 
-    async def update_record(self, record: BaseRecord):
+    async def update_example_record(self, record: ExampleRecord):
         """Update an existing Example record"""
-        return await super().update_record(record)
+        return await self.update_record(record)
 
-    async def delete_record(self, record: BaseRecord):
+    async def delete_example_record(self, record: ExampleRecord):
         """Delete an existing Example record"""
         record_id = await record.get_field(ExampleFields.record_id)
-        return await super().delete_record(record_id)
+        return await self.delete_record(record_id)
 
-    async def get_example(
+    async def get_example_records(
         self, record_id: str = None, example_a: str = None, example_b: str = None
     ) -> ExampleRecord:
         """Get an existing Example record"""

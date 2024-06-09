@@ -1,4 +1,4 @@
-from enum import IntEnum, EnumCheck, StrEnum, verify
+from enum import EnumCheck, StrEnum, verify
 
 
 ### Database ###

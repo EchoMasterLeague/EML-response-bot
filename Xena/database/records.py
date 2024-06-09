@@ -1,15 +1,15 @@
-from database.enums import Bool, Regions, TeamStatus, MatchResult
+from database.enums import Bool, MatchResult, Regions, TeamStatus
 from database.fields import (
     BaseFields,
     CommandLockFields,
     CooldownFields,
     ExampleFields,
-    TeamInviteFields,
+    MatchFields,
     MatchInviteFields,
     MatchResultInviteFields,
-    MatchFields,
     PlayerFields,
     TeamFields,
+    TeamInviteFields,
     TeamPlayerFields,
     VwRosterFields,
 )
@@ -421,6 +421,23 @@ class MatchResultInviteRecord(BaseRecord):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
         # Conversion / Validation
+        ## Outcome
+        result = self._data_dict[MatchResultInviteFields.match_outcome.name]
+        allowed_result_list = [r.value for r in MatchResult]
+        for allowed_result in allowed_result_list:
+            if str(result).casefold() == str(allowed_result).casefold():
+                self._data_dict[MatchResultInviteFields.match_outcome.name] = (
+                    allowed_result
+                )
+                break
+        if (
+            self._data_dict[MatchResultInviteFields.match_outcome.name]
+            not in allowed_result_list
+        ):
+            raise ValueError(
+                f"Result '{result}' not available. Available Results: {allowed_result_list}"
+            )
+
         # ensure rounds are integers or null
         score_list = [
             data_list[MatchResultInviteFields.round_1_score_a.value],

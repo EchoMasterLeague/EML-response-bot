@@ -1,8 +1,8 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
+from database.enums import TeamStatus
 from database.fields import TeamFields
 from database.records import TeamRecord
-from database.enums import TeamStatus
 import constants
 import errors.database_errors as DbErrors
 import gspread

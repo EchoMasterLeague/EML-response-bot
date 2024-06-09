@@ -92,14 +92,3 @@ class CommandLockTable(BaseTable):
             ):
                 existing_records.append(CommandLockRecord(row))
         return existing_records
-
-    async def ensure_command_allowance(self, command_name: str) -> bool:
-        """Check if a command is allowed, create reacord if needed"""
-        records = await self.get_command_lock_records(command_name=command_name)
-        record = records[0] if records else None
-        if not record:
-            record = await self.create_command_lock_record(command_name, True)
-        if record:
-            is_allowed = await record.get_field(CommandLockFields.is_allowed)
-            return is_allowed
-        return False

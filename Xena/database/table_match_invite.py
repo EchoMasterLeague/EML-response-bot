@@ -1,8 +1,8 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
+from database.enums import InviteStatus
 from database.fields import MatchInviteFields
 from database.records import MatchInviteRecord
-from database.enums import InviteStatus
 import constants
 import errors.database_errors as DbErrors
 import gspread

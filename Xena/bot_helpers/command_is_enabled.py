@@ -4,10 +4,17 @@ from utils import discord_helpers
 import discord
 
 
-async def command_is_enabled(database: FullDatabase, interaction: discord.Interaction):
+async def command_is_enabled(
+    database: FullDatabase,
+    interaction: discord.Interaction,
+    default_enabled: bool = True,
+    skip_db: bool = False,
+):
     """Command availablity check"""
     try:
         command_name = interaction.command.name
+        if skip_db:
+            return default_enabled
 
         #######################################################################
         #                               RECORDS                               #
@@ -28,7 +35,7 @@ async def command_is_enabled(database: FullDatabase, interaction: discord.Intera
         #                             PROCESSING                              #
         #######################################################################
         # Command Availability
-        is_allowed = True
+        is_allowed = default_enabled
         if record:
             is_allowed = await record.get_field(CommandLockFields.is_allowed)
 
@@ -36,7 +43,7 @@ async def command_is_enabled(database: FullDatabase, interaction: discord.Intera
         #                              RESPONSE                               #
         #######################################################################
         # Command Disabled
-        if not is_allowed:
+        if is_allowed == False:
             await discord_helpers.final_message(
                 interaction, f"Command `{command_name}`is currently disabled."
             )

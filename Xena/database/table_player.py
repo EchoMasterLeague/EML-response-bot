@@ -1,7 +1,7 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
 from database.fields import PlayerFields
-from database.records import PlayerRecord, Regions
+from database.records import PlayerRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
@@ -56,12 +56,21 @@ class PlayerTable(BaseTable):
         await self.delete_record(record_id)
 
     async def get_player_records(
-        self, record_id: str = None, discord_id: str = None, player_name: str = None
+        self,
+        record_id: str = None,
+        discord_id: str = None,
+        player_name: str = None,
+        region: str = None,
     ) -> list[PlayerRecord]:
         """Get existing Player records"""
-        if record_id is None and discord_id is None and player_name is None:
+        if (
+            record_id is None
+            and discord_id is None
+            and player_name is None
+            and region is None
+        ):
             raise ValueError(
-                "At least one of 'record_id', 'discord_id', or 'player_name' is required"
+                "At least one of `record_id`, `discord_id`, `player_name`, `region`  is required"
             )
         table = await self.get_table_data()
         existing_records = []
@@ -84,31 +93,10 @@ class PlayerTable(BaseTable):
                     or player_name.casefold()
                     == str(row[PlayerFields.player_name]).casefold()
                 )
+                and (
+                    not region
+                    or region.casefold() == str(row[PlayerFields.region]).casefold()
+                )
             ):
                 existing_records.append(PlayerRecord(row))
         return existing_records
-
-    async def get_players_by_region(self, region: str) -> list[PlayerRecord]:
-        """Get all players from a specific region"""
-        # Validate the region
-        is_region_allowed = False
-        allowed_region_list = [r.value for r in Regions]
-        for allowed_region in allowed_region_list:
-            if region.casefold() == allowed_region.casefold():
-                region = allowed_region
-                is_region_allowed = True
-                break
-        if not is_region_allowed:
-            raise DbErrors.EmlRegionNotFound(
-                f"Region '{region}' not available. Available Regions: {allowed_region_list}"
-            )
-        # Get the players from the region
-        table = await self.get_table_data()
-        players = []
-        for row in table:
-            if table.index(row) == 0:
-                continue
-            if region == row[PlayerFields.region]:
-                player = PlayerRecord(row)
-                players.append(player)
-        return players

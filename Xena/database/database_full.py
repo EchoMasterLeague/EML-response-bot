@@ -1,13 +1,13 @@
 from database.database_core import CoreDatabase
 from database.table_command_lock import CommandLockTable
 from database.table_cooldown import CooldownTable
-from database.table_team_invite import TeamInviteTable
-from database.table_player import PlayerTable
-from database.table_team import TeamTable
-from database.table_team_player import TeamPlayerTable
+from database.table_match import MatchTable
 from database.table_match_invite import MatchInviteTable
 from database.table_match_result_invite import MatchResultInviteTable
-from database.table_match import MatchTable
+from database.table_player import PlayerTable
+from database.table_team import TeamTable
+from database.table_team_invite import TeamInviteTable
+from database.table_team_player import TeamPlayerTable
 from database.table_vw_roster import VwRosterTable
 
 
