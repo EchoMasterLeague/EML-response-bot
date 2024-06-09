@@ -1,12 +1,12 @@
 from database.base_table import BaseTable
 from database.database_core import CoreDatabase
+from database.enums import MatchType, MatchStatus
 from database.fields import MatchFields
 from database.records import MatchRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
 import utils.general_helpers as general_helpers
-from database.enums import MatchType, MatchStatus
 
 
 """

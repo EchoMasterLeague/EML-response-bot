@@ -1,6 +1,6 @@
 from database.database_core import CoreDatabase
-from database.fields import *
-from database.records import *
+from database.fields import BaseFields
+from database.records import BaseRecord
 from enum import IntEnum, StrEnum, verify, EnumCheck
 from typing import Type
 import constants

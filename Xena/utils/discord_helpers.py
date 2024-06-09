@@ -126,10 +126,10 @@ async def member_role_remove_by_prefix(
 
 async def role_mention(
     guild: discord.Guild,
-    team_name: str = None,
     discord_id: str = None,
-    player_name: str = None,
     role_name: str = None,
+    team_name: str = None,
+    player_name: str = None,
 ):
     if team_name:
         role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
@@ -143,28 +143,13 @@ async def role_mention(
         member = await member_from_discord_id(guild, discord_id)
         if member:
             return member.mention
-        if player_name:
-            return f"`{player_name}`"
         return f"`({discord_id})`"
+    if player_name:
+        return f"`{player_name}`"
     return f"`(unknown)`"
 
 
-async def role_mention_player(guild: discord.Guild, player_id: str):
-    member = await member_from_discord_id(guild, player_id)
-    return member.mention if member else f"`{player_id}`"
-
-
 ### Roles for Teams ###
-
-
-async def get_team_role(guild: discord.Guild, team_name: str):
-    """Get a Team role from a Guild"""
-    try:
-        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
-        role = await guild_role_get(guild, role_name)
-        return role
-    except discord.errors.NotFound:
-        return None
 
 
 async def member_add_team_role(member: discord.Member, team_name: str):
@@ -197,14 +182,6 @@ async def guild_remove_team_role(guild: discord.Guild, team_name: str):
 async def member_add_captain_role(member: discord.Member, region: str):
     """Add a Captain role to a Guild Member"""
     role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
-    role = await guild_role_get_or_create(member.guild, role_name)
-    await member.add_roles(role)
-    return True
-
-
-async def member_add_co_captain_role(member: discord.Member, region: str):
-    """Add a Captain role to a Guild Member"""
-    role_name = f"{constants.ROLE_PREFIX_CO_CAPTAIN}{region}"
     role = await guild_role_get_or_create(member.guild, role_name)
     await member.add_roles(role)
     return True

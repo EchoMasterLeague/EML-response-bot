@@ -1,7 +1,84 @@
-from database.enums import MatchResult
+from database.enums import MatchResult, MatchType
 
 
-### Outcome ###
+###############################################################################
+#                                 MATCH TYPE                                  #
+###############################################################################
+
+
+async def get_normalized_match_type(match_type: str) -> MatchType:
+    normalized_match_type = None
+    for match_option in MatchType:
+        if str(match_option.value).casefold() == match_type.casefold():
+            normalized_match_type = match_option
+            break
+    if not normalized_match_type:
+        if match_type.casefold() in [
+            "assign".casefold(),
+            "assigns".casefold(),
+            "assigned".casefold(),
+        ]:
+            normalized_match_type = MatchType.ASSIGNED
+        if match_type.casefold() in [
+            "postpone".casefold(),
+            "postpones".casefold(),
+            "postponed".casefold(),
+        ]:
+            normalized_match_type = MatchType.POSTPONED
+        if match_type.casefold() in [
+            "challenge".casefold(),
+            "challenges".casefold(),
+            "challenged".casefold(),
+        ]:
+            normalized_match_type = MatchType.CHALLENGE
+
+    return normalized_match_type
+
+
+###############################################################################
+#                                   OUTCOME                                   #
+###############################################################################
+
+
+async def get_normalized_outcome(outcome: str) -> MatchResult:
+    """Normalize the outcome of the match"""
+    normalized_outcome: MatchResult = None
+    for outcome_option in MatchResult:
+        if str(outcome_option.value).casefold() == outcome.casefold():
+            normalized_outcome = outcome_option
+            break
+    if not normalized_outcome:
+        if outcome.casefold() in [
+            "tie".casefold(),
+            "ties".casefold(),
+            "tied".casefold(),
+            "draw".casefold(),
+            "draws".casefold(),
+            "drawn".casefold(),
+            "equal".casefold(),
+        ]:
+            normalized_outcome = MatchResult.DRAW
+        if outcome.casefold() in [
+            "win".casefold(),
+            "wins".casefold(),
+            "won".casefold(),
+            "winner".casefold(),
+            "victor".casefold(),
+            "victory".casefold(),
+            "victorious".casefold(),
+        ]:
+            normalized_outcome = MatchResult.WIN
+        if outcome.casefold() in [
+            "lose".casefold(),
+            "loses".casefold(),
+            "loss".casefold(),
+            "lost".casefold(),
+            "loser".casefold(),
+            "defeat".casefold(),
+            "defeated".casefold(),
+        ]:
+            normalized_outcome = MatchResult.LOSS
+    return normalized_outcome
 
 
 async def get_reversed_outcome(outcome: MatchResult) -> MatchResult:
@@ -17,7 +94,33 @@ async def get_reversed_outcome(outcome: MatchResult) -> MatchResult:
         raise ValueError(f"Outcome '{outcome}' not available")
 
 
-### Scores ###
+async def is_outcome_consistent_with_scores(
+    outcome: MatchResult, scores: list[list[int | None]]
+) -> bool:
+    """Check if the outcome is consistent with the scores"""
+    win = 0
+    loss = 0
+    for round_scores in scores:
+        if round_scores[0] is None or round_scores[1] is None:
+            continue
+        if round_scores[0] > round_scores[1]:
+            win += 1
+        elif round_scores[0] < round_scores[1]:
+            loss += 1
+    if win > loss:
+        return outcome == MatchResult.WIN
+    if win < loss:
+        return outcome == MatchResult.LOSS
+    if win == loss:
+        return outcome == MatchResult.DRAW
+    return False
+
+
+###############################################################################
+#                                   SCORES                                    #
+###############################################################################
+
+
 async def is_score_structure_valid(scores: list[list[int | None]]) -> bool:
     """Validate the format of the scores list
     Whether or not the scores match the format: scores[round][team] = score
@@ -95,44 +198,3 @@ async def get_scores_display_dict(scores: list[list[int | None]]) -> dict[str, s
         "round_3": f"{scores[2][0]} :{scores[2][1]} ",
     }
     return display_scores
-
-
-async def get_normalized_outcome(outcome: str) -> MatchResult:
-    """Normalize the outcome of the match"""
-    normalized_outcome: MatchResult = None
-    for outcome_option in MatchResult:
-        if str(outcome_option.value).casefold() == outcome.casefold():
-            normalized_outcome = outcome_option
-            break
-    if not normalized_outcome:
-        if outcome.casefold() in [
-            "tie".casefold(),
-            "ties".casefold(),
-            "tied".casefold(),
-            "draw".casefold(),
-            "draws".casefold(),
-            "drawn".casefold(),
-            "equal".casefold(),
-        ]:
-            normalized_outcome = MatchResult.DRAW
-        if outcome.casefold() in [
-            "win".casefold(),
-            "wins".casefold(),
-            "won".casefold(),
-            "winner".casefold(),
-            "victor".casefold(),
-            "victory".casefold(),
-            "victorious".casefold(),
-        ]:
-            normalized_outcome = MatchResult.WIN
-        if outcome.casefold() in [
-            "lose".casefold(),
-            "loses".casefold(),
-            "loss".casefold(),
-            "lost".casefold(),
-            "loser".casefold(),
-            "defeat".casefold(),
-            "defeated".casefold(),
-        ]:
-            normalized_outcome = MatchResult.LOSS
-    return normalized_outcome
