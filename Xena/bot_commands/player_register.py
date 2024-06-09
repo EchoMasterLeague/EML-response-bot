@@ -51,7 +51,13 @@ async def player_register(
         )
         # Show Options
         await interaction.response.send_message(
-            content="Choose a region", view=options_view, ephemeral=True
+            view=options_view,
+            content="\n".join(
+                [
+                    f"Choose a region",
+                ]
+            ),
+            # ephemeral=True,
         )
         #######################################################################
         #                               CHOICE                                #

@@ -122,9 +122,9 @@ async def team_disband(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Team `{team_name}` has been disbanded:",
+                    f"Team `{team_name}` has been disbanded.",
+                    f"Data removed:",
                     f"{response_code_block}",
-                    f"This team no longer exists.",
                 ]
             ),
         )

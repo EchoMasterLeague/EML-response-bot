@@ -105,9 +105,15 @@ async def match_result_accept(
             await general_helpers.format_json(descriptions), "json"
         )
         await interaction.response.send_message(
-            content=f"Match Result Invites:\n{descriptions_block}\n\nWarning: Once accepted, this cannot be undone.",
             view=options_view,
-            ephemeral=True,
+            content="\n".join(
+                [
+                    f"Match Result Invites:",
+                    f"{descriptions_block}",
+                    f"Warning: Once accepted, this cannot be undone.",
+                ]
+            ),
+            # ephemeral=True,
         )
 
         #######################################################################

@@ -79,12 +79,15 @@ async def team_player_accept(
             await general_helpers.format_json(descriptions), "json"
         )
         await interaction.response.send_message(
-            content=(
-                f"Team Invites:\n{descriptions_block}\n\n"
-                f"Which team invite would you like to accept?"
-            ),
             view=options_view,
-            ephemeral=True,
+            content="\n".join(
+                [
+                    f"Team Invites:",
+                    f"{descriptions_block}",
+                    f"Which team invite would you like to accept?",
+                ]
+            ),
+            # ephemeral=True,
         )
 
         #######################################################################

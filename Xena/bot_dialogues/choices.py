@@ -31,18 +31,24 @@ class QuestionPromptViewExampleUsage:
             "option2": "Option 2",
             "option3": "Option 3",
         }
-        view = QuestionPromptView(options_dict=options_dict)
+        options_view = QuestionPromptView(options_dict=options_dict)
         # optionally add more buttons with specific styles
         additional_button = QuestionOptionButton(
             "risky", "Risky Click", style=discord.ButtonStyle.danger
         )
-        view.add_item(additional_button)
+        options_view.add_item(additional_button)
         await interaction.response.send_message(
-            "Which option?", view=view, ephemeral=True
+            view=options_view,
+            content="\n".join(
+                [
+                    f"Which option?",
+                ]
+            ),
+            # ephemeral=True,
         )
-        await view.wait()
+        await options_view.wait()
         # Send a message with the selected option
-        await interaction.followup.send(f"You selected: {view.value}")
+        await interaction.followup.send(f"You selected: {options_view.value}")
 
 
 class QuestionOptionButton(discord.ui.Button):

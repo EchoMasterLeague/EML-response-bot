@@ -102,12 +102,18 @@ async def match_accept(
             await general_helpers.format_json(descriptions), "json"
         )
         await interaction.response.send_message(
-            content=(
-                f"Match Invites:\n{descriptions_block}\nNote: All times in United States Eastern Time (ET).\n\n"
-                f"Warning: Once accepted, this cannot be undone.\nFailure to show at scheduled time will result in automatic forfeiture."
-            ),
             view=options_view,
-            ephemeral=True,
+            content="\n".join(
+                [
+                    f"Match Invites:",
+                    f"{descriptions_block}",
+                    f"Note: All times in United States Eastern Time (ET).",
+                    f"",
+                    f"Warning: Once accepted, this cannot be undone.",
+                    f"Failure to show at scheduled time will result in automatic forfeiture.",
+                ]
+            ),
+            # ephemeral=True,
         )
 
         #######################################################################
