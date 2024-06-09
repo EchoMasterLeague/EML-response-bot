@@ -189,7 +189,7 @@ async def website(interaction: discord.Interaction):
     """Link to Command Reference"""
     await bot_helpers.command_log({**locals()})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
-        link = constants.LINK_COMMAND_REFERENCE
+        link = constants.LINK_BOT_COMMANDS
         await interaction.response.send_message(f"Command Reference: {link}")
 
 

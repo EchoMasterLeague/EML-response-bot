@@ -54,12 +54,12 @@ LEAGUE_DB_TAB_TEAM = "Team"
 LEAGUE_DB_TAB_TEAM_INVITE = "TeamInvite"
 LEAGUE_DB_TAB_TEAM_PLAYER = "TeamPlayer"
 LEAGUE_DB_TAB_VW_ROSTER = "vwRoster"
-LINK_ACCUMULATED_POINTS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJmIGHxYlgMAy2Wvlz-pSx27iDTjBdzQbe7BCSu6qXCHk1kBTxwDJu0yAQuy0Msm3KLnIY2MwvMC8t/pubhtml"
+LINK_ACCUMULATED_POINTS = "https://echomasterleague.com/eml-accumulated-points-ap-system/"  # Comment added to keep line long enough for the formatter to ignore
 LINK_ACTION_LIST = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
-LINK_BOT_INSTRUCTIONS = "https://docs.google.com/document/d/10GqUfLFMmW2eDP-hCxjJK9uOa-fjONoOpi_88mRJpZY/edit?usp=sharing"
+LINK_BOT_COMMANDS = "https://echomasterleague.com/eml-bot-commands/"
+LINK_BOT_INSTRUCTIONS = "https://echomasterleague.com/eml-bot-instructions/"
 LINK_CALENDAR_EU = "https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&"
 LINK_CALENDAR_NA = "https://cdn.discordapp.com/attachments/1182380149468045354/1239966506297589842/Echo_Master_League_Calendar_.png?ex=6644d84c&is=664386cc&hm=729e9856f260f98d129e1772df43c722779bc4b800045af1ed206c23bdd08f15&"
-LINK_COMMAND_REFERENCE = "https://docs.google.com/document/d/1KeGjbB9urEjVZ_ZM0q6nOwfOgaq2REezFIDGW0EWNXI/edit?usp=sharing"
 LINK_DB_DEV_SPREADHEET_URL = "https://docs.google.com/spreadsheets/d/1tQ9BuaCF8kKx_oIc5T5erqkkXt7CtnUopAiOfBaPKVI"
 LINK_DB_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Pl2-PB9c2BUDszs68U_ZCBqffRH2REXPe5RCj4xCcS8"
 LINK_DB_VIEW_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1z_gAHwQaakiRP4dsenxpDC0brStTTWmnWjm_YSU2w5c"
@@ -73,7 +73,7 @@ LINK_LEAGUE_MATCHES = "https://echomasterleague.com/current-week-matches-and-res
 LINK_LEAGUE_ROSTER = "https://echomasterleague.com/2024-season-1-team-rosters/"
 LINK_LEAGUE_RULES = "https://echomasterleague.com/eml-league-rules/"
 LINK_STAFF_APPLICATION = "https://echomasterleague.com/staff-application/"
-LINK_TEAM_RANKINGS = "https://echomasterleague.com/team-rankings-2/"
+LINK_TEAM_RANKINGS = "https://echomasterleague.com/2024-season-1-team-rankings/"
 MATCH_INVITES_EXPIRATION_DAYS = 7
 MATCH_INVITES_RECEIVE_MAX = 5
 MATCH_INVITES_SEND_MAX = 5
