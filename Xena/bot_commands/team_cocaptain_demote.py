@@ -93,7 +93,7 @@ async def team_cocaptain_demote(
 
         # Update roster view
         await database_helpers.update_roster_view(
-            db=database, team_id=await our_team.get_field(TeamFields.record_id)
+            database=database, team_id=await our_team.get_field(TeamFields.record_id)
         )
 
         #######################################################################

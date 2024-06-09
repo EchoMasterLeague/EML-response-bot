@@ -17,7 +17,7 @@ from database.fields import (
 
 ### Roster ###
 async def update_roster_view(
-    db: FullDatabase, team_id: str = None, team_name: str = None
+    database: FullDatabase, team_id: str = None, team_name: str = None
 ):
     """Rebuild Roster for all Teams
 
@@ -29,9 +29,9 @@ async def update_roster_view(
     Note: team_id and team_name are ignored, this rebuilds the full roster ever time it is called.
     They are kept in case we want to update teams individually in the future.
     """
-    all_teams = await db.table_team.get_table_data()
-    all_players = await db.table_player.get_table_data()
-    all_team_players = await db.table_team_player.get_table_data()
+    all_teams = await database.table_team.get_table_data()
+    all_players = await database.table_player.get_table_data()
+    all_team_players = await database.table_team_player.get_table_data()
     roster_table = [
         [
             VwRosterFields.team.name,
@@ -119,7 +119,7 @@ async def update_roster_view(
                 is_2_co_cap,
             ]
         )
-    await db.table_vw_roster.replace_vw_roster(roster_table)
+    await database.table_vw_roster.replace_vw_roster(roster_table)
 
 
 ### Player ###
