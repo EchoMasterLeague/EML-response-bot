@@ -66,11 +66,11 @@ async def team_create(
 
         # Add Discord roles
         await discord_helpers.add_member_to_team(
-            discord_member=interaction.user,
+            member=interaction.user,
             team_name=await new_team_record.get_field(TeamFields.team_name),
         )
         await discord_helpers.member_add_captain_role(
-            discord_member=interaction.user,
+            member=interaction.user,
             region=await my_player.get_field(PlayerFields.region),
         )
 
