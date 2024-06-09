@@ -68,8 +68,6 @@ async def match_accept(
             invite_id = await invite.get_field(MatchInviteFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
             descriptions[str(option_number)] = {
-                "invite_id": invite_id,
-                "created_at": f"{await invite.get_field(MatchInviteFields.created_at)}",
                 "expires_at": f"{await invite.get_field(MatchInviteFields.invite_expires_at)}",
                 "match_type": f"{await invite.get_field(MatchInviteFields.match_type)}",
                 "opposing_team": f"{await invite.get_field(MatchInviteFields.vw_from_team)}",
@@ -203,9 +201,14 @@ async def match_accept(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Match accepted:\n{response_code_block}\nMatch scheduled.\n\n"
-                f"Remember: This cannot be undone. Failure to show will result in automatic forfeiture.",
+            message="\n".join(
+                [
+                    f"Match accepted:",
+                    f"{response_code_block}",
+                    f"Match scheduled.",
+                    f"",
+                    f"Remember: This cannot be undone. Failure to show will result in automatic forfeiture.",
+                ]
             ),
         )
 

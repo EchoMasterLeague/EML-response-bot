@@ -1,6 +1,7 @@
 from database.database_full import FullDatabase
-from utils import discord_helpers, database_helpers, general_helpers
 from database.fields import PlayerFields, TeamFields, TeamPlayerFields, TeamInviteFields
+from utils import discord_helpers, database_helpers, general_helpers
+import constants
 import discord
 
 
@@ -45,6 +46,26 @@ async def team_player_invite(
         )
         assert from_team_records, "Your team could not be found."
         from_team_record = from_team_records[0]
+        # "From" TeamInvite
+        from_teaminvite_records = (
+            await database.table_team_invite.get_team_invite_records(
+                from_team_id=await from_team_record.get_field(TeamFields.record_id)
+            )
+        )
+        assert (
+            len(from_teaminvite_records) < constants.TEAM_INVITES_SEND_MAX
+        ), "Your team has sent too many pending invites."
+        # "My" TeamInvites (sent)
+        my_teaminvite_records = (
+            await database.table_team_invite.get_team_invite_records(
+                from_player_id=await from_player_record.get_field(
+                    PlayerFields.record_id
+                )
+            )
+        )
+        assert (
+            len(my_teaminvite_records) < constants.TEAM_INVITES_SEND_MAX
+        ), "You have sent too many pending invites."
         # "To" Player
         assert player_name or player_discord_id, "Please specify a player to invite."
         to_player_records = await database.table_player.get_player_records(
@@ -57,6 +78,23 @@ async def team_player_invite(
             len(to_player_records) == 1
         ), "Multiple players found. Please specify the player's Discord ID (nubmers only) to invite them."
         to_player_record = to_player_records[0]
+        # "To" TeamInvite
+        to_teaminvite_records = (
+            await database.table_team_invite.get_team_invite_records(
+                to_player_id=await to_player_record.get_field(PlayerFields.record_id)
+            )
+        )
+        assert (
+            len(to_teaminvite_records) < constants.TEAM_INVITES_RECEIVE_MAX
+        ), f"`{await to_player_record.get_field(PlayerFields.player_name)}` has too many pending invites."
+        for to_teaminvite_record in to_teaminvite_records:
+            from_team_id = await from_team_record.get_field(TeamFields.record_id)
+            to_team_id = await to_teaminvite_record.get_field(
+                TeamInviteFields.from_team_id
+            )
+            assert (
+                from_team_id != to_team_id
+            ), f"`{await to_player_record.get_field(PlayerFields.player_name)}` has a pending invite from `{await to_teaminvite_record.get_field(TeamInviteFields.vw_team)}`."
 
         #######################################################################
         #                             PROCESSING                              #

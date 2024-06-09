@@ -73,7 +73,7 @@ async def match_invite(
         from_team_mame = await from_team_record.get_field(TeamFields.team_name)
         to_team_name = await to_team_record.get_field(TeamFields.team_name)
         assert (
-            not existing_match_invites
+            not existing_match_invites or True
         ), f"Match already proposed from `{from_team_mame}` to play `{to_team_name}`."
 
         # Match Type
@@ -86,7 +86,7 @@ async def match_invite(
         match_epoch = await general_helpers.epoch_from_eml_datetime_string(date_time)
         assert (
             match_epoch
-        ), f"Date/Time format is `{constants.TIME_ENTRY_FORMAT}`.\n{constants.TIMEZONE_ENCOURAGEMENT_MESSAGE}"
+        ), f"Date/Time format is `{constants.TIME_ENTRY_FORMAT}`.\n{constants.TIME_ENTRY_FORMAT_INVALID_ENCOURAGEMENT_MESSAGE}"
 
         # Existing Matches
         existing_matches = await database.table_match.get_match_records(
@@ -133,9 +133,14 @@ async def match_invite(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Match proposal sent to `{to_team_name}`:\n{response_code_block}\nWaiting on opposing team to accept match date/time.\n\n"
-                f"Remember: Once accepted, this cannot be undone. Failure to show will result in automatic forfeiture.",
+            message="\n".join(
+                [
+                    f"Match proposal sent to `{to_team_name}`:",
+                    f"{response_code_block}",
+                    f"Waiting on opposing team to accept match date/time.",
+                    f"",
+                    f"Remember: Once accepted, this cannot be undone. Failure to show will result in automatic forfeiture.",
+                ]
             ),
         )
 

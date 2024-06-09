@@ -49,8 +49,8 @@ async def team_cocaptain_promote(
         # "Their" TeamPlayer
         their_teamplayer_records: list[TeamPlayerRecord] = []
         for teamplayer in our_teamplayer_records:
-            their_id = await teamplayer.get_field(TeamPlayerFields.player_id)
-            if their_id == teamplayer.get_field(TeamPlayerFields.player_id):
+            their_id = await their_player.get_field(PlayerFields.record_id)
+            if their_id == await teamplayer.get_field(TeamPlayerFields.player_id):
                 their_teamplayer_records.append(teamplayer)
         assert their_teamplayer_records, "Player is not your team."
         their_teamplayer = their_teamplayer_records[0]

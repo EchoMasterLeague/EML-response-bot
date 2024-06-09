@@ -157,9 +157,12 @@ async def match_result_invite(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Match Result Proposal sent to team `{opposing_team_name}`.\n{response_code_block}\n"
-                f"Your opponent must confirm these results before they are officially recorded.",
+            message="\n".join(
+                [
+                    f"Match Result Proposal sent to team `{opposing_team_name}`.",
+                    f"{response_code_block}",
+                    f"Your opponent must confirm these results before they are officially recorded.",
+                ]
             ),
         )
 

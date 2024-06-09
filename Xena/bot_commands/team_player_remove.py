@@ -1,9 +1,10 @@
 from database.database_full import FullDatabase
-from database.fields import PlayerFields, TeamFields, TeamPlayerFields
-from utils import discord_helpers, database_helpers, general_helpers
 from database.enums import TeamStatus
-import discord
+from database.fields import PlayerFields, TeamFields, TeamPlayerFields
+from database.records import TeamPlayerRecord
+from utils import discord_helpers, database_helpers, general_helpers
 import constants
+import discord
 
 
 async def team_player_remove(
@@ -53,7 +54,7 @@ async def team_player_remove(
         assert their_player_records, f"Player `{player_name}` not found."
         their_player_record = their_player_records[0]
         # "Their" TeamPlayer
-        their_teamplayer_records = []
+        their_teamplayer_records: list[TeamPlayerRecord] = []
         for teamplayer in our_teamplayer_records:
             teamplayer_id = await teamplayer.get_field(TeamPlayerFields.player_id)
             their_id = await their_player_record.get_field(PlayerFields.record_id)
@@ -83,12 +84,14 @@ async def team_player_remove(
         assert new_cooldown, "Error: Could not apply cooldown."
 
         # Delete "Their" TeamPlayer
-        await database.table_team_player.delete_record(their_teamplayer_record)
+        await database.table_team_player.delete_team_player_record(
+            record=their_teamplayer_record
+        )
 
         # Update "Our" Team Active Status
         if len(our_teamplayer_records) - 1 < constants.TEAM_PLAYERS_MIN:
-            our_team_record.set_field(TeamFields.status, TeamStatus.INACTIVE)
-            await database.table_team.update_record(our_team_record)
+            await our_team_record.set_field(TeamFields.status, TeamStatus.INACTIVE)
+            await database.table_team.update_team_record(record=our_team_record)
 
         # Update roster view
         await database_helpers.update_roster_view(

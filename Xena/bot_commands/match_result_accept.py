@@ -69,8 +69,6 @@ async def match_result_accept(
             invite_id = await invite.get_field(ResultFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
             descriptions[str(option_number)] = {
-                "invite_id": invite_id,
-                "created_at": f"{await invite.get_field(ResultFields.created_at)}",
                 "expires_at": f"{await invite.get_field(ResultFields.invite_expires_at)}",
                 "match_type": f"{await invite.get_field(ResultFields.match_type)}",
                 "opposing_team": f"{await invite.get_field(ResultFields.vw_from_team)}",
@@ -225,10 +223,12 @@ async def match_result_accept(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Match Results accepted:\n"
-                f"{response_code_block}\n"
-                f"Match results confirmed."
+            message="\n".join(
+                [
+                    f"Match Results accepted:",
+                    f"{response_code_block}",
+                    f"Match results confirmed.",
+                ]
             ),
         )
 

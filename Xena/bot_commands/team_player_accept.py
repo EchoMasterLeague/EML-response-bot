@@ -47,11 +47,9 @@ async def team_player_accept(
             invite_id = await invite.get_field(TeamInviteFields.record_id)
             options_dict[invite_id] = f"Accept ({option_number})"
             descriptions[str(option_number)] = {
-                "invite_id": invite_id,
-                "created_at": f"{await invite.get_field(TeamInviteFields.created_at)}",
                 "expires_at": f"{await invite.get_field(TeamInviteFields.invite_expires_at)}",
-                "team_name": f"{await invite.get_field(TeamInviteFields.vw_team)}",
-                "captain": f"{await invite.get_field(TeamInviteFields.vw_from_player)}({await invite.get_field(TeamInviteFields.from_player_id)})",
+                "from_captain": f"{await invite.get_field(TeamInviteFields.vw_from_player)}({await invite.get_field(TeamInviteFields.from_player_id)})",
+                "from_team": f"{await invite.get_field(TeamInviteFields.vw_team)}",
             }
         # Options View
         options_view = choices.QuestionPromptView(

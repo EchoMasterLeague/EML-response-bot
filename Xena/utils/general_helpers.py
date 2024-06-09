@@ -2,6 +2,7 @@ import json
 import datetime
 import uuid
 import pytz
+import constants
 
 """
 This module contains common functions for any module.
@@ -19,43 +20,15 @@ async def format_json(data, sort_keys=False):
     return json.dumps(data, sort_keys=sort_keys, indent=4)
 
 
+### Time Helpers ###
+
+
 async def epoch_timestamp(iso_timestamp: str = None) -> int:
     """Return the utc timestamp in epoch format (e.g. 1584661872)"""
     if iso_timestamp is None:
         iso_timestamp = datetime.datetime.now().isoformat()
     epoch_timestamp = datetime.datetime.fromisoformat(iso_timestamp).timestamp()
     return int(epoch_timestamp)
-
-
-async def normalize_eml_datetime_string(date_time: str) -> str:
-    """Normalize a datetime string to 'YYYY-MM-DD HH:MMAM/PM' format"""
-    # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM"
-    try:
-        datetime_array = date_time.split(" ")
-        date = datetime_array[0]
-        time = "".join(datetime_array[1:])
-        date_time = f"{date} {time}"
-        return date_time
-    except Exception as e:
-        print(e)
-        return None
-
-
-async def epoch_from_eml_datetime_string(date_time: str) -> int:
-    """Return the epoch time from eml datetime string
-
-    From 'YYYY-MM-DD HH:MMAM/PM'
-    To epoch timestamp (e.g. 1584661872)
-    """
-    try:
-        date_time = await normalize_eml_datetime_string(date_time)
-        date_time += f"US/Eastern"
-        date_time_obj = datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
-        epoch_timestamp = int(date_time_obj.timestamp())
-        return epoch_timestamp
-    except Exception as e:
-        print(e)
-        return None
 
 
 async def iso_timestamp(epoch_timestamp: int = None) -> str:
@@ -85,25 +58,6 @@ async def season_week(epoch_timestamp: int = None) -> str:
     return year_week
 
 
-async def eml_date(epoch_timestamp: int) -> str:
-    """Return the date in Eastern Time from the epoch timestamp (e.g. 03/19/2020)"""
-    tz = pytz.timezone("America/New_York")
-    eastern_time = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
-    date_eastern = eastern_time.strftime("%m/%d/%Y")
-    return date_eastern
-
-
-async def eml_time(epoch_timestamp: int) -> str:
-    """Return the time in Eastern Time from the epoch timestamp (e.g. 1:31 PM)"""
-    # get time in tz
-    tz = pytz.timezone("America/New_York")
-    eastern_time = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
-    time_eastern = eastern_time.strftime("%I:%M %p")
-    if time_eastern.startswith("0"):
-        time_eastern = time_eastern[1:]
-    return time_eastern
-
-
 async def upcoming_monday() -> int:
     """Return the epoch timestamp for the following Monday at 00:00:00 UTC
 
@@ -119,3 +73,57 @@ async def upcoming_monday() -> int:
     )
     epoch_time = int(next_monday_midnight.timestamp())
     return epoch_time
+
+
+### EML Localized Time Helpers ###
+
+
+async def normalize_eml_datetime_string(date_time: str) -> str:
+    """Normalize a datetime string to 'YYYY-MM-DD HH:MMAM/PM' format"""
+    # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM"
+    try:
+        datetime_array = date_time.split(" ")
+        date = datetime_array[0]
+        time = "".join(datetime_array[1:])
+        date_time = f"{date} {time}"
+        return date_time
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def epoch_from_eml_datetime_string(date_time: str) -> int:
+    """Return the epoch time from eml datetime string
+
+    From 'YYYY-MM-DD HH:MMAM/PM'
+    To epoch timestamp (e.g. 1584661872)
+    """
+    try:
+        tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
+        date_time = await normalize_eml_datetime_string(date_time)
+        date_time_obj = tz.localize(
+            datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
+        )
+        epoch_timestamp = int(date_time_obj.timestamp())
+        return epoch_timestamp
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def eml_date(epoch_timestamp: int) -> str:
+    """Return the date in Eastern Time from the epoch timestamp (e.g. 03/19/2020)"""
+    tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
+    eml_datetime = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
+    eml_date = eml_datetime.strftime("%m/%d/%Y")
+    return eml_date
+
+
+async def eml_time(epoch_timestamp: int) -> str:
+    """Return the time in Eastern Time from the epoch timestamp (e.g. 1:31 PM)"""
+    tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
+    eml_datetime = datetime.datetime.fromtimestamp(epoch_timestamp, tz)
+    eml_time = eml_datetime.strftime("%I:%M %p")
+    if eml_time.startswith("0"):
+        eml_time = eml_time[1:]
+    return eml_time
