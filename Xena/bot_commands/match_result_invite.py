@@ -104,7 +104,7 @@ async def match_result_invite(
         is_sores_valid = await match_helpers.is_score_structure_valid(scores)
         assert is_sores_valid, f"Error: Scores could not be parsed."
         # Outcome
-        outcome = match_helpers.get_normalized_outcome(outcome)
+        outcome = await match_helpers.get_normalized_outcome(outcome)
         assert (
             outcome
         ), f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
