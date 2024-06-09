@@ -13,12 +13,16 @@ async def code_block(text: str, language: str = "json") -> str:
 ### Messages ###
 
 
-async def final_message(interaction: discord.Interaction, message: str):
+async def final_message(
+    interaction: discord.Interaction, message: str, ephemeral: bool = False
+):
     """Send a final message to an interaction"""
     if not interaction.response.is_done():
-        return await interaction.response.send_message(message)
+        return await interaction.response.send_message(
+            content=message, ephemeral=ephemeral
+        )
     else:
-        return await interaction.followup.send(message)
+        return await interaction.followup.send(content=message, ephemeral=ephemeral)
 
 
 async def error_message(

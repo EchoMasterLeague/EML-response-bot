@@ -47,8 +47,9 @@ async def command_is_enabled(
             this_channel = interaction.channel
             if bot_channel != this_channel:
                 await discord_helpers.final_message(
-                    interaction,
-                    f"Command `{command_name}` is only available in the channel {bot_channel.mention}.",
+                    interaction=interaction,
+                    message=f"Command `{command_name}` is only available in the channel {bot_channel.mention}.",
+                    ephemeral=True,
                 )
                 return False
 
