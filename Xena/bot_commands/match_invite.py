@@ -73,7 +73,7 @@ async def match_invite(
         from_team_mame = await from_team_record.get_field(TeamFields.team_name)
         to_team_name = await to_team_record.get_field(TeamFields.team_name)
         assert (
-            not existing_match_invites or True
+            not existing_match_invites
         ), f"Match already proposed from `{from_team_mame}` to play `{to_team_name}`."
 
         # Match Type
