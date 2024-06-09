@@ -57,10 +57,13 @@ async def player_unregister(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"You are no longer registered as a player:\n{response_code_block}\n",
-                f"This registration has been removed from the League.",
-                f"Please register again if you wish to participate.",
+            message="\n".join(
+                [
+                    f"You are no longer registered as a player:",
+                    f"{response_code_block}",
+                    f"This registration has been removed from the League.",
+                    f"Please register again if you wish to participate.",
+                ]
             ),
         )
 

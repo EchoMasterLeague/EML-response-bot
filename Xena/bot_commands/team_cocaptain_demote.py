@@ -121,8 +121,11 @@ async def team_cocaptain_demote(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Player `{player_name}` demoted from co-captain:\n{response_code_block}\n"
+            message="\n".join(
+                [
+                    f"Player `{player_name}` demoted from co-captain:",
+                    f"{response_code_block}",
+                ]
             ),
         )
 

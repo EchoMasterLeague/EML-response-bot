@@ -77,7 +77,11 @@ async def show_player_details(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"{response_code_block}",
+            message="\n".join(
+                [
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

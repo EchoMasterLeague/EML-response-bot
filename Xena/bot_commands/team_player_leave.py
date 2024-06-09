@@ -117,7 +117,12 @@ async def team_player_leave(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"You have left `{team_name}`.\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"You have left `{team_name}`.",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

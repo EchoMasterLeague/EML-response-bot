@@ -36,7 +36,12 @@ async def show_list_cooldown(database: FullDatabase, interaction: discord.Intera
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Players on cooldown:\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Players on cooldown:",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

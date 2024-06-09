@@ -96,7 +96,12 @@ async def team_create(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(f"Team created: `{team_name}`.\n{response_code_block}"),
+            message="\n".join(
+                [
+                    f"Team created: `{team_name}`.",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

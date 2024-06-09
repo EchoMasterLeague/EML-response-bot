@@ -25,7 +25,12 @@ async def system_list_writes(database: FullDatabase, interaction: discord.Intera
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Pending writes:\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Pending writes:",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

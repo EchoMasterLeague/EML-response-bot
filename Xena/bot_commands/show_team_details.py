@@ -80,7 +80,11 @@ async def show_team_details(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Team Details:\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Team Details:\n{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

@@ -107,8 +107,11 @@ async def player_register(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Player `{player_name}` registered for region `{region}`:\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Player `{player_name}` registered for region `{region}`:",
+                    f"{response_code_block}",
+                ]
             ),
         )
 

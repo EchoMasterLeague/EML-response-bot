@@ -106,9 +106,12 @@ async def team_player_invite(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Team invite sent to `{player_name}`.\n{response_code_block}\n"
-                f"They still need to accept the invite to join the team."
+            message="\n".join(
+                [
+                    f"Team invite sent to `{player_name}`.",
+                    f"{response_code_block}",
+                    f"They still need to accept the invite to join the team.",
+                ]
             ),
         )
 

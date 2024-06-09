@@ -125,7 +125,12 @@ async def team_player_remove(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Player `{player_name}` removed from team `{team_name}`.\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Player `{player_name}` removed from team `{team_name}`.",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################

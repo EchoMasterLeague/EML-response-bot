@@ -120,9 +120,12 @@ async def team_disband(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                f"Team `{team_name}` has been disbanded: \n{response_code_block}\n"
-                f"This team no longer exists."
+            message="\n".join(
+                [
+                    f"Team `{team_name}` has been disbanded:",
+                    f"{response_code_block}",
+                    f"This team no longer exists.",
+                ]
             ),
         )
 

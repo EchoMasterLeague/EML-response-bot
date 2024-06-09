@@ -32,7 +32,12 @@ async def system_list_cache(database: FullDatabase, interaction: discord.Interac
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=f"Cache Refresh Times:\n{response_code_block}",
+            message="\n".join(
+                [
+                    f"Cache Refresh Times:",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
         #######################################################################
