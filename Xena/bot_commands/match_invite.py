@@ -16,8 +16,8 @@ import discord
 async def match_invite(
     database: FullDatabase,
     interaction: discord.Interaction,
+    to_team_role: discord.Role,
     match_type: str,
-    opposing_team_name: str,
     date_time: str,
 ):
     """Send a Match Invite to another Team"""
@@ -53,10 +53,11 @@ async def match_invite(
         assert from_team_records, f"Your team could not be found."
         from_team_record = from_team_records[0]
         # "To" Team
+        to_team_name = await discord_helpers.get_team_name_from_role(to_team_role)
         to_team_records = await database.table_team.get_team_records(
-            team_name=opposing_team_name
+            team_name=await discord_helpers.get_team_name_from_role(to_team_role)
         )
-        assert to_team_records, f"Team `{opposing_team_name}` not found."
+        assert to_team_records, f"Team `{to_team_name}` not found."
         to_team_record = to_team_records[0]
 
         #######################################################################

@@ -220,3 +220,8 @@ async def add_member_to_team(member: discord.Member, team_name: str):
     await member_remove_team_roles(member)
     await member_add_team_role(member, team_name)
     return True
+
+
+async def get_team_name_from_role(team_role: discord.Role):
+    """Get the Team name from a role name"""
+    return team_role.name.replace(constants.ROLE_PREFIX_TEAM, "")

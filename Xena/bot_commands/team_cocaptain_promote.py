@@ -8,7 +8,7 @@ import discord
 async def team_cocaptain_promote(
     database: FullDatabase,
     interaction: discord.Interaction,
-    player_name: str,
+    discord_member: discord.Member,
 ):
     """Promote a Player to Team co-captain"""
     try:
@@ -20,13 +20,13 @@ async def team_cocaptain_promote(
         my_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
         )
-        assert my_player_records, "You are not registered as a player."
+        assert my_player_records, f"You are not registered as a player."
         my_player = my_player_records[0]
         # "Their" Player
         their_player_records = await database.table_player.get_player_records(
-            player_name=player_name
+            discord_id=discord_member.id
         )
-        assert their_player_records, "Player not found."
+        assert their_player_records, f"Player `{discord_member.display_name}`not found."
         their_player = their_player_records[0]
         # "My" TeamPlayer
         my_teamplayer_records = (
@@ -99,6 +99,7 @@ async def team_cocaptain_promote(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        their_player_name = await their_player.get_field(PlayerFields.player_name)
         captain = None
         cocaptain = None
         players = []
@@ -123,7 +124,7 @@ async def team_cocaptain_promote(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Player `{player_name}` promoted to co-captain:",
+                    f"Player `{their_player_name}` promoted to co-captain:",
                     f"{response_code_block}",
                 ]
             ),

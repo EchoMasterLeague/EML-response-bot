@@ -17,13 +17,10 @@ async def show_player_details(
         #                               RECORDS                               #
         #######################################################################
         # Player
-        discord_id = discord_member.id
-        if not discord_id:
-            discord_id = interaction.user.id
         player_records = await database.table_player.get_player_records(
-            discord_id=discord_id
+            discord_id=discord_member.id
         )
-        assert player_records, "Player not found."
+        assert player_records, f"Player `{discord_member.display_name}` not found. Are they registered?"
         player_record = player_records[0]
         # TeamPlayer
         teamplayer_records = await database.table_team_player.get_team_player_records(

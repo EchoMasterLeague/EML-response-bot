@@ -7,19 +7,18 @@ from database.fields import (
 )
 from database.database_full import FullDatabase
 from database.enums import MatchType, MatchResult, MatchStatus
-from database.records import MatchRecord, MatchResultInviteRecord
-from errors.database_errors import EmlRecordAlreadyExists
-from utils import discord_helpers, database_helpers, general_helpers, match_helpers
+from database.records import MatchResultInviteRecord
+from utils import discord_helpers, general_helpers, match_helpers
 import discord
 
 
 async def match_result_invite(
     database: FullDatabase,
     interaction: discord.Interaction,
-    opposing_team_name: str,
-    scores: list[tuple[int, int]],
+    to_team_role: discord.Role,
+    match_type: str,
     outcome: str,
-    match_type: str = MatchType.ASSIGNED.value,
+    scores: list[tuple[int, int]],
 ):
     """Propose Match Result to another Team"""
     try:
@@ -54,10 +53,11 @@ async def match_result_invite(
         assert from_team_records, f"Your team could not be found."
         from_team_record = from_team_records[0]
         # "To" Team
+        to_team_name = await discord_helpers.get_team_name_from_role(to_team_role)
         to_team_records = await database.table_team.get_team_records(
-            team_name=opposing_team_name
+            team_name=await discord_helpers.get_team_name_from_role(to_team_role)
         )
-        assert to_team_records, f"Team `{opposing_team_name}` not found."
+        assert to_team_records, f"Team `{to_team_name}` not found."
         to_team_record = to_team_records[0]
         # Match
         match_type = await match_helpers.get_normalized_match_type(match_type)
@@ -134,6 +134,7 @@ async def match_result_invite(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        to_team_name = await to_team_record.get_field(TeamFields.team_name)
         response_outcomes = {
             MatchResult.WIN: "my_team",
             MatchResult.LOSS: "to_team",
@@ -159,7 +160,7 @@ async def match_result_invite(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Match Result Proposal sent to team `{opposing_team_name}`.",
+                    f"Match Result Proposal sent to team `{to_team_name}`.",
                     f"{response_code_block}",
                     f"Your opponent must confirm these results before they are officially recorded.",
                 ]

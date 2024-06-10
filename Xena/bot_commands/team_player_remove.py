@@ -10,7 +10,7 @@ import discord
 async def team_player_remove(
     database: FullDatabase,
     interaction: discord.Interaction,
-    player_name: str,
+    discord_member: discord.Member,
 ):
     """Remove a Player from a Team by name"""
     try:
@@ -49,18 +49,25 @@ async def team_player_remove(
         our_team_record = our_team_records[0]
         # "Their" Player
         their_player_records = await database.table_player.get_player_records(
-            player_name=player_name
+            discord_id=discord_member.id
         )
-        assert their_player_records, f"Player `{player_name}` not found."
+        assert (
+            their_player_records
+        ), f"Player `{discord_member.display_name}` not found."
         their_player_record = their_player_records[0]
         # "Their" TeamPlayer
+        their_player_name = await their_player_record.get_field(
+            PlayerFields.player_name
+        )
         their_teamplayer_records: list[TeamPlayerRecord] = []
         for teamplayer in our_teamplayer_records:
             teamplayer_id = await teamplayer.get_field(TeamPlayerFields.player_id)
             their_id = await their_player_record.get_field(PlayerFields.record_id)
             if teamplayer_id == their_id:
                 their_teamplayer_records.append(teamplayer)
-        assert their_teamplayer_records, f"Player `{player_name}` is not on your team."
+        assert (
+            their_teamplayer_records
+        ), f"Player `{their_player_name}` is not on your team."
         their_teamplayer_record = their_teamplayer_records[0]
 
         #######################################################################
@@ -102,7 +109,10 @@ async def team_player_remove(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
-        team_name = f"{await our_team_record.get_field(TeamFields.team_name)}"
+        their_player_name = await their_player_record.get_field(
+            PlayerFields.player_name
+        )
+        our_team_name = f"{await our_team_record.get_field(TeamFields.team_name)}"
         captain = None
         cocaptain = None
         players = []
@@ -130,7 +140,7 @@ async def team_player_remove(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Player `{player_name}` removed from team `{team_name}`.",
+                    f"Player `{their_player_name}` removed from team `{our_team_name}`.",
                     f"{response_code_block}",
                 ]
             ),

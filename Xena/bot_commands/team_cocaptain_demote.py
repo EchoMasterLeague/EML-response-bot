@@ -8,7 +8,7 @@ import discord
 async def team_cocaptain_demote(
     database: FullDatabase,
     interaction: discord.Interaction,
-    player_name: str,
+    discord_member: discord.Member,
 ):
     """Demote a Player from Team co-captain"""
     try:
@@ -24,9 +24,11 @@ async def team_cocaptain_demote(
         my_player = my_player_records[0]
         # "Their" Player
         their_player_records = await database.table_player.get_player_records(
-            player_name=player_name
+            discord_id=discord_member.id
         )
-        assert their_player_records, "Player not found."
+        assert (
+            their_player_records
+        ), f"Player `{discord_member.display_name}` not found."
         their_player = their_player_records[0]
         # "My" TeamPlayer
         my_teamplayer_records = (
@@ -99,6 +101,7 @@ async def team_cocaptain_demote(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        their_player_name = await their_player.get_field(PlayerFields.player_name)
         captain = None
         cocaptain = None
         players = []
@@ -123,7 +126,7 @@ async def team_cocaptain_demote(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Player `{player_name}` demoted from co-captain:",
+                    f"Player `{their_player_name}` demoted from co-captain:",
                     f"{response_code_block}",
                 ]
             ),

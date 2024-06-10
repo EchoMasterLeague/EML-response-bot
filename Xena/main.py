@@ -439,16 +439,15 @@ async def bot_team_create(interaction: discord.Interaction, team_name: str):
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERADD}")
 async def bot_team_invite_offer(
-    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
+    interaction: discord.Interaction, player: discord.Member
 ):
     """Invite a player to join your Team"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log(
+        {**locals(), "player": f"{player.display_name}({player.id})"}
+    )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.team_player_invite(
-            database=db,
-            interaction=interaction,
-            player_name=player_name,
-            player_discord_id=discord_id,
+            database=db, interaction=interaction, from_teamplayer_record=player
         )
 
 
@@ -461,38 +460,50 @@ async def bot_team_invite_accept(interaction: discord.Interaction):
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}")
-async def bot_team_player_remove(interaction: discord.Interaction, player_name: str):
+async def bot_team_player_remove(
+    interaction: discord.Interaction, player: discord.Member
+):
     """Remove a player from your Team"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log(
+        {**locals(), "player": f"{player.display_name}({player.id})"}
+    )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.team_player_remove(
             database=db,
             interaction=interaction,
-            player_name=player_name,
+            discord_member=player,
         )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERPROMOTE}")
-async def bot_team_player_promote(interaction: discord.Interaction, player_name: str):
+async def bot_team_player_promote(
+    interaction: discord.Interaction, player: discord.Member
+):
     """Promote a player to Team Co-Captain"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log(
+        {**locals(), "player": f"{player.display_name}({player.id})"}
+    )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.team_cocaptain_promote(
             database=db,
             interaction=interaction,
-            player_name=player_name,
+            discord_member=player,
         )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERDEMOTE}")
-async def bot_team_player_demote(interaction: discord.Interaction, player_name: str):
+async def bot_team_player_demote(
+    interaction: discord.Interaction, player: discord.Member
+):
     """Demote a player from Team Co-Captain"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log(
+        {**locals(), "player": f"{player.display_name}({player.id})"}
+    )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.team_cocaptain_demote(
             database=db,
             interaction=interaction,
-            player_name=player_name,
+            discord_member=player,
         )
 
 
@@ -519,16 +530,16 @@ async def bot_team_disband(interaction: discord.Interaction):
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}")
 async def bot_match_propose(
-    interaction: discord.Interaction, match_type: str, opponent_name: str, date: str
+    interaction: discord.Interaction, opponent: discord.Role, match_type: str, date: str
 ):
     """Propose a Match with another Team"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log({**locals(), "opponent": f"{opponent.name}"})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.match_invite(
             database=db,
             interaction=interaction,
+            to_team_role=opponent,
             match_type=match_type,
-            opposing_team_name=opponent_name,
             date_time=date,
         )
 
@@ -544,8 +555,8 @@ async def bot_match_accept(interaction: discord.Interaction):
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}")
 async def bot_match_result_offer(
     interaction: discord.Interaction,
+    opponent: discord.Role,
     match_type: str,
-    opponent_name: str,
     outcome: str,
     round_1_us: int,
     round_1_them: int,
@@ -555,7 +566,7 @@ async def bot_match_result_offer(
     round_3_them: int = None,
 ):
     """Propose a Match Result with another Team"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log({**locals(), "opponent": f"{opponent.name}"})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         scores = [
             (round_1_us, round_1_them),
@@ -565,10 +576,10 @@ async def bot_match_result_offer(
         await bot_commands.match_result_invite(
             database=db,
             interaction=interaction,
+            to_team_role=opponent,
             match_type=match_type,
-            opposing_team_name=opponent_name,
-            scores=scores,
             outcome=outcome,
+            scores=scores,
         )
 
 
