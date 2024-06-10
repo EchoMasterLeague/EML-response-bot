@@ -447,7 +447,7 @@ async def bot_team_invite_offer(
     )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.team_player_invite(
-            database=db, interaction=interaction, from_teamplayer_record=player
+            database=db, interaction=interaction, discord_member=player
         )
 
 
