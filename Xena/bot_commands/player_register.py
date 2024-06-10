@@ -3,6 +3,7 @@ from database.database_full import FullDatabase
 from database.enums import Regions
 from database.fields import PlayerFields
 from utils import discord_helpers, player_helpers, general_helpers
+import constants
 import discord
 
 
@@ -88,6 +89,27 @@ async def player_register(
         assert region, f"Region must be in {[r.value for r in Regions]}"
 
         # Create Player record
+        user_name = interaction.user.display_name
+        ok_chars = set(constants.INPUT_ALLOWED_CHARS_TEAM_NAME)
+        special_chars = constants.INPUT_ALLOWED_CHARS_LIMITED
+        clean_name = "".join([char for char in user_name if char in ok_chars])
+        clean_name = ""
+        for char_a in user_name:
+            for char_b in ok_chars:
+                if char_a == char_b:
+                    clean_name += char_b
+        assert (
+            clean_name == user_name
+        ), f"Player name contains invalid characters. Only the following characters are allowed: [`{constants.INPUT_ALLOWED_CHARS_PLAYER_NAME}`]"
+        assert (
+            len(user_name) >= 3 and len(user_name) <= 32
+        ), "Player name must be between 3 and 32 characters long."
+        for i in range(len(user_name) - 1):
+            a = user_name[i] in set(special_chars)
+            b = user_name[i + 1] in set(special_chars)
+            assert not (
+                a and b
+            ), f"Player name must not contain consecutive special characters: [`{constants.INPUT_ALLOWED_CHARS_LIMITED}`]"
         new_player_record = await database.table_player.create_player_record(
             discord_id=interaction.user.id,
             player_name=interaction.user.display_name,

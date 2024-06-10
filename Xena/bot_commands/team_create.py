@@ -40,13 +40,28 @@ async def team_create(
 
         # Create Team
         ok_chars = set(constants.INPUT_ALLOWED_CHARS_TEAM_NAME)
+        special_chars = constants.INPUT_ALLOWED_CHARS_LIMITED
         clean_name = "".join([char for char in team_name if char in ok_chars])
+        clean_name = ""
+        for char_a in team_name:
+            for char_b in ok_chars:
+                if char_a == char_b:
+                    clean_name += char_b
         assert (
             clean_name == team_name
         ), f"Team name contains invalid characters. Only the following characters are allowed: [`{constants.INPUT_ALLOWED_CHARS_TEAM_NAME}`]"
         assert (
             len(team_name) >= 3 and len(team_name) <= 32
         ), "Team name must be between 3 and 32 characters long."
+        for i in range(len(team_name) - 1):
+            a = team_name[i] in set(special_chars)
+            b = team_name[i + 1] in set(special_chars)
+            assert not (
+                a and b
+            ), f"Team name must not contain consecutive special characters: [`{constants.INPUT_ALLOWED_CHARS_LIMITED}`]"
+        assert team_name[0] not in set(special_chars) and team_name[-1] not in set(
+            special_chars
+        ), f"Team name must not start or end with a special character: [`{constants.INPUT_ALLOWED_CHARS_LIMITED}`]"
         new_team_record = await database.table_team.create_team_record(
             team_name=team_name,
             vw_region=await my_player.get_field(PlayerFields.region),
