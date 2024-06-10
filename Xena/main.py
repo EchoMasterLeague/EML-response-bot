@@ -371,7 +371,8 @@ async def bot_z_debug_db_cache(interaction: discord.Interaction):
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOOKUPPLAYER}")
 async def bot_lookup_player(
-    interaction: discord.Interaction, player_name: str = None, discord_id: str = None
+    interaction: discord.Interaction,
+    player: discord.Member,
 ):
     """Lookup a Player by name or Discord ID"""
     await bot_helpers.command_log({**locals()})
@@ -379,8 +380,7 @@ async def bot_lookup_player(
         await bot_commands.show_player_details(
             database=db,
             interaction=interaction,
-            player_name=player_name,
-            discord_id=discord_id,
+            discord_member=player,
         )
 
 
