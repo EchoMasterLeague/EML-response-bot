@@ -171,7 +171,7 @@ async def team_player_accept(
         )
 
         # Update "From" Team Active Status
-        if len(from_teamplayer_records) + 1 >= constants.TEAM_PLAYERS_MIN:
+        if len(from_teamplayer_records) >= constants.TEAM_PLAYERS_MIN:
             await from_team_record.set_field(TeamFields.status, TeamStatus.ACTIVE)
             await database.table_team.update_team_record(from_team_record)
 
