@@ -85,7 +85,7 @@ async def team_player_accept(
                     f"Which team invite would you like to accept?",
                 ]
             ),
-            # ephemeral=True,
+            ephemeral=True,
         )
 
         #######################################################################

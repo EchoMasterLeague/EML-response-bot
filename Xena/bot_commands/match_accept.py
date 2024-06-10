@@ -111,7 +111,7 @@ async def match_accept(
                     f"Failure to show at scheduled time will result in automatic forfeiture.",
                 ]
             ),
-            # ephemeral=True,
+            ephemeral=True,
         )
 
         #######################################################################

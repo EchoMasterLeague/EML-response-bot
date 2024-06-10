@@ -111,7 +111,7 @@ async def match_result_accept(
                     f"Warning: Once accepted, this cannot be undone.",
                 ]
             ),
-            # ephemeral=True,
+            ephemeral=True,
         )
 
         #######################################################################
