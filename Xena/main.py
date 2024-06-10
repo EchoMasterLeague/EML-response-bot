@@ -84,66 +84,74 @@ async def help(interaction: discord.Interaction):
     Displays information about available commands.
     """
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         # f"`/{BOT_PREFIX}{constants.COMMAND_REGISTRATION}`: Gives a link to the website NA Team Registration Form\n"
-        help_message = (
-            f"**Help**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_HELP}`: Show this message\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_COMMANDS}`: Link command reference\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}`: Link to bot guide\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_SUPPORT}`: Link to #league-faq\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TICKET}`: Link to ticketing in Echo Master League\n"
-            f"**Rules**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_COC}`: Link to the Code of Conduct\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}`: Link to League Rules\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_AP}`: Link to the Accumulated Points system\n"
-            f"**Violations**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}`: Link to ticketing in Echo VR Lounge\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}`: Link to the violator action list\n"
-            f"**League Info**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_WEBSITE}`: Link to EML website\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_STAFF_APP}`: Link to EML staff application\n"
-            f"**Season Info**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}`: Show EU League Calendar\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_NA}`: Show NA League Calendar\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_MATCHES}`: Link to upcoming matches list\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_RANKS}`: Link to team rankings\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_ROSTERS}`: Link to roster\n"
-            f"**League Management Commands**\n"
-            f"**Players**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERREGISTER}`: Register into the League\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERUNREGISTER}`: Unregister from the League\n"
-            f"**Teams**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMINVITEACCEPT}`: Join a team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMCREATE}`: Create year own team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERADD}`: Invite a player to join your team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMLEAVE}`: Leave your team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMDISBAND}`: Disband your team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}`: Remove teammate from your team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERPROMOTE}`: Specify Co-Captain of your team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERDEMOTE}`: Remove Co-Captain role from your teammate\n"
-            f"**Matches**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEACCEPT}`: Accept match date and time proposed by another team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTACCEPT}`: Accept match results proposed by another team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}`: Propose match date and time to another team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}`: Propose match results to another team\n"
-            f"**Lookup**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPPLAYER}`: Show player details\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPTEAM}`: Show team details\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_LISTCOOLDOWNPLAYERS}`: Show players who recenly left a team\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_ROLELOOKUP}`: Show discord members with a specific role\n"
-            f"**Debug**\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}`: Show database cache pull timestamps\n"
-            f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}`: Show database write queue\n"
+        await interaction.response.send_message(
+            ephemeral=True,
+            content="\n".join(
+                [
+                    f"**Help**\n",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_HELP}`: Show this message",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_COMMANDS}`: Link command reference",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}`: Link to bot guide",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_SUPPORT}`: Link to #league-faq",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TICKET}`: Link to ticketing in Echo Master League",
+                    f"**Rules**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_COC}`: Link to the Code of Conduct",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}`: Link to League Rules",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_AP}`: Link to the Accumulated Points system",
+                    f"**Violations**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}`: Link to ticketing in Echo VR Lounge",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}`: Link to the violator action list",
+                    f"**League Info**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_WEBSITE}`: Link to EML website",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_STAFF_APP}`: Link to EML staff application",
+                    f"**Season Info**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}`: Show EU League Calendar",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_CALENDAR_NA}`: Show NA League Calendar",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_MATCHES}`: Link to upcoming matches list",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_RANKS}`: Link to team rankings",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_ROSTERS}`: Link to roster",
+                    f"**League Management Commands**",
+                    f"**Players**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERREGISTER}`: Register into the League",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_PLAYERUNREGISTER}`: Unregister from the League",
+                    f"**Teams**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMINVITEACCEPT}`: Join a team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMCREATE}`: Create year own team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERADD}`: Invite a player to join your team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMLEAVE}`: Leave your team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMDISBAND}`: Disband your team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERKICK}`: Remove teammate from your team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERPROMOTE}`: Specify Co-Captain of your team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_TEAMPLAYERDEMOTE}`: Remove Co-Captain role from your teammate",
+                    f"**Matches**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEACCEPT}`: Accept match date and time proposed by another team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTACCEPT}`: Accept match results proposed by another team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}`: Propose match date and time to another team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_MATCHRESULTPROPOSE}`: Propose match results to another team",
+                    f"**Lookup**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPPLAYER}`: Show player details",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_LOOKUPTEAM}`: Show team details",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_LISTCOOLDOWNPLAYERS}`: Show players who recenly left a team",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_ROLELOOKUP}`: Show discord members with a specific role",
+                    f"**Debug**",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}`: Show database cache pull timestamps",
+                    f"`/{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}`: Show database write queue",
+                ]
+            ),
         )
-        await interaction.response.send_message(help_message)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_RANKS}")
 async def ranks(interaction: discord.Interaction):
     """Link to Team Rankings"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_TEAM_RANKINGS
         await interaction.response.send_message(f"Team Rankings: {link}")
 
@@ -152,7 +160,9 @@ async def ranks(interaction: discord.Interaction):
 async def matches(interaction: discord.Interaction):
     """Link to upcoming Matches"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_LEAGUE_MATCHES
         await interaction.response.send_message(f"Upcoming Matches: {link}")
 
@@ -161,7 +171,9 @@ async def matches(interaction: discord.Interaction):
 async def rosters(interaction: discord.Interaction):
     """Link to League Roster"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_LEAGUE_ROSTER
         await interaction.response.send_message(f"Roster: {link}")
 
@@ -170,7 +182,9 @@ async def rosters(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to EML Website"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_EML_WEBSITE
         await interaction.response.send_message(f"EML Website: {link}")
 
@@ -179,7 +193,9 @@ async def website(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to Bot Instructions"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_BOT_INSTRUCTIONS
         await interaction.response.send_message(f"Bot Instructions: {link}")
 
@@ -188,7 +204,9 @@ async def website(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to Command Reference"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_BOT_COMMANDS
         await interaction.response.send_message(f"Command Reference: {link}")
 
@@ -197,7 +215,9 @@ async def website(interaction: discord.Interaction):
 async def leaguerules(interaction: discord.Interaction):
     """Link to EML League Rules"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_LEAGUE_RULES
         await interaction.response.send_message(f"League Rules: {link}")
 
@@ -206,7 +226,9 @@ async def leaguerules(interaction: discord.Interaction):
 async def coc(interaction: discord.Interaction):
     """Link to EML Code of Conduct"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_DISCORD_CHANNEL_EML_COC
         await interaction.response.send_message(f"EML Code of Conduct: {link}")
 
@@ -215,7 +237,9 @@ async def coc(interaction: discord.Interaction):
 async def ticket(interaction: discord.Interaction):
     """Link to EML Tickets"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
         await interaction.response.send_message(f"EML Tickets: {link}")
 
@@ -224,7 +248,9 @@ async def ticket(interaction: discord.Interaction):
 async def support(interaction: discord.Interaction):
     """Link to EML Support (FAQ)"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
         await interaction.response.send_message(f"EML Support (FAQ): {link}")
 
@@ -233,7 +259,9 @@ async def support(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to EML Staff Application"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_STAFF_APPLICATION
         await interaction.response.send_message(f"Staff Application: {link}")
 
@@ -242,7 +270,9 @@ async def staff_app(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to EU Calendar"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_CALENDAR_EU
         await interaction.response.send_message(f"**Europe**: [EU]({link})")
 
@@ -251,7 +281,9 @@ async def staff_app(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to NA Calendar"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_CALENDAR_NA
         await interaction.response.send_message(f"**North America**: [NA]({link})")
 
@@ -260,7 +292,9 @@ async def staff_app(interaction: discord.Interaction):
 async def ap(interaction: discord.Interaction):
     """Link to Accumulated Points"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_ACCUMULATED_POINTS
         await interaction.response.send_message(f"Accumlulated Points: {link}")
 
@@ -269,7 +303,9 @@ async def ap(interaction: discord.Interaction):
 async def action_list(interaction: discord.Interaction):
     """Link to Action List"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link = constants.LINK_ACTION_LIST
         await interaction.response.send_message(f"Action List: {link}")
 
@@ -278,7 +314,9 @@ async def action_list(interaction: discord.Interaction):
 async def lounge_report(interaction: discord.Interaction):
     """Link to Echo VR Lounge Reporting"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         link_lounge = constants.LINK_ECHO_VR_LOUNGE
         link_report = constants.LINK_ECHO_VR_LOUNGE_TICKETS
         await interaction.response.send_message(
@@ -297,7 +335,9 @@ async def bot_rolelookup(
 ):
     """Show members with a specific role"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, skip_channel=True
+    ):
         await bot_commands.show_role_members(
             interaction=interaction, role_input1=role_input1, role_input2=role_input2
         )

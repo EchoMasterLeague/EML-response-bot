@@ -11,6 +11,7 @@ async def command_is_enabled(
     default_enabled: bool = True,
     skip_db: bool = False,
     skip_channel: bool = False,
+    require_admin: bool = False,
 ):
     """Command availablity check"""
     try:
@@ -37,6 +38,15 @@ async def command_is_enabled(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+        # Admin Check
+        if require_admin:
+            if not await discord_helpers.member_is_admin(interaction):
+                await discord_helpers.final_message(
+                    interaction=interaction,
+                    message=f"Command `{command_name}` is only available to admins.",
+                    ephemeral=True,
+                )
+                return False
 
         # Channel Availability
         if not skip_channel:

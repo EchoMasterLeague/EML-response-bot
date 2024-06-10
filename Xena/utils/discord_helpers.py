@@ -81,6 +81,17 @@ async def member_from_discord_id(guild: discord.Guild, discord_id: str):
         return None
 
 
+async def member_is_admin(member: discord.Member):
+    """Check if a Guild Member is an admin"""
+    admin_roles = constants.ROLE_LIST_ADMIN.split(",")
+    admin_roles = [role.strip() for role in admin_roles]
+    member_roles = [role.name for role in member.roles]
+    common_roles = set(admin_roles).intersection(member_roles)
+    if common_roles:
+        return True
+    return False
+
+
 ### Roles ###
 
 
