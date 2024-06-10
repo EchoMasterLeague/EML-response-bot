@@ -376,7 +376,7 @@ async def bot_lookup_player(
 ):
     """Lookup a Player by name or Discord ID"""
     await bot_helpers.command_log(
-        {**locals(), "player": f"{player.display_name}({player.id})>"}
+        {**locals(), "player": f"{player.display_name}({player.id})"}
     )
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.show_player_details(
