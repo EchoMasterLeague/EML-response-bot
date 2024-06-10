@@ -57,7 +57,7 @@ async def player_register(
                     f"Choose a region",
                 ]
             ),
-            # ephemeral=True,
+            ephemeral=True,
         )
         #######################################################################
         #                               CHOICE                                #
