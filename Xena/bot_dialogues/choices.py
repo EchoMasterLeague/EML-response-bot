@@ -44,7 +44,7 @@ class QuestionPromptViewExampleUsage:
                     f"Which option?",
                 ]
             ),
-            # ephemeral=True,
+            ephemeral=True,
         )
         await options_view.wait()
         # Send a message with the selected option
