@@ -36,25 +36,28 @@ async def show_role_members(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
-        length_limit = 2000
+        # Message
         response_list = [member.mention for member in members_with_roles]
         response_list_string = ", ".join(response_list)
         response_prefix = f"Members with {discord_role_1.mention} {'and ' + discord_role_2.mention  + ' roles' if discord_role_2 else 'role'}: ["
         response_message = f"{response_prefix}{response_list_string}]"
-        if response_message > length_limit:
+        # Length
+        length_limit = 2000
+        if len(response_message) > length_limit:
             response_prefix = f"Members with {discord_role_1.mention} {'and ' + discord_role_2.mention  + ' roles' if discord_role_2 else 'role'} (members omitted to fit message length): ["
             response_message = f"{response_prefix}{response_list_string}]"
         attempts = 0
-        while response_message > length_limit and attempts < 100:
+        while len(response_message) > length_limit and attempts < 100:
             attempts += 1
             response_list.pop()
             response_list_string = ", ".join(response_list)
             response_message = f"{response_prefix}{response_list_string}]"
         print(response_message)
         print(len(response_message), (len(response_list)))
+        # Response
         await discord_helpers.final_message(
             interaction=interaction,
-            message=response_message[:2000],
+            message=response_message,
             ephemeral=True,
         )
         #######################################################################
