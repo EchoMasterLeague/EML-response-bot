@@ -4,76 +4,54 @@ from utils import discord_helpers
 
 async def show_role_members(
     interaction: discord.Interaction,
-    role_input1: str,
-    role_input2: str = None,
+    discord_role_1: discord.Role,
+    discord_role_2: discord.Role = None,
 ):
     try:
+        await interaction.response.defer()
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
-        # Get the guild from the interaction
+        # Guild
         guild = interaction.guild
-
-        if guild:
-            all_roles: list[discord.Role] = await guild.fetch_roles()
-            all_members: list[discord.Member] = guild.members
-            # Get role based on the provided role_input1 (case-insensitive)
-            role1_matches = [
-                role
-                for role in all_roles
-                if role_input1.casefold() == role.name.casefold()
+        assert guild, "Error: Guild not found."
+        all_members: list[discord.Member] = guild.members
+        # Role 1
+        assert discord_role_1, "Error: Role not found."
+        members_with_roles = [
+            member for member in all_members if discord_role_1 in member.roles
+        ]
+        # Role 2
+        if discord_role_2:
+            members_with_roles = [
+                member
+                for member in members_with_roles
+                if discord_role_2 in member.roles
             ]
-            role1 = role1_matches[0] if role1_matches else None
-            # If role_input2 is provided, get the role based on it (case-insensitive)
-            role2 = None
-            if role_input2:
-                role2_matches = [
-                    role
-                    for role in all_roles
-                    if role_input2.casefold() == role.name.casefold()
-                ]
-                role2 = role2_matches[0] if role2_matches else None
-            if role1:
-                # Get members with specified roles (case-insensitive comparison)
-                members_with_roles = [
-                    member for member in all_members if role1 in member.roles
-                ]
-                if role2:
-                    members_with_roles = [
-                        member for member in members_with_roles if role2 in member.roles
-                    ]
-                if members_with_roles:
-                    member_mentions = [member.mention for member in members_with_roles]
-                    await interaction.response.send_message(
-                        f"Members with {role1.mention} role{' and ' + role2.mention if role2 else ''}: {', '.join(member_mentions)}",
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.response.send_message(
-                        f"No members found with {role1.mention} role{' and ' + role2.mention if role2 else ''}.",
-                        ephemeral=True,
-                    )
-            else:
-                await interaction.response.send_message(
-                    "Role not found.", ephemeral=True
-                )
-        else:
-            await interaction.response.send_message(
-                "Error: Guild not found.", ephemeral=True
-            )
-
+        # Sort
+        members_with_roles.sort(key=lambda member: member.display_name)
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        response_list = [member.mention for member in members_with_roles]
+        await discord_helpers.final_message(
+            interaction=interaction,
+            message="\n".join(
+                [
+                    f"Members with {discord_role_1.mention} {'and ' + discord_role_2.mention  + ' roles' if discord_role_2 else 'role'}: [{', '.join(response_list)}]",
+                ]
+            ),
+            ephemeral=True,
+        )
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.final_message(interaction, message, ephemeral=True)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

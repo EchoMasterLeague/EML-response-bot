@@ -331,16 +331,22 @@ async def lounge_report(interaction: discord.Interaction):
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ROLELOOKUP}")
 async def bot_rolelookup(
     interaction: discord.Interaction,
-    role_input1: str,
-    role_input2: str = None,
+    role1: discord.Role,
+    role2: discord.Role = None,
 ):
     """Show members with a specific role"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log(
+        {
+            **locals(),
+            "role1": f"{role1.name}",
+            "role2": f"{role2.name}" if role2 else None,
+        }
+    )
     if await bot_helpers.command_is_enabled(
         database=db, interaction=interaction, skip_channel=True
     ):
         await bot_commands.show_role_members(
-            interaction=interaction, role_input1=role_input1, role_input2=role_input2
+            interaction=interaction, discord_role_1=role1, discord_role_2=role2
         )
 
 
