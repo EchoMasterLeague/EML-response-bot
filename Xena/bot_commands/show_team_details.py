@@ -5,7 +5,7 @@ import discord
 
 
 async def show_team_details(
-    database: FullDatabase, interaction: discord.Interaction, team_name: str = None
+    database: FullDatabase, interaction: discord.Interaction, discord_role: discord.Role
 ):
     """Show Details of a Team"""
     try:
@@ -13,36 +13,20 @@ async def show_team_details(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
-        if not team_name:
-            # "My" Player
-            my_player_records = await database.table_player.get_player_records(
-                discord_id=interaction.user.id
-            )
-            assert (
-                my_player_records
-            ), "You must provide a team name, or be on a team to get team details."
-            my_player_record = my_player_records[0]
-            # "My" TeamPlayer
-            my_teamplayer_records = (
-                await database.table_team_player.get_team_player_records(
-                    player_id=await my_player_record.get_field(PlayerFields.record_id)
-                )
-            )
-            assert (
-                my_teamplayer_records
-            ), "You must provide a team name, or be on a team to get team details."
-            my_teamplayer_record = my_teamplayer_records[0]
-            team_name = await my_teamplayer_record.get_field(TeamPlayerFields.vw_team)
         # Team
-        team_records = await database.table_team.get_team_records(team_name=team_name)
-        assert team_records, f"Team `{team_name}` not found."
+        team_records = await database.table_team.get_team_records(
+            team_name=await discord_helpers.get_team_name_from_role(discord_role)
+        )
+        assert team_records, f"Team `{discord_role.name}` not found."
         team_record = team_records[0]
         # TeamPlayer
+        team_name = await team_record.get_field(TeamFields.team_name)
         teamplayer_records = await database.table_team_player.get_team_player_records(
             team_id=await team_record.get_field(TeamFields.record_id)
         )
         assert teamplayer_records, f"Team `{team_name}` has no players."
         # Player
+        team_name = await team_record.get_field(TeamFields.team_name)
         player_records = []
         for teamplayer_record in teamplayer_records:
             player_records += await database.table_player.get_player_records(

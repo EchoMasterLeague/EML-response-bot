@@ -417,12 +417,12 @@ async def bot_lookup_cooldown_players(interaction: discord.Interaction):
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOOKUPTEAM}")
-async def bot_lookup_team(interaction: discord.Interaction, team_name: str = None):
+async def bot_lookup_team(interaction: discord.Interaction, team: discord.Role):
     """Lookup a Team by name"""
-    await bot_helpers.command_log({**locals()})
+    await bot_helpers.command_log({**locals(), "team": f"{team.name}"})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.show_team_details(
-            database=db, interaction=interaction, team_name=team_name
+            database=db, interaction=interaction, discord_role=team
         )
 
 
