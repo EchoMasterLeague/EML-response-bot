@@ -8,7 +8,7 @@ async def show_role_members(
     discord_role_2: discord.Role = None,
 ):
     try:
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
