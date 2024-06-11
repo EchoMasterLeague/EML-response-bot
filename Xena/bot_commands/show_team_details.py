@@ -15,7 +15,7 @@ async def show_team_details(
         #######################################################################
         # Team
         team_records = await database.table_team.get_team_records(
-            team_name=discord_helpers.get_team_name_from_role(discord_role)
+            team_name=await discord_helpers.get_team_name_from_role(discord_role)
         )
         assert team_records, f"Team `{discord_role.name}` not found."
         team_record = team_records[0]
