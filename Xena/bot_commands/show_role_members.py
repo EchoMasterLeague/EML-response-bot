@@ -48,9 +48,7 @@ async def show_role_members(
             attempts += 1
             response_list.pop()
             response_list_string = ", ".join(response_list)
-            response_message = f"{response_prefix} ({attempts} member{'s' if attempts > 1 else ''} omitted to fit length): [{response_list_string}]"
-        print(response_message)
-        print(len(response_message), (len(response_list)))
+            response_message = f"{response_prefix} ({attempts} member{'s' if attempts > 1 else ''} omitted to fit length): [{response_list_string}, ...]"
         # Response
         await discord_helpers.final_message(
             interaction=interaction,
