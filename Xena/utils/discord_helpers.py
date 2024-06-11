@@ -29,9 +29,10 @@ async def error_message(
     interaction: discord.Interaction,
     error: Exception,
     message: str = "Error: Something went wrong.",
+    ephemeral: bool = False,
 ):
     """Send an error message to an interaction, and raise the error."""
-    await final_message(interaction, message)
+    await final_message(interaction=interaction, message=message, ephemeral=ephemeral)
     raise error
 
 
