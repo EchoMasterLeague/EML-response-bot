@@ -40,9 +40,10 @@ async def show_role_members(
         response_message = (
             f"Members with {discord_role_1.mention} {'and ' + discord_role_2.mention  + ' roles' if discord_role_2 else 'role'} (limited to 2000 chars): [{', '.join(response_list)}]",
         )
+        print(response_message)
         await discord_helpers.final_message(
             interaction=interaction,
-            message=response_message[:2000],
+            message=response_message[:1000],
             ephemeral=True,
         )
         #######################################################################
