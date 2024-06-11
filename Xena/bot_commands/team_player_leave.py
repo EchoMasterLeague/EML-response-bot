@@ -79,7 +79,7 @@ async def team_player_leave(
 
         # Update "Our" Team Active Status
         if len(our_teamplayer_records) - 1 < constants.TEAM_PLAYERS_MIN:
-            our_team_record.set_field(TeamFields.status, TeamStatus.INACTIVE)
+            await our_team_record.set_field(TeamFields.status, TeamStatus.INACTIVE)
             await database.table_team.update_record(our_team_record)
 
         # Update roster view

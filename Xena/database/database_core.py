@@ -76,9 +76,13 @@ class CoreDatabase:
         is_safe = len(self._db_write_queue) == 0
         if not is_cached or (is_stale and is_safe):
             print(f"[ 0 write, 1 read ] Getting Table: {table_name}")
-            worksheet = self.get_table_worksheet(table_name)
-            self._db_local_cache[table_name] = worksheet.get_all_values()
-            self._db_cache_pull_times[table_name] = time.time()
+            try:
+                worksheet = self.get_table_worksheet(table_name)
+                table_data = worksheet.get_all_values()
+                self._db_local_cache[table_name] = table_data
+                self._db_cache_pull_times[table_name] = time.time()
+            except Exception as error:
+                print(f"    Failed to update table data cache: {error}")
         return self._db_local_cache[table_name]
 
     async def append_row(

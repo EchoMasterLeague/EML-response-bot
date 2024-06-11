@@ -30,6 +30,7 @@ SPREADSHEET_URL = (
 # Google Sheets "Database"
 # gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE, http_client=gspread.BackOffHTTPClient)  # For 429 backoff, but breaks on 403
 gs_client = gspread.service_account(GOOGLE_CREDENTIALS_FILE)
+gs_client.set_timeout(constants.LEAGUE_DB_RESPONSE_TIMEOUT_SECONDS)
 database_core = CoreDatabase(gs_client, SPREADSHEET_URL)
 db = FullDatabase(database_core)
 
