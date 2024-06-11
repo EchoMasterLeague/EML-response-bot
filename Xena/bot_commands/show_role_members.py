@@ -55,6 +55,8 @@ async def show_role_members(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message, ephemeral=True)
+        await discord_helpers.final_message(
+            interaction=interaction, message=message, ephemeral=True
+        )
     except Exception as error:
         await discord_helpers.error_message(interaction, error)
