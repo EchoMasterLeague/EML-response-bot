@@ -42,7 +42,7 @@ class TeamPlayerTable(BaseTable):
             raise DbErrors.EmlRecordAlreadyExists(
                 f"TeamPlayer '{team_id}' '{player_id}' already exists"
             )
-        # Create the TeamPlayer record
+        # Create the new record
         record_list = [None] * len(TeamPlayerFields)
         record_list[TeamPlayerFields.team_id] = team_id
         record_list[TeamPlayerFields.player_id] = player_id

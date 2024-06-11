@@ -47,7 +47,7 @@ class TeamInviteTable(BaseTable):
         now = await general_helpers.epoch_timestamp()
         expiration_epoch = now + constants.TEAM_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
         expiration_iso = await general_helpers.iso_timestamp(expiration_epoch)
-        # Create the Invite record
+        # Create the new record
         record_list = [None] * len(TeamInviteFields)
         record_list[TeamInviteFields.from_team_id] = from_team_id
         record_list[TeamInviteFields.from_player_id] = from_player_id

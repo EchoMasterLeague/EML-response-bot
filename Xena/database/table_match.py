@@ -58,7 +58,7 @@ class MatchTable(BaseTable):
         # Prepare info for new record
         match_date = await general_helpers.eml_date(match_epoch)
         match_time = await general_helpers.eml_time(match_epoch)
-        # Create the Match record
+        # Create the new record
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         record_list = [None] * len(MatchFields)
         record_list[MatchFields.match_timestamp] = match_timestamp

@@ -67,7 +67,7 @@ class MatchResultInviteTable(BaseTable):
         # Ensure there are 3 rounds
         if len(scores) < 3:
             scores = scores + [(None, None)] * (3 - len(scores))
-        # Create the Invite record
+        # Create the new record
         record_list = [None] * len(MatchResultInviteFields)
         record_list[MatchResultInviteFields.match_id] = match_id
         record_list[MatchResultInviteFields.match_type] = match_type

@@ -40,7 +40,7 @@ class CommandLockTable(BaseTable):
             existing_record.set_field(CommandLockFields.is_allowed, is_allowed)
             await self.update_command_lock_record(existing_record)
             return existing_record
-        # Create the Player record
+        # Create the new record
         record_list = [None] * len(CommandLockFields)
         record_list[CommandLockFields.command_name] = command_name
         record_list[CommandLockFields.is_allowed] = is_allowed

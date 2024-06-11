@@ -35,7 +35,7 @@ class ExmapleTable(BaseTable):
             raise DbErrors.EmlRecordAlreadyExists(
                 f"Example record already exists: {existing_record.to_dict()}"
             )
-        # Create the Example record
+        # Create the new record
         record_list = [None] * len(ExampleFields)
         record_list[ExampleFields.example_a] = example_a
         record_list[ExampleFields.example_b] = example_b

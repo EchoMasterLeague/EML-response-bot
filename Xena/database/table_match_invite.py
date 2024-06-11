@@ -58,7 +58,7 @@ class MatchInviteTable(BaseTable):
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         match_date = await general_helpers.eml_date(match_epoch)
         match_time_et = await general_helpers.eml_time(match_epoch)
-        # Create the Match Invite record
+        # Create the new record
         record_list = [None] * len(MatchInviteFields)
         record_list[MatchInviteFields.from_team_id] = from_team_id
         record_list[MatchInviteFields.to_team_id] = to_team_id

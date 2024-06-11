@@ -84,7 +84,7 @@ class VwRosterTable(BaseTable):
             await existing_record.set_field(VwRosterFields.is_2_co_cap, is_2_co_cap)
             await self.update_vw_roster_record(existing_record)
             return existing_record
-        # Create a new record
+        # Create the new record
         record_list = [None] * len(VwRosterFields)
         record_list[VwRosterFields.team] = team_name
         record_list[VwRosterFields.captain] = captain_name

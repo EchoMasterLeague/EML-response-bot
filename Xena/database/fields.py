@@ -243,6 +243,11 @@ class LeagueSubMatchFields(IntEnum):
     team_id = 5  # Record ID of the team
     vw_player = 6  # The name of the player
     vw_team = 7  # The name of the team
+    vw_timestamp = 8  # The time of the match
+    vw_type = 9  # The type of the match
+    vw_team_a = 10  # The name of the first team
+    vw_team_b = 11  # The name of the second team
+    vw_winner = 12  # The name of the winning team
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
