@@ -65,4 +65,6 @@ async def show_role_members(
             interaction=interaction, message=message, ephemeral=True
         )
     except Exception as error:
-        await discord_helpers.error_message(interaction, error)
+        await discord_helpers.error_message(
+            interaction=interaction, error=error, ephemeral=True
+        )
