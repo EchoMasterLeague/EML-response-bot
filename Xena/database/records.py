@@ -4,6 +4,8 @@ from database.fields import (
     CommandLockFields,
     CooldownFields,
     ExampleFields,
+    LeagueSubMatchFields,
+    LeagueSubMatchInviteFields,
     MatchFields,
     MatchInviteFields,
     MatchResultInviteFields,
@@ -127,6 +129,8 @@ class CommandLockRecord(BaseRecord):
 
 
 ### Roster ###
+
+
 class VwRosterRecord(BaseRecord):
     """Record class for table VwRoster"""
 
@@ -517,3 +521,34 @@ class MatchResultInviteRecord(BaseRecord):
             ],
         ]
         return scores
+
+
+### Leage Substitutes ###
+
+
+class LeagueSubMatchRecord(BaseRecord):
+    """Record class for table LeagueSubMatch"""
+
+    fields: Type[LeagueSubMatchFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[LeagueSubMatchFields] = LeagueSubMatchFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+
+class LeagueSubMatchInviteRecord(BaseRecord):
+    """Record class for table LeagueSubMatchInvite"""
+
+    fields: Type[LeagueSubMatchInviteFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[LeagueSubMatchInviteFields] = LeagueSubMatchInviteFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
