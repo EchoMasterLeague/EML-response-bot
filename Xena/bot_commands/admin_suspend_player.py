@@ -136,6 +136,9 @@ async def admin_suspend_player(
         #                              RESPONSE                               #
         #######################################################################
         their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
+        suspension_expiration = (
+            f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
+        )
         response_dictionary = {
             "player_id": f"{await new_suspension_record.get_field(SuspensionFields.player_id)}",
             "player_name": f"{await new_suspension_record.get_field(SuspensionFields.vw_player)}",
