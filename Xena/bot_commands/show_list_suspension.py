@@ -30,7 +30,7 @@ async def show_list_suspension(
             )
             player_name = await suspension.get_field(SuspensionFields.vw_player)
             player_name = (
-                f"{player_member.global_name}({player_member.id})"
+                f"{player_member.name}({player_member.id})"
                 if player_member
                 else player_name
             )
