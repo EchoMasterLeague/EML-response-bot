@@ -7,6 +7,7 @@ from database.table_match import MatchTable
 from database.table_match_invite import MatchInviteTable
 from database.table_match_result_invite import MatchResultInviteTable
 from database.table_player import PlayerTable
+from database.table_suspension import SuspensionTable
 from database.table_team import TeamTable
 from database.table_team_invite import TeamInviteTable
 from database.table_team_player import TeamPlayerTable
@@ -27,6 +28,7 @@ class FullDatabase:
         self.table_match_invite = MatchInviteTable(core_database)
         self.table_match_result_invite = MatchResultInviteTable(core_database)
         self.table_player = PlayerTable(core_database)
+        self.table_suspension = SuspensionTable(core_database)
         self.table_team = TeamTable(core_database)
         self.table_team_invite = TeamInviteTable(core_database)
         self.table_team_player = TeamPlayerTable(core_database)

@@ -99,6 +99,19 @@ class CooldownFields(IntEnum):
     vw_old_team = 7  # The name of the team the player was on
 
 
+@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
+class SuspensionFields(IntEnum):
+    """Lookup for column numbers of fields in the Suspension table"""
+
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    player_id = 3  # Record ID of the player
+    expires_at = 4  # Timestamp when the suspension expires
+    reason = 5  # Reason for the suspension
+    vw_player = 6  # The name of the player
+
+
 ### Teams ###
 
 

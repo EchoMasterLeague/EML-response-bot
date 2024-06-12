@@ -1,7 +1,7 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import Regions
-from database.fields import PlayerFields
+from database.fields import PlayerFields, SuspensionFields
 from utils import discord_helpers, player_helpers, general_helpers
 import constants
 import discord
@@ -17,6 +17,13 @@ async def player_register(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "My" Suspension
+        my_suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=interaction.user.id
+        )
+        assert (
+            not my_suspension_records
+        ), f"You are suspended until `{await my_suspension_records[0].get_field(SuspensionFields.expires_at)}`."
         # "My" Player
         my_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
