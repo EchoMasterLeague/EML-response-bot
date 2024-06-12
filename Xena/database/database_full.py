@@ -1,6 +1,8 @@
 from database.database_core import CoreDatabase
 from database.table_command_lock import CommandLockTable
 from database.table_cooldown import CooldownTable
+from database.table_league_sub_match import LeagueSubMatchTable
+from database.table_league_sub_match_invite import LeagueSubMatchInviteTable
 from database.table_match import MatchTable
 from database.table_match_invite import MatchInviteTable
 from database.table_match_result_invite import MatchResultInviteTable
@@ -20,6 +22,8 @@ class FullDatabase:
         self.core_database = core_database
         self.table_command_lock = CommandLockTable(core_database)
         self.table_cooldown = CooldownTable(core_database)
+        self.table_league_sub_match = LeagueSubMatchTable(core_database)
+        self.table_league_sub_match_invite = LeagueSubMatchInviteTable(core_database)
         self.table_match = MatchTable(core_database)
         self.table_match_invite = MatchInviteTable(core_database)
         self.table_match_result_invite = MatchResultInviteTable(core_database)

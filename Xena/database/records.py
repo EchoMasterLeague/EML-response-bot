@@ -4,6 +4,8 @@ from database.fields import (
     CommandLockFields,
     CooldownFields,
     ExampleFields,
+    LeagueSubMatchFields,
+    LeagueSubMatchInviteFields,
     MatchFields,
     MatchInviteFields,
     MatchResultInviteFields,
@@ -128,6 +130,8 @@ class CommandLockRecord(BaseRecord):
 
 
 ### Roster ###
+
+
 class VwRosterRecord(BaseRecord):
     """Record class for table VwRoster"""
 
@@ -189,6 +193,22 @@ class PlayerRecord(BaseRecord):
             raise DbErrors.EmlRegionNotFound(
                 f"Region '{region}' not available. Available Regions: {region_list}"
             )
+        ## League Substitute
+        is_sub = data_list[PlayerFields.is_sub.value]
+        is_sub = (
+            True
+            if (is_sub == True or str(is_sub).casefold() == str(Bool.TRUE).casefold())
+            else False
+        )
+        self._data_dict[PlayerFields.is_sub.name] = is_sub
+
+    async def to_list(self) -> list[int | float | str | None]:
+        """Return the record as a list of data (e.g. for `gsheets`)"""
+        data_list = await super().to_list()
+        # Conversion
+        is_sub = self._data_dict[PlayerFields.is_sub.name]
+        data_list[PlayerFields.is_sub.value] = Bool.TRUE if is_sub else Bool.FALSE
+        return data_list
 
 
 class CooldownRecord(BaseRecord):
@@ -532,3 +552,34 @@ class MatchResultInviteRecord(BaseRecord):
             ],
         ]
         return scores
+
+
+### Leage Substitutes ###
+
+
+class LeagueSubMatchRecord(BaseRecord):
+    """Record class for table LeagueSubMatch"""
+
+    fields: Type[LeagueSubMatchFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[LeagueSubMatchFields] = LeagueSubMatchFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+
+class LeagueSubMatchInviteRecord(BaseRecord):
+    """Record class for table LeagueSubMatchInvite"""
+
+    fields: Type[LeagueSubMatchInviteFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[LeagueSubMatchInviteFields] = LeagueSubMatchInviteFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)

@@ -45,9 +45,11 @@ class TeamInviteTable(BaseTable):
             )
         # prepare info for new record
         now = await general_helpers.epoch_timestamp()
-        expiration_epoch = now + constants.TEAM_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+        expiration_epoch = (
+            now + constants.INVITES_TO_TEAM_EXPIRATION_DAYS * 60 * 60 * 24
+        )
         expiration_iso = await general_helpers.iso_timestamp(expiration_epoch)
-        # Create the Invite record
+        # Create the new record
         record_list = [None] * len(TeamInviteFields)
         record_list[TeamInviteFields.from_team_id] = from_team_id
         record_list[TeamInviteFields.from_player_id] = from_player_id
@@ -101,8 +103,7 @@ class TeamInviteTable(BaseTable):
                 row[TeamInviteFields.invite_expires_at]
             )
             if now > expiration_epoch:
-                expired_record = TeamInviteRecord(row)
-                expired_records.append(expired_record)
+                expired_records.append(TeamInviteRecord(row))
                 continue
             # Check for matching records
             if (
@@ -127,8 +128,7 @@ class TeamInviteTable(BaseTable):
                     == str(row[TeamInviteFields.to_player_id]).casefold()
                 )
             ):
-                existing_record = TeamInviteRecord(row)
-                existing_records.append(existing_record)
+                existing_records.append(TeamInviteRecord(row))
         # Delete expired records
         for expired_record in expired_records:
             await self.delete_team_invite_record(expired_record)

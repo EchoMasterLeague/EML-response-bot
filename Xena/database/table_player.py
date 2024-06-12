@@ -33,7 +33,7 @@ class PlayerTable(BaseTable):
             raise DbErrors.EmlRecordAlreadyExists(
                 f"Player '{player_name}' already exists"
             )
-        # Create the Player record
+        # Create the new record
         record_list = [None] * len(PlayerFields)
         record_list[PlayerFields.discord_id] = discord_id
         record_list[PlayerFields.player_name] = player_name

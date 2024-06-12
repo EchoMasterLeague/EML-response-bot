@@ -58,7 +58,7 @@ class MatchTable(BaseTable):
         # Prepare info for new record
         match_date = await general_helpers.eml_date(match_epoch)
         match_time = await general_helpers.eml_time(match_epoch)
-        # Create the Match record
+        # Create the new record
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         record_list = [None] * len(MatchFields)
         record_list[MatchFields.match_timestamp] = match_timestamp
@@ -101,6 +101,7 @@ class MatchTable(BaseTable):
         team_b_id: str = None,
         outcome: str = None,
         match_status: str = None,
+        match_timestamp: str = None,
     ) -> list[MatchRecord]:
         """Get existing Match records"""
         if (
@@ -113,7 +114,7 @@ class MatchTable(BaseTable):
             and match_status is None
         ):
             raise ValueError(
-                "At least one of the following parameters must be provided: record_id, match_week, match_type, team_a_id, team_b_id, outcome, match_status"
+                "At least one of the following parameters must be provided: record_id, match_week, match_type, team_a_id, team_b_id, outcome, match_status, match_timestamp"
             )
         table = await self.get_table_data()
         existing_records: list[MatchRecord] = []
@@ -157,6 +158,11 @@ class MatchTable(BaseTable):
                     not match_status
                     or str(match_status).casefold()
                     == str(row[MatchFields.match_status]).casefold()
+                )
+                and (
+                    not match_timestamp
+                    or str(match_timestamp).casefold()
+                    == str(row[MatchFields.match_timestamp]).casefold()
                 )
             ):
                 existing_records.append(MatchRecord(row))

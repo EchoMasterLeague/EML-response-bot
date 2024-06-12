@@ -46,7 +46,7 @@ async def log_to_channel(
         return False
     if interaction:
         channel = await get_guild_channel(
-            interaction=interaction, channel_name=constants.GUILD_CHANNEL_BOT_LOGS
+            interaction=interaction, channel_name=constants.DISCORD_CHANNEL_BOT_LOGS
         )
     return await channel.send(content=message)
 
@@ -84,7 +84,7 @@ async def member_from_discord_id(guild: discord.Guild, discord_id: str):
 
 async def member_is_admin(member: discord.Member):
     """Check if a Guild Member is an admin"""
-    admin_roles = constants.ROLE_LIST_ADMIN.split(",")
+    admin_roles = constants.DISCORD_ROLES_LIST_ADMIN.split(",")
     admin_roles = [role.strip() for role in admin_roles]
     member_roles = [role.name for role in member.roles]
     common_roles = set(admin_roles).intersection(member_roles)
@@ -150,7 +150,7 @@ async def role_mention(
     player_name: str = None,
 ):
     if team_name:
-        role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+        role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
     if role_name:
         role = await guild_role_get(guild, role_name)
         if role:
@@ -172,7 +172,7 @@ async def role_mention(
 
 async def member_add_team_role(member: discord.Member, team_name: str):
     """Add a Team role to a Guild Member"""
-    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
     role = await guild_role_get_or_create(member.guild, role_name)
     await member.add_roles(role)
     return True
@@ -181,9 +181,9 @@ async def member_add_team_role(member: discord.Member, team_name: str):
 async def member_remove_team_roles(member: discord.Member):
     """Remove all Team roles from a Guild Member"""
     prefixes = [
-        constants.ROLE_PREFIX_TEAM,
-        constants.ROLE_PREFIX_CAPTAIN,
-        constants.ROLE_PREFIX_CO_CAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_TEAM,
+        constants.DISCORD_ROLE_PREFIX_CAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN,
     ]
     for role in member.roles:
         if any(role.name.startswith(prefix) for prefix in prefixes):
@@ -193,13 +193,13 @@ async def member_remove_team_roles(member: discord.Member):
 
 async def guild_remove_team_role(guild: discord.Guild, team_name: str):
     """Remove a Team role from a Guild"""
-    role_name = f"{constants.ROLE_PREFIX_TEAM}{team_name}"
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
     return await guild_role_remove_if_exists(guild, role_name)
 
 
 async def member_add_captain_role(member: discord.Member, region: str):
     """Add a Captain role to a Guild Member"""
-    role_name = f"{constants.ROLE_PREFIX_CAPTAIN}{region}"
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_CAPTAIN}{region}"
     role = await guild_role_get_or_create(member.guild, role_name)
     await member.add_roles(role)
     return True
@@ -207,7 +207,10 @@ async def member_add_captain_role(member: discord.Member, region: str):
 
 async def member_remove_captain_roles(member: discord.Member):
     """Remove a Captain role from a Guild Member"""
-    prefixes = [constants.ROLE_PREFIX_CAPTAIN, constants.ROLE_PREFIX_CO_CAPTAIN]
+    prefixes = [
+        constants.DISCORD_ROLE_PREFIX_CAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN,
+    ]
     for role in member.roles:
         if any(role.name.startswith(prefix) for prefix in prefixes):
             await member.remove_roles(role)
@@ -225,4 +228,4 @@ async def add_member_to_team(member: discord.Member, team_name: str):
 
 async def get_team_name_from_role(team_role: discord.Role):
     """Get the Team name from a role name"""
-    return team_role.name.replace(constants.ROLE_PREFIX_TEAM, "")
+    return team_role.name.replace(constants.DISCORD_ROLE_PREFIX_TEAM, "")

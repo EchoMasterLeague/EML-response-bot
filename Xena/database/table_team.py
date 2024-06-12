@@ -28,7 +28,7 @@ class TeamTable(BaseTable):
         existing_records = await self.get_team_records(team_name=team_name)
         if existing_records:
             raise DbErrors.EmlRecordAlreadyExists(f"Team '{team_name}' already exists")
-        # Create the Team record
+        # Create the new record
         record_list = [None] * len(TeamFields)
         record_list[TeamFields.team_name] = team_name
         record_list[TeamFields.status] = TeamStatus.INACTIVE

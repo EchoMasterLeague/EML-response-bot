@@ -52,7 +52,7 @@ async def command_is_enabled(
         if not skip_channel:
             bot_channel = await discord_helpers.get_guild_channel(
                 interaction=interaction,
-                channel_name=constants.GUILD_CHANNEL_BOT_COMMANDS,
+                channel_name=constants.DISCORD_CHANNEL_BOT_COMMANDS,
             )
             this_channel = interaction.channel
             if bot_channel != this_channel:

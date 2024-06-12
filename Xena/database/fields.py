@@ -82,6 +82,7 @@ class PlayerFields(IntEnum):
     discord_id = 3  # Numeric Discord ID of the player
     player_name = 4  # Display Name of the player
     region = 5  # Region of the player
+    is_sub = 6  # Whether or not the player is a league substitute
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
@@ -185,6 +186,8 @@ class MatchFields(IntEnum):
     round_3_score_b = 17  # Score of the second team in the third round
     vw_team_a = 18  # The name of the first team
     vw_team_b = 19  # The name of the second team
+    vw_sub_a = 20  # The name of the first team league substitute
+    vw_sub_b = 21  # The name of the second team league substitute
 
 
 @verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
@@ -236,3 +239,43 @@ class MatchResultInviteFields(IntEnum):
     vw_from_player = 19  # The name of the player sending the invite
     vw_to_team = 20  # The name of the team receiving the invite
     vw_to_player = 21  # The name of the player receiving the invite
+
+
+### League Substitutes ###
+
+
+@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
+class LeagueSubMatchFields(IntEnum):
+    """Lookup for column numbers of fields in the LeagueSubMatch table"""
+
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    match_id = 3  # Record ID of the match
+    player_id = 4  # Record ID of the player
+    team_id = 5  # Record ID of the team
+    vw_player = 6  # The name of the player
+    vw_team = 7  # The name of the team
+    vw_timestamp = 8  # The time of the match
+    vw_type = 9  # The type of the match
+    vw_team_a = 10  # The name of the first team
+    vw_team_b = 11  # The name of the second team
+    vw_winner = 12  # The name of the winning team
+
+
+@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
+class LeagueSubMatchInviteFields(IntEnum):
+    """Lookup for column numbers of fields in the LeagueSubMatchInvite table"""
+
+    record_id = BaseFields.record_id
+    created_at = BaseFields.created_at
+    updated_at = BaseFields.updated_at
+    match_id = 3  # Record ID of the match
+    sub_player_id = 4  # Record ID of the sub player
+    team_id = 5  # Record ID of the team
+    captain_player_id = 6  # Record ID of the captain
+    invite_status = 7  # Status of the sub match invite
+    invite_expires_at = 8  # Timestamp when the sub match invite expires
+    vw_sub = 9  # The name of the sub player
+    vw_team = 10  # The name of the team
+    vw_captain = 11  # The name of the captain

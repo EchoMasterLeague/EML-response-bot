@@ -52,7 +52,7 @@ async def team_player_invite(
             )
         )
         assert (
-            len(from_teaminvite_records) < constants.TEAM_INVITES_SEND_MAX
+            len(from_teaminvite_records) < constants.INVITES_TO_TEAM_SEND_MAX
         ), "Your team has sent too many pending invites."
         # "My" TeamInvites (sent)
         my_teaminvite_records = (
@@ -63,7 +63,7 @@ async def team_player_invite(
             )
         )
         assert (
-            len(my_teaminvite_records) < constants.TEAM_INVITES_SEND_MAX
+            len(my_teaminvite_records) < constants.INVITES_TO_TEAM_SEND_MAX
         ), "You have sent too many pending invites."
         # "To" Player
         to_player_records = await database.table_player.get_player_records(
@@ -83,7 +83,7 @@ async def team_player_invite(
             )
         )
         assert (
-            len(to_teaminvite_records) < constants.TEAM_INVITES_RECEIVE_MAX
+            len(to_teaminvite_records) < constants.INVITES_TO_TEAM_RECEIVE_MAX
         ), f"`{await to_player_record.get_field(PlayerFields.player_name)}` has too many pending invites."
         for to_teaminvite_record in to_teaminvite_records:
             from_team_id = await from_team_record.get_field(TeamFields.record_id)

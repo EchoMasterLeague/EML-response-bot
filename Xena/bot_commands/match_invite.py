@@ -6,10 +6,8 @@ from database.fields import (
 )
 from database.database_full import FullDatabase
 from database.enums import MatchType, InviteStatus, MatchStatus
-from errors.database_errors import EmlRecordAlreadyExists
-from utils import discord_helpers, database_helpers, general_helpers, match_helpers
+from utils import discord_helpers, general_helpers, match_helpers
 import constants
-import datetime
 import discord
 
 
@@ -18,7 +16,11 @@ async def match_invite(
     interaction: discord.Interaction,
     to_team_role: discord.Role,
     match_type: str,
-    date_time: str,
+    year: int,
+    month: int,
+    day: int,
+    time: str,
+    am_pm: str,
 ):
     """Send a Match Invite to another Team"""
     try:
@@ -84,10 +86,18 @@ async def match_invite(
         ), f"Match type must be one of: [{', '.join([str(option.value) for option in MatchType])}]"
 
         # Match Epoch
-        match_epoch = await general_helpers.epoch_from_eml_datetime_string(date_time)
-        assert (
-            match_epoch
-        ), f"Date/Time format is `{constants.TIME_ENTRY_FORMAT}`.\n{constants.TIME_ENTRY_FORMAT_INVALID_ENCOURAGEMENT_MESSAGE}"
+        match_epoch = await general_helpers.epoch_from_eml_datetime_strings(
+            year=year, month=month, day=day, time=time, am_pm=am_pm
+        )
+
+        assert match_epoch, "\n".join(
+            f"Year, Month, and Day must be numeric. e.g. year: `1776`, month: `07`, day: `04` for July 4, 1776.",
+            f"Time must be in 12-hour format. e.g. `12:00` for ambiguous noon or midnight.",
+            f"AM_PM must be `AM` for morning or `PM` for afternoon.",
+            f"e.g. Noon is `12:00 PM`, Midnight is `12:00 AM`.",
+            f"No time zones are needed because all times are assumed to be in Eastern Time (ET).",
+            f"{constants.TIME_ENTRY_FORMAT_INVALID_ENCOURAGEMENT_MESSAGE}",
+        )
 
         # Existing Matches
         existing_matches = await database.table_match.get_match_records(
