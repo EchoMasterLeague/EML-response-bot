@@ -21,8 +21,7 @@ async def admin_suspend_player(
         their_player_records = await database.table_player.get_player_records(
             discord_id=discord_member.id
         )
-        assert their_player_records, f"Player not found."
-        their_player_record = their_player_records[0]
+        their_player_record = their_player_records[0] if their_player_records else None
         # "Their" TeamPlayer
         their_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
