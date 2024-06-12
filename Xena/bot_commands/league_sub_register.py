@@ -33,7 +33,7 @@ async def league_sub_register(database: FullDatabase, interaction: discord.Inter
         await database.table_player.update_player_record(my_player_record)
 
         # Add League Substitute role
-        await player_helpers.member_add_league_sub_role(interaction.user)
+        await discord_helpers.member_add_league_sub_role(interaction.user)
 
         #######################################################################
         #                              RESPONSE                               #

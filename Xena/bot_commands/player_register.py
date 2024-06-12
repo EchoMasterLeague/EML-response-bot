@@ -124,7 +124,7 @@ async def player_register(
         )
 
         # Add Player role
-        await player_helpers.member_add_player_role(interaction.user, region=region)
+        await discord_helpers.member_add_player_role(interaction.user, region=region)
 
         #######################################################################
         #                              RESPONSE                               #

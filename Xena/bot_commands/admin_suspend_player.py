@@ -24,26 +24,36 @@ async def admin_suspend_player(
         assert their_player_records, f"Player not found."
         their_player_record = their_player_records[0]
         # "Their" TeamPlayer
-        their_team_player_records = (
+        their_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
                 player_id=await their_player_record.get_field(PlayerFields.record_id)
             )
         )
-        their_team_player_record = (
-            their_team_player_records[0] if their_team_player_records else None
+        their_teamplayer_record = (
+            their_teamplayer_records[0] if their_teamplayer_records else None
         )
         # "Their" Team
         their_team_records = (
             await database.table_team.get_team_records(
-                record_id=await their_team_player_record.get_field(
+                record_id=await their_teamplayer_record.get_field(
                     PlayerFields.record_id
                 )
             )
-            if their_team_player_record
+            if their_teamplayer_record
             else None
         )
         their_team_record = their_team_records[0] if their_team_records else None
-        # "Their" Suspension
+        # "TheirTeam" TeamPlayers
+        theirteam_teamplayers = []
+        if their_teamplayer_record:
+            theirteam_teamplayers = (
+                await database.table_team_player.get_team_player_records(
+                    team_id=await their_teamplayer_record.get_field(
+                        TeamPlayerFields.team_id
+                    )
+                )
+            )
+        # "Their" (Existing) Suspension
         their_existing_suspension_records = (
             await database.table_suspension.get_suspension_records(
                 player_id=await their_player_record.get_field(
@@ -60,6 +70,7 @@ async def admin_suspend_player(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+
         # Delete Existing Suspension
         if their_existing_suspension_record:
             await database.table_suspension.delete_suspension_record(
@@ -75,45 +86,59 @@ async def admin_suspend_player(
         assert new_suspension_record, f"Error: Failed to create suspension record."
 
         # Delete "Their" TeamPlayer
-        if their_team_player_record:
+        if their_teamplayer_record:
             await database.table_team_player.delete_team_player_record(
-                their_team_player_record
+                their_teamplayer_record
             )
-
         # Delete "Their" Player
         if their_player_record:
             await database.table_player.delete_player_record(their_player_record)
+        # Remove All "Their" Discord League Roles
+        await discord_helpers.member_remove_all_league_roles(member=discord_member)
 
         # Disband "Their" Team (if captain)
-        if their_team_player_record:
-            # Team
-            if their_team_record:
-                await database.table_team.delete_team_record(their_team_record)
-            # TeamPlayers
-            if await their_team_player_record.get_field(TeamPlayerFields.is_captain):
-                teammates = await database.table_team_player.get_team_player_records(
-                    team_id=await their_team_player_record.get_field(
-                        TeamPlayerFields.team_id
-                    )
+        if their_teamplayer_record:
+            if await their_teamplayer_record.get_field(TeamPlayerFields.is_captain):
+                # "TheirTeam" TeamPlayers
+                their_player_id = await their_teamplayer_record.get_field(
+                    TeamPlayerFields.player_id
                 )
-                for teammate in teammates:
-                    await database.table_team_player.delete_team_player_record(teammate)
+                for teammate_teamplayer in theirteam_teamplayers:
+                    teammate_player_id = await teammate_teamplayer.get_field(
+                        TeamPlayerFields.player_id
+                    )
+                    if teammate_player_id == their_player_id:
+                        continue
+                    # Delete TeamPlayer
+                    await database.table_team_player.delete_team_player_record(
+                        teammate_teamplayer
+                    )
+                    # Remove Discord Team Roles
+                    await discord_helpers.member_remove_team_roles(
+                        guild=interaction.guild,
+                        discord_member=await discord_helpers.member_from_discord_id(
+                            guild=interaction.guild,
+                            discord_id=await teammate_teamplayer.get_field(
+                                TeamPlayerFields.player_id
+                            ),
+                        ),
+                    )
+                # Team
+                if their_team_record:
+                    # Delete Team Record
+                    await database.table_team.delete_team_record(their_team_record)
+                    # Remove Discord Guild Team Role
+                    await discord_helpers.guild_remove_team_role(
+                        guild=interaction.guild,
+                        team_name=await their_team_record.get_field(
+                            TeamFields.team_name
+                        ),
+                    )
 
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
         their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
-        their_team_mention = (
-            f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await their_team_record.get_field(TeamFields.team_name))}"
-            if their_team_record
-            else None
-        )
-        suspended = "suspended"
-        if their_team_mention:
-            suspended += f" and removed from {their_team_mention}"
-        suspension_expiration = (
-            f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
-        )
         response_dictionary = {
             "player_id": f"{await new_suspension_record.get_field(SuspensionFields.player_id)}",
             "player_name": f"{await new_suspension_record.get_field(SuspensionFields.vw_player)}",
@@ -128,7 +153,7 @@ async def admin_suspend_player(
             message="\n".join(
                 [
                     f"Suspension Created:\n{response_code_block}",
-                    f"{discord_member.mention} has been {suspended} until `{suspension_expiration}`.",
+                    f"{their_player_mention} has been suspended until `{suspension_expiration}`.",
                 ]
             ),
             ephemeral=True,
@@ -138,20 +163,12 @@ async def admin_suspend_player(
         #                               LOGGING                               #
         #######################################################################
         their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
-        their_team_mention = (
-            f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await their_team_record.get_field(TeamFields.team_name))}"
-            if their_team_record
-            else None
-        )
-        suspended = "suspended"
-        if their_team_mention:
-            suspended += f" and removed from {their_team_mention}"
         suspension_expiration = (
             f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{their_player_mention} has been {suspended} until `{suspension_expiration}`",
+            message=f"{their_player_mention} has been suspended until `{suspension_expiration}`",
         )
 
     # Errors
