@@ -4,8 +4,10 @@ from utils import discord_helpers, player_helpers, general_helpers
 import discord
 
 
-async def league_sub_register(database: FullDatabase, interaction: discord.Interaction):
-    """Register as a League Substitute"""
+async def league_sub_unregister(
+    database: FullDatabase, interaction: discord.Interaction
+):
+    """Unregister as a League Substitute"""
     try:
         #######################################################################
         #                               RECORDS                               #
@@ -16,24 +18,20 @@ async def league_sub_register(database: FullDatabase, interaction: discord.Inter
         )
         assert my_player_records, "You are not registered as a player."
         my_player_record = my_player_records[0]
-        # "My" TeamPlayer
-        my_teamplayer_records = (
-            await database.table_team_player.get_team_player_records(
-                player_id=await my_player_record.get_field(PlayerFields.record_id)
-            )
-        )
-        assert not my_teamplayer_records, "You are a member of a team."
+        assert await my_player_record.get_field(
+            PlayerFields.is_sub
+        ), "You are not a League Substitute."
 
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
 
         # Update Player record
-        await my_player_record.set_field(PlayerFields.is_sub, True)
+        await my_player_record.set_field(PlayerFields.is_sub, False)
         await database.table_player.update_player_record(my_player_record)
 
-        # Add League Substitute role
-        await player_helpers.member_add_league_sub_role(interaction.user)
+        # Remove League Substitute role
+        await player_helpers.member_remove_league_sub_role(interaction.user)
 
         #######################################################################
         #                              RESPONSE                               #
@@ -54,7 +52,7 @@ async def league_sub_register(database: FullDatabase, interaction: discord.Inter
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Player `{player_name}` registered as a League Substitue:",
+                    f"Player `{player_name}` unregistered from League Substitue:",
                     f"{response_code_block}",
                 ]
             ),
@@ -66,7 +64,7 @@ async def league_sub_register(database: FullDatabase, interaction: discord.Inter
         my_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await my_player_record.get_field(PlayerFields.discord_id))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{my_player_mention} has registered as a League Substitute.",
+            message=f"{my_player_mention} has unregistered from League Substitute.",
         )
 
     # Errors

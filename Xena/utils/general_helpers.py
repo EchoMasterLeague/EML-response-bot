@@ -78,21 +78,9 @@ async def upcoming_monday() -> int:
 ### EML Localized Time Helpers ###
 
 
-async def normalize_eml_datetime_string(date_time: str) -> str:
-    """Normalize a datetime string to 'YYYY-MM-DD HH:MMAM/PM' format"""
-    # Convert "YYYY-MM-DD HH:MM AM/PM" to "YYYY-MM-DD HH:MMAM/PM"
-    try:
-        datetime_array = date_time.split(" ")
-        date = datetime_array[0]
-        time = "".join(datetime_array[1:])
-        date_time = f"{date} {time}"
-        return date_time
-    except Exception as e:
-        print(e)
-        return None
-
-
-async def epoch_from_eml_datetime_string(date_time: str) -> int:
+async def epoch_from_eml_datetime_strings(
+    year: int, month: int, day: int, time: str, am_pm: str
+) -> int:
     """Return the epoch time from eml datetime string
 
     From 'YYYY-MM-DD HH:MMAM/PM'
@@ -100,7 +88,7 @@ async def epoch_from_eml_datetime_string(date_time: str) -> int:
     """
     try:
         tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
-        date_time = await normalize_eml_datetime_string(date_time)
+        date_time = f"{year}-{month}-{day} {time}{am_pm}"
         date_time_obj = tz.localize(
             datetime.datetime.strptime(date_time, "%Y-%m-%d %I:%M%p")
         )

@@ -537,7 +537,14 @@ async def bot_team_disband(interaction: discord.Interaction):
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}")
 async def bot_match_propose(
-    interaction: discord.Interaction, opponent: discord.Role, match_type: str, date: str
+    interaction: discord.Interaction,
+    opponent: discord.Role,
+    match_type: str,
+    year: int,
+    month: int,
+    day: int,
+    time: str,
+    am_pm: str,
 ):
     """Propose a Match with another Team"""
     await bot_helpers.command_log({**locals(), "opponent": f"{opponent.name}"})
@@ -547,7 +554,11 @@ async def bot_match_propose(
             interaction=interaction,
             to_team_role=opponent,
             match_type=match_type,
-            date_time=date,
+            year=year,
+            month=month,
+            day=day,
+            time=time,
+            am_pm=am_pm,
         )
 
 
@@ -596,6 +607,88 @@ async def bot_match_result_accept(interaction: discord.Interaction):
     await bot_helpers.command_log({**locals()})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.match_result_accept(database=db, interaction=interaction)
+
+
+###########################
+### League Sub Commands ###
+###########################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUESUBREGISTER}")
+async def bot_league_sub_register(interaction: discord.Interaction):
+    """Register as a League Sub"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+        await bot_commands.league_sub_register(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUESUBUNREGISTER}")
+async def bot_league_sub_unregister(interaction: discord.Interaction):
+    """Unregister as a League Sub"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+        await bot_commands.league_sub_unregister(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUESUBMATCHPROPOSE}")
+async def bot_league_sub_match_propose(
+    interaction: discord.Interaction,
+    sub_player: discord.Member,
+    sub_team: discord.Role,
+    opponent: discord.Role,
+    match_type: str,
+    year: int,
+    month: int,
+    day: int,
+    time: str,
+    am_pm: str,
+):
+    """Propose a Match with another Team as a League Sub"""
+    await bot_helpers.command_log(
+        {
+            **locals(),
+            "sub_player": f"{sub_player.display_name}",
+            "sub_team": f"{sub_team.name}",
+            "opponent": f"{opponent.name}",
+        }
+    )
+    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+        await bot_commands.league_sub_match_invite(
+            database=db,
+            interaction=interaction,
+            sub_player_member=sub_player,
+            sub_team_role=sub_team,
+            opponent_team_role=opponent,
+            match_type=match_type,
+            year=year,
+            month=month,
+            day=day,
+            time=time,
+            am_pm=am_pm,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUESUBMATCHACCEPT}")
+async def bot_league_sub_match_accept(
+    interaction: discord.Interaction,
+    sub_player: discord.Member,
+    sub_team: discord.Role,
+):
+    """Accept a Match as a League Sub"""
+    await bot_helpers.command_log(
+        {
+            **locals(),
+            "sub_player": f"{sub_player.display_name}",
+            "sub_team": f"{sub_team.name}",
+        }
+    )
+    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+        await bot_commands.league_sub_match_accept(
+            database=db,
+            interaction=interaction,
+            sub_player_member=sub_player,
+            our_team_role=sub_team,
+        )
 
 
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###

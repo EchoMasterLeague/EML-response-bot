@@ -262,6 +262,7 @@ class LeagueSubMatchInviteFields(IntEnum):
     team_id = 5  # Record ID of the team
     captain_player_id = 6  # Record ID of the captain
     invite_status = 7  # Status of the sub match invite
-    vw_sub = 8  # The name of the sub player
-    vw_team = 9  # The name of the team
-    vw_captain = 10  # The name of the captain
+    invite_expires_at = 8  # Timestamp when the sub match invite expires
+    vw_sub = 9  # The name of the sub player
+    vw_team = 10  # The name of the team
+    vw_captain = 11  # The name of the captain

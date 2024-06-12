@@ -51,7 +51,9 @@ class MatchInviteTable(BaseTable):
             )
         # Prepare info for new record
         now = await general_helpers.epoch_timestamp()
-        default_invite_duration = constants.MATCH_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+        default_invite_duration = (
+            constants.INVITES_TO_MATCH_EXPIRATION_DAYS * 60 * 60 * 24
+        )
         default_expiration_epoch = now + default_invite_duration
         expiration = expiration if expiration else default_expiration_epoch
         expires_at = await general_helpers.iso_timestamp(expiration)

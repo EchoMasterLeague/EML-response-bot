@@ -61,7 +61,7 @@ class MatchResultInviteTable(BaseTable):
             )
         # Prepare info for new record
         now = await general_helpers.epoch_timestamp()
-        default_duration = constants.RESULT_INVITES_EXPIRATION_DAYS * 60 * 60 * 24
+        default_duration = constants.INVITES_TO_RESULTS_EXPIRATION_DAYS * 60 * 60 * 24
         expiration = expiration if expiration else now + default_duration
         expires_at = await general_helpers.iso_timestamp(expiration)
         # Ensure there are 3 rounds

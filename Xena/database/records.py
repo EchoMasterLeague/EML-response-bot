@@ -192,6 +192,22 @@ class PlayerRecord(BaseRecord):
             raise DbErrors.EmlRegionNotFound(
                 f"Region '{region}' not available. Available Regions: {region_list}"
             )
+        ## League Substitute
+        is_sub = data_list[PlayerFields.is_sub.value]
+        is_sub = (
+            True
+            if (is_sub == True or str(is_sub).casefold() == str(Bool.TRUE).casefold())
+            else False
+        )
+        self._data_dict[PlayerFields.is_sub.name] = is_sub
+
+    async def to_list(self) -> list[int | float | str | None]:
+        """Return the record as a list of data (e.g. for `gsheets`)"""
+        data_list = await super().to_list()
+        # Conversion
+        is_sub = self._data_dict[PlayerFields.is_sub.name]
+        data_list[PlayerFields.is_sub.value] = Bool.TRUE if is_sub else Bool.FALSE
+        return data_list
 
 
 class CooldownRecord(BaseRecord):
