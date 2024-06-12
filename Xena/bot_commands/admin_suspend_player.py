@@ -25,7 +25,7 @@ async def admin_suspend_player(
         # "Their" TeamPlayer
         their_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
-                player_id=await their_player_record.get_field(PlayerFields.record_id)
+                player_id=discord_member.id
             )
         )
         their_teamplayer_record = (
@@ -35,29 +35,25 @@ async def admin_suspend_player(
         their_team_records = (
             await database.table_team.get_team_records(
                 record_id=await their_teamplayer_record.get_field(
-                    PlayerFields.record_id
+                    TeamPlayerFields.team_id
                 )
             )
             if their_teamplayer_record
-            else None
+            else []
         )
         their_team_record = their_team_records[0] if their_team_records else None
         # "TheirTeam" TeamPlayers
-        theirteam_teamplayers = []
-        if their_teamplayer_record:
-            theirteam_teamplayers = (
-                await database.table_team_player.get_team_player_records(
-                    team_id=await their_teamplayer_record.get_field(
-                        TeamPlayerFields.team_id
-                    )
-                )
+        theirteam_teamplayers = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await their_team_record.get_field(TeamFields.record_id)
             )
+            if their_team_record
+            else []
+        )
         # "Their" (Existing) Suspension
         their_existing_suspension_records = (
             await database.table_suspension.get_suspension_records(
-                player_id=await their_player_record.get_field(
-                    SuspensionFields.record_id
-                )
+                player_id=discord_member.id
             )
         )
         their_existing_suspension_record = (
