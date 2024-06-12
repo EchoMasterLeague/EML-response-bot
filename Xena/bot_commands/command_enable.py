@@ -10,7 +10,7 @@ async def command_enable(
     """Enable a command"""
     try:
         # Defer Response
-        interaction.response.defer()
+        await interaction.response.defer()
 
         #######################################################################
         #                               RECORDS                               #

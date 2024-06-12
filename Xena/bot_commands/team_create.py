@@ -1,5 +1,5 @@
 from database.database_full import FullDatabase
-from database.fields import PlayerFields, TeamFields, TeamPlayerFields
+from database.fields import PlayerFields, TeamFields, TeamPlayerFields, SuspensionFields
 from utils import discord_helpers, database_helpers, general_helpers
 import discord
 import constants
@@ -22,6 +22,13 @@ async def team_create(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "My" Suspension
+        my_suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=interaction.user.id
+        )
+        assert (
+            not my_suspension_records
+        ), f"You are suspended until `{await my_suspension_records[0].get_field(SuspensionFields.expires_at)}`."
         # "My" Player
         my_players = await database.table_player.get_player_records(
             discord_id=interaction.user.id

@@ -1,3 +1,4 @@
+from bot_commands.admin_suspend_player import admin_suspend_player
 from bot_commands.command_disable import command_disable
 from bot_commands.command_enable import command_enable
 from bot_commands.match_accept import match_accept
@@ -7,6 +8,7 @@ from bot_commands.match_result_invite import match_result_invite
 from bot_commands.player_register import player_register
 from bot_commands.player_unregister import player_unregister
 from bot_commands.show_list_cooldown import show_list_cooldown
+from bot_commands.show_list_suspension import show_list_suspension
 from bot_commands.show_player_details import show_player_details
 from bot_commands.show_role_members import show_role_members
 from bot_commands.show_team_details import show_team_details

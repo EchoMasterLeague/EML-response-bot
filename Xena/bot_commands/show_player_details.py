@@ -1,5 +1,5 @@
 from database.database_full import FullDatabase
-from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields
+from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields, SuspensionFields
 from database.records import CooldownRecord
 from utils import discord_helpers, general_helpers
 import discord
@@ -16,6 +16,12 @@ async def show_player_details(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # Suspension
+        suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=discord_member.id
+        )
+        suspension_record = suspension_records[0] if suspension_records else None
+        assert not suspension_record, f"Player {discord_member.mention} is suspended until {await suspension_record.get_field(SuspensionFields.expires_at)}."
         # Player
         player_records = await database.table_player.get_player_records(
             discord_id=discord_member.id

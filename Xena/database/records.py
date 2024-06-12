@@ -8,6 +8,7 @@ from database.fields import (
     MatchInviteFields,
     MatchResultInviteFields,
     PlayerFields,
+    SuspensionFields,
     TeamFields,
     TeamInviteFields,
     TeamPlayerFields,
@@ -199,6 +200,20 @@ class CooldownRecord(BaseRecord):
         self,
         data_list: list[int | float | str | None],
         fields: Type[CooldownFields] = CooldownFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+
+class SuspensionRecord(BaseRecord):
+    """Record class for table Suspension"""
+
+    fields: Type[SuspensionFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[SuspensionFields] = SuspensionFields,
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)

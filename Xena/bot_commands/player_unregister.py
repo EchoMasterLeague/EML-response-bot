@@ -1,5 +1,5 @@
 from database.database_full import FullDatabase
-from database.fields import PlayerFields
+from database.fields import PlayerFields, SuspensionFields
 from utils import discord_helpers, player_helpers, general_helpers
 import discord
 
@@ -14,13 +14,21 @@ async def player_unregister(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "My" Suspension
+        my_suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=interaction.user.id
+        )
+        assert (
+            not my_suspension_records
+        ), f"You are suspended until `{await my_suspension_records[0].get_field(SuspensionFields.expires_at)}`."
         # "My" Player
         my_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
         )
         assert my_player_records, "You are not registered."
         my_player_record = my_player_records[0]
-        # "My" Team Player
+
+        # "My" TeamPlayer
         my_team_player_records = (
             await database.table_team_player.get_team_player_records(
                 player_id=await my_player_record.get_field(PlayerFields.record_id)

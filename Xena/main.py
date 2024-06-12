@@ -371,6 +371,27 @@ async def bot_z_debug_db_cache(interaction: discord.Interaction):
         await bot_commands.system_list_cache(database=db, interaction=interaction)
 
 
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
+async def bot_admin_suspend_player(
+    interaction: discord.Interaction,
+    player: discord.Member,
+    reason: str,
+    duration_days: int,
+):
+    """Suspend a Player"""
+    await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, require_admin=True
+    ):
+        await bot_commands.admin_suspend_player(
+            database=db,
+            interaction=interaction,
+            discord_member=player,
+            reason=reason,
+            expiration_days=duration_days,
+        )
+
+
 #######################
 ### Player Commands ###
 #######################
@@ -415,6 +436,14 @@ async def bot_lookup_cooldown_players(interaction: discord.Interaction):
     await bot_helpers.command_log({**locals()})
     if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
         await bot_commands.show_list_cooldown(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LISTSUSPENDEDPLAYERS}")
+async def bot_lookup_suspended_players(interaction: discord.Interaction):
+    """List suspended players"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+        await bot_commands.show_list_suspension(database=db, interaction=interaction)
 
 
 #####################
