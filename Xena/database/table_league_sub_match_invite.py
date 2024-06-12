@@ -23,7 +23,7 @@ class LeagueSubMatchInviteTable(BaseTable):
         """Initialize the LeagueSubMatchInvite Table class"""
         super().__init__(
             db,
-            constants.LEAGUE_DB_TAB_LEAGUE_SUB_MATCH,
+            constants.LEAGUE_DB_TAB_LEAGUE_SUB_MATCH_INVITE,
             LeagueSubMatchInviteRecord,
             LeagueSubMatchInviteFields,
         )
