@@ -22,19 +22,19 @@ async def team_player_accept(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        # "To" Suspensions
+        to_suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=interaction.user.id
+        )
+        assert (
+            not to_suspension_records
+        ), f"You are suspended until `{await to_suspension_records[0].get_field(SuspensionFields.expires_at)}`."
         # "To" Player
         to_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
         )
         assert to_player_records, f"You are not registered as a player."
         to_player_record = to_player_records[0]
-        # "To" Suspensions
-        to_suspension_records = await database.table_suspension.get_suspension_records(
-            player_id=await to_player_records[0].get_field(PlayerFields.record_id)
-        )
-        assert (
-            not to_suspension_records
-        ), f"You are suspended until {await to_suspension_records[0].get_field(SuspensionFields.expires_at)}."
         # "To" Team Player
         to_teamplayer_records = (
             await database.table_team_player.get_team_player_records(

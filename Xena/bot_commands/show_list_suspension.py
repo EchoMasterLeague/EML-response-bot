@@ -35,7 +35,7 @@ async def show_list_suspension(
                 else player_name
             )
             expires_at = await suspension.get_field(SuspensionFields.expires_at)
-            suspension_players[player_name] = f"Expiration: {expires_at})"
+            suspension_players[player_name] = f"Expiration: {expires_at}"
 
         #######################################################################
         #                              RESPONSE                               #

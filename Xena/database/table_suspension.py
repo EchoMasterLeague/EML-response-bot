@@ -28,13 +28,14 @@ class SuspensionTable(BaseTable):
         player_id: str,
         player_name: str,
         reason: str,
-        expiration: int = None,
+        expiration: int,
     ) -> SuspensionRecord:
         """Create a new Suspension record, or update an existing one"""
         # prepare info for new (or existing) record
-        expiration_epoch = await general_helpers.upcoming_monday()
-        expiration = expiration if expiration else expiration_epoch
-        expires_at = await general_helpers.iso_timestamp(expiration)
+        now = await general_helpers.epoch_timestamp()
+        expiration_seconds = expiration * 60 * 60 * 24 if expiration else 0
+        expiration_epoch = now + expiration_seconds
+        expires_at = await general_helpers.iso_timestamp(expiration_epoch)
         # Check for existing records to avoid duplication
         existing_records = await self.get_suspension_records(player_id=player_id)
         existing_record: SuspensionRecord

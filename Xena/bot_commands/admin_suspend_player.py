@@ -9,15 +9,11 @@ async def admin_suspend_player(
     interaction: discord.Interaction,
     discord_member: discord.Member,
     reason: str,
-    expiration_days: int = None,
+    expiration_days: int,
 ):
     """Disable a command"""
     try:
-        interaction.response.defer()
-        # Vefiry Admin
-        is_admin = await discord_helpers.member_is_admin(interaction.user)
-        assert is_admin, f"Only Admins can run this command."
-
+        await interaction.response.defer()
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
@@ -37,8 +33,14 @@ async def admin_suspend_player(
             their_team_player_records[0] if their_team_player_records else None
         )
         # "Their" Team
-        their_team_records = await database.table_team.get_team_records(
-            record_id=await their_team_player_redcord.get_field(PlayerFields.record_id)
+        their_team_records = (
+            await database.table_team.get_team_records(
+                record_id=await their_team_player_redcord.get_field(
+                    PlayerFields.record_id
+                )
+            )
+            if their_team_player_redcord
+            else None
         )
         their_team_record = their_team_records[0] if their_team_records else None
         # "Their" Suspension
@@ -81,6 +83,18 @@ async def admin_suspend_player(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
+        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
+        their_team_mention = (
+            f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await their_team_record.get_field(TeamFields.team_name))}"
+            if their_team_record
+            else None
+        )
+        suspended = "suspended"
+        if their_team_mention:
+            suspended += f" and removed from {their_team_mention}"
+        suspension_expiration = (
+            f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
+        )
         response_dictionary = {
             "player_id": f"{await new_suspension_record.get_field(SuspensionFields.player_id)}",
             "player_name": f"{await new_suspension_record.get_field(SuspensionFields.vw_player)}",
@@ -92,13 +106,11 @@ async def admin_suspend_player(
         )
         await discord_helpers.final_message(
             interaction=interaction,
-            message=(
-                "\n".join(
-                    [
-                        f"Suspension Created:\n{response_code_block}",
-                        f"{discord_member.mention} has been suspended and removed from their team.",
-                    ]
-                ),
+            message="\n".join(
+                [
+                    f"Suspension Created:\n{response_code_block}",
+                    f"{discord_member.mention} has been {suspended} until `{suspension_expiration}`.",
+                ]
             ),
         )
 
@@ -119,7 +131,7 @@ async def admin_suspend_player(
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"{their_player_mention} has been {suspended} until {suspension_expiration}",
+            message=f"{their_player_mention} has been {suspended} until `{suspension_expiration}`",
         )
 
     # Errors

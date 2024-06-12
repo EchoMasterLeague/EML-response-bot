@@ -40,7 +40,7 @@ async def command_is_enabled(
         #######################################################################
         # Admin Check
         if require_admin:
-            if not await discord_helpers.member_is_admin(interaction):
+            if not await discord_helpers.member_is_admin(interaction.user):
                 await discord_helpers.final_message(
                     interaction=interaction,
                     message=f"Command `{command_name}` is only available to admins.",

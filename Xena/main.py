@@ -379,8 +379,10 @@ async def bot_admin_suspend_player(
     duration_days: int,
 ):
     """Suspend a Player"""
-    await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, require_admin=True
+    ):
         await bot_commands.admin_suspend_player(
             database=db,
             interaction=interaction,

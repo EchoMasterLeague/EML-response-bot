@@ -10,7 +10,7 @@ async def command_disable(
     """Disable a command"""
     try:
         # Defer Response
-        interaction.response.defer()
+        await interaction.response.defer()
 
         #######################################################################
         #                               RECORDS                               #

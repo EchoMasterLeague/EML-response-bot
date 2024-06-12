@@ -23,7 +23,7 @@ async def player_register(
         )
         assert (
             not my_suspension_records
-        ), f"You are suspended until {await my_suspension_records[0].get_field(SuspensionFields.expires_at)}."
+        ), f"You are suspended until `{await my_suspension_records[0].get_field(SuspensionFields.expires_at)}`."
         # "My" Player
         my_player_records = await database.table_player.get_player_records(
             discord_id=interaction.user.id
