@@ -76,11 +76,13 @@ async def admin_suspend_player(
                 their_existing_suspension_record
             )
         # Create New Suspension
-        new_suspension_record = await database.table_suspension.create_suspension_record(
-            player_id=await their_player_record.get_field(PlayerFields.record_id),
-            player_name=f"{await their_player_record.get_field(PlayerFields.player_name)}",
-            reason=reason,
-            expiration=expiration_days,
+        new_suspension_record = (
+            await database.table_suspension.create_suspension_record(
+                player_id=discord_member.id,
+                player_name=discord_member.display_name,
+                reason=reason,
+                expiration=expiration_days,
+            )
         )
         assert new_suspension_record, f"Error: Failed to create suspension record."
 
