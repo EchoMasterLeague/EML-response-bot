@@ -1,5 +1,5 @@
 from database.database_full import FullDatabase
-from database.fields import SuspensionFields, PlayerFields, TeamFields
+from database.fields import SuspensionFields, PlayerFields, TeamFields, TeamPlayerFields
 from utils import discord_helpers, general_helpers
 import discord
 
@@ -13,7 +13,7 @@ async def admin_suspend_player(
 ):
     """Disable a command"""
     try:
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
@@ -29,17 +29,17 @@ async def admin_suspend_player(
                 player_id=await their_player_record.get_field(PlayerFields.record_id)
             )
         )
-        their_team_player_redcord = (
+        their_team_player_record = (
             their_team_player_records[0] if their_team_player_records else None
         )
         # "Their" Team
         their_team_records = (
             await database.table_team.get_team_records(
-                record_id=await their_team_player_redcord.get_field(
+                record_id=await their_team_player_record.get_field(
                     PlayerFields.record_id
                 )
             )
-            if their_team_player_redcord
+            if their_team_player_record
             else None
         )
         their_team_record = their_team_records[0] if their_team_records else None
@@ -75,10 +75,29 @@ async def admin_suspend_player(
         assert new_suspension_record, f"Error: Failed to create suspension record."
 
         # Delete "Their" TeamPlayer
-        if their_team_player_redcord:
+        if their_team_player_record:
             await database.table_team_player.delete_team_player_record(
-                their_team_player_redcord
+                their_team_player_record
             )
+
+        # Delete "Their" Player
+        if their_player_record:
+            await database.table_player.delete_player_record(their_player_record)
+
+        # Disband "Their" Team (if captain)
+        if their_team_player_record:
+            # Team
+            if their_team_record:
+                await database.table_team.delete_team_record(their_team_record)
+            # TeamPlayers
+            if await their_team_player_record.get_field(TeamPlayerFields.is_captain):
+                teammates = await database.table_team_player.get_team_player_records(
+                    team_id=await their_team_player_record.get_field(
+                        TeamPlayerFields.team_id
+                    )
+                )
+                for teammate in teammates:
+                    await database.table_team_player.delete_team_player_record(teammate)
 
         #######################################################################
         #                              RESPONSE                               #
@@ -112,6 +131,7 @@ async def admin_suspend_player(
                     f"{discord_member.mention} has been {suspended} until `{suspension_expiration}`.",
                 ]
             ),
+            ephemeral=True,
         )
 
         #######################################################################
@@ -136,6 +156,6 @@ async def admin_suspend_player(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.final_message(interaction, message, ephemeral=True)
     except Exception as error:
-        await discord_helpers.error_message(interaction, error)
+        await discord_helpers.error_message(interaction, error, ephemeral=True)
