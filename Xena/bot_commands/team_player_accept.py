@@ -1,7 +1,13 @@
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import InviteStatus, TeamStatus
-from database.fields import TeamInviteFields, PlayerFields, TeamFields, TeamPlayerFields
+from database.fields import (
+    TeamInviteFields,
+    PlayerFields,
+    TeamFields,
+    TeamPlayerFields,
+    SuspensionFields,
+)
 from utils import discord_helpers, database_helpers, general_helpers
 import discord
 import constants
@@ -22,6 +28,13 @@ async def team_player_accept(
         )
         assert to_player_records, f"You are not registered as a player."
         to_player_record = to_player_records[0]
+        # "To" Suspensions
+        to_suspension_records = await database.table_suspension.get_suspension_records(
+            player_id=await to_player_records[0].get_field(PlayerFields.record_id)
+        )
+        assert (
+            not to_suspension_records
+        ), f"You are suspended until {await to_suspension_records[0].get_field(SuspensionFields.expires_at)}."
         # "To" Team Player
         to_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
