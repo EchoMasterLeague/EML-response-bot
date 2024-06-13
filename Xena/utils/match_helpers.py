@@ -17,6 +17,7 @@ async def get_normalized_match_type(match_type: str) -> MatchType:
             "assign".casefold(),
             "assigns".casefold(),
             "assigned".casefold(),
+            "official".casefold(),
         ]:
             normalized_match_type = MatchType.ASSIGNED
         if match_type.casefold() in [
