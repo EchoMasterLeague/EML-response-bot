@@ -98,7 +98,7 @@ async def league_sub_match_invite(
         assert their_team_records, f"Team `{opponent_team_name}` not found."
         their_team_record = their_team_records[0]
         # Match
-        match_type = match_helpers.get_normalized_match_type(match_type)
+        match_type = await match_helpers.get_normalized_match_type(match_type)
         assert (
             match_type
         ), f"Match type must be one of: [{', '.join([str(option.value) for option in MatchType])}]"
