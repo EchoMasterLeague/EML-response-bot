@@ -133,7 +133,7 @@ async def league_sub_match_accept(
                 "team_b": f"{await match_record.get_field(MatchFields.vw_team_b)}",
                 "sub_team": f"{await invite.get_field(SubInviteFields.vw_team)}",
                 "sub_player": f"{await invite.get_field(SubInviteFields.vw_sub)}",
-                "winner": f"{winner_dict[await match_record.get_field(MatchFields.outcome)]}",
+                "winner": f"{winner_dict[await match_record.get_field(MatchFields.outcome)] if await match_record.get_field(MatchFields.outcome) else "pending"}",
                 "scores": await match_helpers.get_scores_display_dict(
                     await match_record.get_scores()
                 ),
