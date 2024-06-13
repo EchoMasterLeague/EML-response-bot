@@ -96,6 +96,10 @@ async def player_register(
         assert region, f"Region must be in {[r.value for r in Regions]}"
 
         # Create Player record
+        # - Usernames must start with a letter or number.
+        # - Usernames may be between 2 to 20 characters in length.
+        # - Usernames may include a mix of letters, number, dashes and underscores, but may not include dashes or underscores consecutively.
+        # - Usernames may not have spaces, slashes or periods.
         user_name = interaction.user.display_name
         ok_chars = set(constants.INPUT_ALLOWED_CHARS_TEAM_NAME)
         special_chars = constants.INPUT_ALLOWED_CHARS_LIMITED
@@ -109,8 +113,8 @@ async def player_register(
             clean_name == user_name
         ), f"Player name contains invalid characters. Only the following characters are allowed: [`{constants.INPUT_ALLOWED_CHARS_PLAYER_NAME}`]"
         assert (
-            len(user_name) >= 3 and len(user_name) <= 32
-        ), "Player name must be between 3 and 32 characters long."
+            len(user_name) >= 2 and len(user_name) <= 20
+        ), "Player name must be between 2 and 20 characters long."
         for i in range(len(user_name) - 1):
             a = user_name[i] in set(special_chars)
             b = user_name[i + 1] in set(special_chars)
