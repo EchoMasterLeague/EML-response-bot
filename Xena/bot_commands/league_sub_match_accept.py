@@ -228,7 +228,7 @@ async def league_sub_match_accept(
                 SubInviteFields.vw_captain,
                 await my_player_record.get_field(PlayerFields.player_name),
             )
-        await database.table_match_result_invite.update_match_result_invite_record(
+        await database.table_league_sub_match_invite.update_league_sub_match_invite_record(
             selected_invite
         )
 
