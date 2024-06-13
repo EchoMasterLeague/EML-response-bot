@@ -686,7 +686,7 @@ async def bot_league_sub_match_propose(
             database=db,
             interaction=interaction,
             sub_player_member=sub_player,
-            sub_team_role=sub_team,
+            our_team_role=sub_team,
             opponent_team_role=opponent,
             match_type=match_type,
             year=year,
