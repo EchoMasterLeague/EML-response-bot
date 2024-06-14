@@ -323,14 +323,14 @@ async def league_sub_match_accept(
         team_a_id = await match_record.get_field(MatchFields.team_a_id)
         our_team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await our_team_record.get_field(TeamFields.team_name))}"
         sub_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,discord_id=await sub_player_record.get_field(PlayerFields.discord_id))}"
-        opponent_team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await match_record.get_field(MatchFields.vw_team_a if our_team_id == team_a_id else MatchFields.vw_team_b))}"
+        opponent_team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild,team_name=await match_record.get_field(MatchFields.vw_team_a if our_team_id == team_b_id else MatchFields.vw_team_b))}"
         eml_date = f"{await match_record.get_field(MatchFields.match_date)}"
         eml_time = f"{await match_record.get_field(MatchFields.match_time_et)}"
         match_timestamp = f"{await match_record.get_field(MatchFields.match_timestamp)}"
         match_type = f"{await match_record.get_field(MatchFields.match_type)}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Leauge Substitution Match Confirmed: {sub_player_mention} played for {our_team_mention} in a `{match_type}` match against {opponent_team_mention} on `{eml_date}` at `{eml_time}` ET `({match_timestamp})`.",
+            message=f"Leauge Substitution Match Confirmed: {sub_player_mention} plays for {our_team_mention} in a `{match_type}` match against {opponent_team_mention} on `{eml_date}` at `{eml_time}` ET `({match_timestamp})`.",
         )
 
     # Errors
