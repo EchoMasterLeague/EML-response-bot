@@ -26,15 +26,17 @@ class MatchTable(BaseTable):
 
     async def create_match_record(
         self,
+        match_epoch: int,
         team_a_id: str,
         team_b_id: str,
-        match_epoch: int,
-        match_type: MatchType,
-        vw_team_a: str,
-        vw_team_b: str,
-        scores: list[tuple[int, int]] = None,
-        outcome: MatchStatus = None,
+        vw_team_a: str = None,
+        vw_team_b: str = None,
+        vw_sub_a: str = None,
+        vw_sub_b: str = None,
         match_status: MatchStatus = MatchStatus.PENDING,
+        match_type: MatchType = MatchType.ASSIGNED,
+        outcome: MatchStatus = None,
+        scores: list[list[int, int]] = None,
     ) -> MatchRecord:
         """Create a new Match record"""
         match_week = await general_helpers.season_week(match_epoch)
@@ -81,22 +83,24 @@ class MatchTable(BaseTable):
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         record_list = [None] * len(MatchFields)
         record_list[MatchFields.match_timestamp] = match_timestamp
-        record_list[MatchFields.match_week] = match_week
-        record_list[MatchFields.match_type] = match_type
-        record_list[MatchFields.team_a_id] = team_a_id
-        record_list[MatchFields.team_b_id] = team_b_id
-        record_list[MatchFields.outcome] = outcome
         record_list[MatchFields.match_date] = match_date
         record_list[MatchFields.match_time_et] = match_time
+        record_list[MatchFields.match_week] = match_week
+        record_list[MatchFields.team_a_id] = team_a_id
+        record_list[MatchFields.team_b_id] = team_b_id
+        record_list[MatchFields.vw_team_a] = vw_team_a
+        record_list[MatchFields.vw_team_b] = vw_team_b
+        record_list[MatchFields.vw_sub_a] = vw_sub_a
+        record_list[MatchFields.vw_sub_b] = vw_sub_b
+        record_list[MatchFields.match_type] = match_type
+        record_list[MatchFields.match_status] = match_status
+        record_list[MatchFields.outcome] = outcome
         record_list[MatchFields.round_1_score_a] = scores[0][0]
         record_list[MatchFields.round_1_score_b] = scores[0][1]
         record_list[MatchFields.round_2_score_a] = scores[1][0]
         record_list[MatchFields.round_2_score_b] = scores[1][1]
         record_list[MatchFields.round_3_score_a] = scores[2][0]
         record_list[MatchFields.round_3_score_b] = scores[2][1]
-        record_list[MatchFields.match_status] = match_status
-        record_list[MatchFields.vw_team_a] = vw_team_a
-        record_list[MatchFields.vw_team_b] = vw_team_b
         new_record = await self.create_record(record_list, MatchFields)
         # Insert the new record into the database
         await self.insert_record(new_record)
