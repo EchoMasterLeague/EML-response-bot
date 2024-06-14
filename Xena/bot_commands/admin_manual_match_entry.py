@@ -66,6 +66,7 @@ async def admin_manual_match_entry(
         #                             PROCESSING                              #
         #######################################################################
         # Existing values
+        match_epoch = None
         if match_record:
             if not match_epoch:
                 match_epoch = await general_helpers.epoch_timestamp(
