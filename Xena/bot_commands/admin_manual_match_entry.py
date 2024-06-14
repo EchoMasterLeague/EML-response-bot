@@ -147,28 +147,28 @@ async def admin_manual_match_entry(
             match_epoch = await general_helpers.upcoming_monday() - 1
         # Update Match
         if match_record:
-            match_record.set_field(
+            await match_record.set_field(
                 MatchFields.match_timestamp, general_helpers.iso_timestamp(match_epoch)
             )
-            match_record.set_field(
+            await match_record.set_field(
                 MatchFields.match_date, general_helpers.eml_date(match_epoch)
             )
-            match_record.set_field(
+            await match_record.set_field(
                 MatchFields.match_time_et, general_helpers.eml_time(match_epoch)
             )
-            match_record.set_field(
+            await match_record.set_field(
                 MatchFields.match_week, general_helpers.season_week(match_epoch)
             )
-            match_record.set_field(MatchFields.team_a_id, team_a_id)
-            match_record.set_field(MatchFields.team_b_id, team_b_id)
-            match_record.set_field(MatchFields.vw_team_a, team_a_name)
-            match_record.set_field(MatchFields.vw_team_b, team_b_name)
-            match_record.set_field(MatchFields.vw_sub_a, sub_a_name)
-            match_record.set_field(MatchFields.vw_sub_b, sub_b_name)
-            match_record.set_field(MatchFields.match_type, match_type)
-            match_record.set_field(MatchFields.match_status, match_status)
-            match_record.set_field(MatchFields.outcome, outcome)
-            match_record.set_scores(scores)
+            await match_record.set_field(MatchFields.team_a_id, team_a_id)
+            await match_record.set_field(MatchFields.team_b_id, team_b_id)
+            await match_record.set_field(MatchFields.vw_team_a, team_a_name)
+            await match_record.set_field(MatchFields.vw_team_b, team_b_name)
+            await match_record.set_field(MatchFields.vw_sub_a, sub_a_name)
+            await match_record.set_field(MatchFields.vw_sub_b, sub_b_name)
+            await match_record.set_field(MatchFields.match_type, match_type)
+            await match_record.set_field(MatchFields.match_status, match_status)
+            await match_record.set_field(MatchFields.outcome, outcome)
+            await match_record.set_scores(scores)
             await database.table_match.update_record(match_record)
         # Create Match
         if not match_record:
