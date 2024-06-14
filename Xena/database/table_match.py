@@ -6,7 +6,7 @@ from database.records import MatchRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
-import utils.general_helpers as general_helpers
+from utils import general_helpers, match_helpers
 
 
 """
@@ -32,6 +32,9 @@ class MatchTable(BaseTable):
         match_type: MatchType,
         vw_team_a: str,
         vw_team_b: str,
+        scores: list[tuple[int, int]] = None,
+        outcome: MatchStatus = None,
+        match_status: MatchStatus = MatchStatus.PENDING,
     ) -> MatchRecord:
         """Create a new Match record"""
         match_week = await general_helpers.season_week(match_epoch)
@@ -43,14 +46,6 @@ class MatchTable(BaseTable):
             match_type=match_type,
             match_status=MatchStatus.PENDING.value,
         )
-        if not existing_records:
-            existing_records = await self.get_match_records(
-                team_a_id=team_b_id,
-                team_b_id=team_a_id,
-                match_week=match_week,
-                match_type=match_type,
-                match_status=MatchStatus.PENDING.value,
-            )
         if existing_records:
             raise DbErrors.EmlRecordAlreadyExists(
                 f"Pending Match of type '{match_type}' between '{vw_team_a}' and '{vw_team_b}' already exists for week '{match_week}'"
@@ -58,6 +53,30 @@ class MatchTable(BaseTable):
         # Prepare info for new record
         match_date = await general_helpers.eml_date(match_epoch)
         match_time = await general_helpers.eml_time(match_epoch)
+        if match_type:
+            match_type = await match_helpers.get_normalized_match_type(match_type)
+            if not match_type:
+                raise ValueError("Invalid match type")
+        if scores:
+            is_valid_scores = await match_helpers.is_score_structure_valid(scores)
+            if not is_valid_scores:
+                raise ValueError("Invalid scores structure")
+        else:
+            scores = [[None, None], [None, None], [None, None]]
+        if outcome:
+            if not scores:
+                raise ValueError("Scores must be provided to set the outcome")
+            is_valid_outcome = await match_helpers.is_outcome_consistent_with_scores(
+                outcome, scores
+            )
+            if not is_valid_outcome:
+                raise ValueError("Scores and outcome do not match")
+        if match_status:
+            match_status = await match_helpers.get_normalized_match_status(match_status)
+            if not match_status:
+                raise ValueError("Invalid match status")
+        else:
+            match_status = MatchStatus.PENDING
         # Create the new record
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         record_list = [None] * len(MatchFields)
@@ -66,16 +85,16 @@ class MatchTable(BaseTable):
         record_list[MatchFields.match_type] = match_type
         record_list[MatchFields.team_a_id] = team_a_id
         record_list[MatchFields.team_b_id] = team_b_id
-        record_list[MatchFields.outcome] = None
+        record_list[MatchFields.outcome] = outcome
         record_list[MatchFields.match_date] = match_date
         record_list[MatchFields.match_time_et] = match_time
-        record_list[MatchFields.round_1_score_a] = None
-        record_list[MatchFields.round_1_score_b] = None
-        record_list[MatchFields.round_2_score_a] = None
-        record_list[MatchFields.round_2_score_b] = None
-        record_list[MatchFields.round_3_score_a] = None
-        record_list[MatchFields.round_3_score_b] = None
-        record_list[MatchFields.match_status] = MatchStatus.PENDING.value
+        record_list[MatchFields.round_1_score_a] = scores[0][0]
+        record_list[MatchFields.round_1_score_b] = scores[0][1]
+        record_list[MatchFields.round_2_score_a] = scores[1][0]
+        record_list[MatchFields.round_2_score_b] = scores[1][1]
+        record_list[MatchFields.round_3_score_a] = scores[2][0]
+        record_list[MatchFields.round_3_score_b] = scores[2][1]
+        record_list[MatchFields.match_status] = match_status
         record_list[MatchFields.vw_team_a] = vw_team_a
         record_list[MatchFields.vw_team_b] = vw_team_b
         new_record = await self.create_record(record_list, MatchFields)

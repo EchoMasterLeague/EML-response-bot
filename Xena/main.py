@@ -392,6 +392,56 @@ async def bot_admin_suspend_player(
         )
 
 
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINMATCHENTRY}")
+async def bot_admin_manual_match_entry(
+    interaction: discord.Interaction,
+    team_a_name: str = None,
+    team_b_name: str = None,
+    team_a_id: str = None,
+    team_b_id: str = None,
+    match_type: str = None,
+    outcome: str = None,
+    round_1_a: int = None,
+    round_1_b: int = None,
+    round_2_a: int = None,
+    round_2_b: int = None,
+    round_3_a: int = None,
+    round_3_b: int = None,
+    year: int = None,
+    month: int = None,
+    day: int = None,
+    time: int = None,
+    am_pm: str = None,
+    match_status: str = None,
+):
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_enabled(
+        database=db, interaction=interaction, require_admin=True
+    ):
+        scores = [
+            (round_1_a, round_1_b),
+            (round_2_a, round_2_b),
+            (round_3_a, round_3_b),
+        ]
+        await bot_commands.admin_manual_match_entry(
+            database=db,
+            interaction=interaction,
+            team_a_name=team_a_name,
+            team_b_name=team_b_name,
+            team_a_id=team_a_id,
+            team_b_id=team_b_id,
+            match_type=match_type,
+            outcome=outcome,
+            scores=scores,
+            year=year,
+            month=month,
+            day=day,
+            time=time,
+            am_pm=am_pm,
+            match_status=match_status,
+        )
+
+
 #######################
 ### Player Commands ###
 #######################

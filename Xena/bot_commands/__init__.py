@@ -1,3 +1,4 @@
+from bot_commands.admin_manual_match_entry import admin_manual_match_entry
 from bot_commands.admin_suspend_player import admin_suspend_player
 from bot_commands.command_disable import command_disable
 from bot_commands.command_enable import command_enable

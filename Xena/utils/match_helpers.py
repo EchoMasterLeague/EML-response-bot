@@ -1,4 +1,4 @@
-from database.enums import MatchResult, MatchType
+from database.enums import MatchResult, MatchType, MatchStatus
 
 
 ###############################################################################
@@ -34,6 +34,49 @@ async def get_normalized_match_type(match_type: str) -> MatchType:
             normalized_match_type = MatchType.CHALLENGE
 
     return normalized_match_type
+
+
+###############################################################################
+#                                   STATUS                                    #
+###############################################################################
+
+
+async def get_normalized_match_status(match_status: str) -> MatchStatus:
+    normalized_match_status = None
+    for status_option in MatchStatus:
+        if str(status_option.value).casefold() == match_status.casefold():
+            normalized_match_status = status_option
+            break
+    if not normalized_match_status:
+        if match_status.casefold() in [
+            "pending".casefold(),
+        ]:
+            normalized_match_status = MatchStatus.PENDING
+        if match_status.casefold() in [
+            "complete".casefold(),
+            "completes".casefold(),
+            "completed".casefold(),
+        ]:
+            normalized_match_status = MatchStatus.COMPLETED
+        if match_status.casefold() in [
+            "abandon".casefold(),
+            "abandons".casefold(),
+            "abandoned".casefold(),
+            "cancel".casefold(),
+            "cancels".casefold(),
+            "cancelled".casefold(),
+        ]:
+            normalized_match_status = MatchStatus.ABANDONED
+        if match_status.casefold() in [
+            "forfeit".casefold(),
+            "forfeits".casefold(),
+            "forfeited".casefold(),
+            "no show".casefold(),
+            "no_show".casefold(),
+            "noshow".casefold(),
+        ]:
+            normalized_match_status = MatchStatus.FORFEITED
+    return normalized_match_status
 
 
 ###############################################################################
