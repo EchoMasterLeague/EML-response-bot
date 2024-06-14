@@ -148,16 +148,17 @@ async def admin_manual_match_entry(
         # Update Match
         if match_record:
             await match_record.set_field(
-                MatchFields.match_timestamp, general_helpers.iso_timestamp(match_epoch)
+                MatchFields.match_timestamp,
+                await general_helpers.iso_timestamp(match_epoch),
             )
             await match_record.set_field(
-                MatchFields.match_date, general_helpers.eml_date(match_epoch)
+                MatchFields.match_date, await general_helpers.eml_date(match_epoch)
             )
             await match_record.set_field(
-                MatchFields.match_time_et, general_helpers.eml_time(match_epoch)
+                MatchFields.match_time_et, await general_helpers.eml_time(match_epoch)
             )
             await match_record.set_field(
-                MatchFields.match_week, general_helpers.season_week(match_epoch)
+                MatchFields.match_week, await general_helpers.season_week(match_epoch)
             )
             await match_record.set_field(MatchFields.team_a_id, team_a_id)
             await match_record.set_field(MatchFields.team_b_id, team_b_id)
