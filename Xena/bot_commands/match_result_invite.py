@@ -107,7 +107,7 @@ async def match_result_invite(
         outcome = await match_helpers.get_normalized_outcome(outcome)
         assert (
             outcome
-        ), f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult])}]"
+        ), f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult if option != MatchResult.DRAW])}]"
         assert await match_helpers.is_outcome_consistent_with_scores(
             outcome=outcome, scores=scores
         ), f"The scores and outcome do not match. Please ensure you are entering the data with your team's scores first for each round."
