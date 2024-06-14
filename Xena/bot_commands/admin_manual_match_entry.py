@@ -41,18 +41,21 @@ async def admin_manual_match_entry(
         #                               RECORDS                               #
         #######################################################################
         # "A" Team
+        team_a_records = []
         if team_a_name or team_a_id:
             team_a_records = await database.table_team.get_team_records(
                 record_id=team_a_id, team_name=team_a_name
             )
         team_a_record = team_a_records[0] if team_a_records else None
         # "B" Team
+        team_b_records = []
         if team_b_name or team_b_id:
             team_b_records = await database.table_team.get_team_records(
                 record_id=team_b_id, team_name=team_b_name
             )
         team_b_record = team_b_records[0] if team_b_records else None
         # Match
+        match_records = []
         if match_id:
             match_records = await database.table_match.get_match_records(
                 record_id=match_id
