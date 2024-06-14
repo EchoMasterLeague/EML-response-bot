@@ -19,7 +19,7 @@ async def admin_manual_match_entry(
     year: int = None,
     month: int = None,
     day: int = None,
-    time: int = None,
+    time: str = None,
     am_pm: str = None,
     team_a_id: str = None,
     team_b_id: str = None,
