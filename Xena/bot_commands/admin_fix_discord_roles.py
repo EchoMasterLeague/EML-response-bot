@@ -127,9 +127,12 @@ async def admin_fix_discord_roles(
         # Players with roles in discord, but not in the database
         discord_players_without_db = {}
         for role_name, discord_ids in discord_players_by_role.items():
-            database_discord_ids = database_players_by_role.get(role_name, [])
             for discord_id in discord_ids:
-                if discord_id not in database_discord_ids:
+                is_in_other_list = False
+                for discord_id_2 in database_players_by_role.get(role_name, []):
+                    if discord_id == discord_id_2:
+                        is_in_other_list = True
+                if not is_in_other_list:
                     if not discord_players_without_db.get(role_name):
                         discord_players_without_db[role_name] = []
                     discord_players_without_db[role_name] += [discord_id]
@@ -137,7 +140,11 @@ async def admin_fix_discord_roles(
         database_players_without_discord = {}
         for role_name, discord_ids in database_players_by_role.items():
             for discord_id in discord_ids:
-                if discord_id not in discord_players_by_role.get(role_name, []):
+                is_in_other_list = False
+                for discord_id_2 in discord_players_by_role.get(role_name, []):
+                    if discord_id == discord_id_2:
+                        is_in_other_list = True
+                if not is_in_other_list:
                     if not database_players_without_discord.get(role_name):
                         database_players_without_discord[role_name] = []
                     database_players_without_discord[role_name] += [discord_id]
@@ -161,6 +168,7 @@ async def admin_fix_discord_roles(
                 role = await discord_helpers.guild_role_get(
                     interaction.guild, role_name
                 )
+                # WARNING
                 # await discord_helpers.member_role_remove_by_prefix(member, role_name)
                 print(
                     f"  DISCORD: Member Removed from `{role_name}` -- {member.display_name}({member.id})"
@@ -176,6 +184,7 @@ async def admin_fix_discord_roles(
                 role = await discord_helpers.guild_role_get_or_create(
                     interaction.guild, role_name
                 )
+                # WARNING
                 # await discord_helpers.member_role_add_if_needed(member, role.name)
                 print(
                     f"  DISCORD: Member Added to `{role_name}` -- {member.display_name}({member.id})"
@@ -211,10 +220,12 @@ async def admin_fix_discord_roles(
         for role_name in empty_roles:
             role_type = "SERVER"
             player_role = False
-            if role in player_roles:
-                role_type = "PLAYER"
-                player_role = True
+            for player_role_name in player_roles:
+                if player_role_name == role_name:
+                    player_role = True
+                    role_type = "PLAYER"
             if player_role:
+                # WARNING
                 # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
                 removed = "DELETED"
                 count_empty += 1
