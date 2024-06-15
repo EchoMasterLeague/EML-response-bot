@@ -62,17 +62,14 @@ class CommandLockTable(BaseTable):
         self, record_id: str = None, command_name: str = None, is_allowed: bool = None
     ) -> list[CommandLockRecord]:
         """Get an existing CommandLock record"""
-        if record_id is None and command_name is None and is_allowed is None:
-            raise ValueError(
-                "At least one of the following must be provided: record_id, command_name, is_allowed"
-            )
+        # Parameter conversion
         if is_allowed is not None:
             is_allowed = Bool.TRUE if is_allowed else Bool.FALSE
+        # Walk the table
         table = await self.get_table_data()
         existing_records = []
-        for row in table:
-            if table.index(row) == 0:
-                continue
+        for row in table[1:]:  # skip header row
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -90,5 +87,8 @@ class CommandLockTable(BaseTable):
                     == str(row[CommandLockFields.is_allowed]).casefold()
                 )
             ):
-                existing_records.append(CommandLockRecord(row))
+                # Add matched record
+                existing_record = CommandLockRecord(row)
+                existing_records.append(existing_record)
+        # Return matched records
         return existing_records

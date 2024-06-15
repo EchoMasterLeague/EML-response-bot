@@ -126,15 +126,11 @@ class VwRosterTable(BaseTable):
         region: str = None,
     ) -> list[VwRosterRecord]:
         """Get existing VwRoster records"""
-        if record_id is None and team_name is None:
-            raise ValueError(
-                "At least one of 'record_id', 'team_name', or 'region' is required"
-            )
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[VwRosterRecord] = []
-        for row in table:
-            if table.index(row) == 0:
-                continue
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -152,7 +148,10 @@ class VwRosterTable(BaseTable):
                     == str(row[VwRosterFields.region]).casefold()
                 )
             ):
-                existing_records.append(VwRosterRecord(row))
+                # Add matched record
+                existing_record = VwRosterRecord(row)
+                existing_records.append(existing_record)
+        # Return matched records
         return existing_records
 
     async def replace_vw_roster(

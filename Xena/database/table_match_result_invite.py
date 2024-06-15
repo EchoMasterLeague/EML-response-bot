@@ -116,28 +116,17 @@ class MatchResultInviteTable(BaseTable):
         to_player_id: str = None,
         invite_status: str = None,
     ) -> list[MatchResultInviteRecord]:
-        """Get an existing Match Result Invite record"""
-        if (
-            record_id is None
-            and match_type is None
-            and from_team_id is None
-            and to_team_id is None
-            and from_player_id is None
-            and to_player_id is None
-            and invite_status is None
-        ):
-            raise ValueError(
-                f"At least one of the following parameters must be provided: 'record_id', 'match_type', 'from_team_id', 'to_team_id', 'from_player_id', 'to_player_id', 'invite_status'"
-            )
+        """Get existing Match Result Invite records
+        Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
+        """
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[MatchResultInviteRecord] = []
-        expired_records: list[MatchResultInviteRecord] = []
-        for row in table:
-            # Skip the header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for expired record
             expiration_epoch = await general_helpers.epoch_timestamp(
                 row[MatchResultInviteFields.invite_expires_at]
             )
@@ -145,7 +134,7 @@ class MatchResultInviteTable(BaseTable):
                 expired_record = MatchResultInviteRecord(row)
                 expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -183,9 +172,11 @@ class MatchResultInviteTable(BaseTable):
                     == str(row[MatchResultInviteFields.status]).casefold()
                 )
             ):
+                # Add matched record
                 existing_record = MatchResultInviteRecord(row)
                 existing_records.append(existing_record)
-        # Clean up expired records
+        # Delete expired records
         for expired_record in expired_records:
             await self.delete_match_result_invite_record(expired_record)
+        # Return matched records
         return existing_records

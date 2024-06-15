@@ -57,14 +57,11 @@ class ExmapleTable(BaseTable):
         self, record_id: str = None, example_a: str = None, example_b: str = None
     ) -> ExampleRecord:
         """Get an existing Example record"""
-        if record_id is None and example_a is None and example_b is None:
-            raise ValueError(
-                "At least one of 'record_id', 'example_a', or 'example_b' must be provided"
-            )
+        # Walk the table
         table = await self.get_table_data()
-        for row in table:
-            if table.index(row) == 0:
-                continue
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -82,6 +79,8 @@ class ExmapleTable(BaseTable):
                     == str(row[ExampleFields.example_b]).casefold()
                 )
             ):
+                # Add matched recrod
                 existing_record = ExampleRecord(row)
-                return existing_record
-        return None
+                existing_records.append(existing_record)
+        # Return matched records
+        return existing_records

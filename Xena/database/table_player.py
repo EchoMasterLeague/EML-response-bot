@@ -63,20 +63,10 @@ class PlayerTable(BaseTable):
         region: str = None,
     ) -> list[PlayerRecord]:
         """Get existing Player records"""
-        if (
-            record_id is None
-            and discord_id is None
-            and player_name is None
-            and region is None
-        ):
-            raise ValueError(
-                "At least one of `record_id`, `discord_id`, `player_name`, `region`  is required"
-            )
         table = await self.get_table_data()
         existing_records = []
-        for row in table:
-            if table.index(row) == 0:
-                continue
+        for row in table[1:]:  # skip header row
+            # Check for matched records
             if (
                 (
                     not record_id
@@ -98,5 +88,8 @@ class PlayerTable(BaseTable):
                     or region.casefold() == str(row[PlayerFields.region]).casefold()
                 )
             ):
-                existing_records.append(PlayerRecord(row))
+                # Add matched record
+                existing_record = PlayerRecord(row)
+                existing_records.append(existing_record)
+        # Return matched records
         return existing_records

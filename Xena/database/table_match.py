@@ -127,25 +127,10 @@ class MatchTable(BaseTable):
         match_timestamp: str = None,
     ) -> list[MatchRecord]:
         """Get existing Match records"""
-        if (
-            record_id is None
-            and match_week is None
-            and match_type is None
-            and team_a_id is None
-            and team_b_id is None
-            and outcome is None
-            and match_status is None
-        ):
-            raise ValueError(
-                "At least one of the following parameters must be provided: record_id, match_week, match_type, team_a_id, team_b_id, outcome, match_status, match_timestamp"
-            )
         table = await self.get_table_data()
-        existing_records: list[MatchRecord] = []
-        for row in table:
-            # Skip header row
-            if table.index(row) == 0:
-                continue
-            # Check for matching records
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for matched records
             if (
                 (
                     not record_id
@@ -188,5 +173,8 @@ class MatchTable(BaseTable):
                     == str(row[MatchFields.match_timestamp]).casefold()
                 )
             ):
-                existing_records.append(MatchRecord(row))
+                # Add matched record
+                existing_record = MatchRecord(row)
+                existing_records.append(existing_record)
+        # Return matched records
         return existing_records

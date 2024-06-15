@@ -80,24 +80,14 @@ class CooldownTable(BaseTable):
 
         Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
         """
-        if (
-            record_id is None
-            and player_id is None
-            and expires_before is None
-            and expires_after is None
-        ):
-            raise ValueError(
-                "At least one of 'record_id', 'player_id', 'expires_before', or 'expires_after' is required"
-            )
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[CooldownRecord] = []
-        expired_records: list[CooldownRecord] = []
-        for row in table:
-            # Skip header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for expired record
             expiration_epoch = int(
                 await general_helpers.epoch_timestamp(row[CooldownFields.expires_at])
             )
@@ -105,7 +95,7 @@ class CooldownTable(BaseTable):
                 expired_record = CooldownRecord(row)
                 expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -120,11 +110,11 @@ class CooldownTable(BaseTable):
                 and (not expires_before or int(expires_before) > int(expiration_epoch))
                 and (not expires_after or int(expires_after) < int(expiration_epoch))
             ):
-                # Add the matching record to the list
+                # Add matched record
                 existing_record = CooldownRecord(row)
                 existing_records.append(existing_record)
-        # Remove expired records from the database
-        for record in expired_records:
-            await self.delete_cooldown_record(record)
-        # Return the matched records
+        # Delete expired records
+        for expired_record in expired_records:
+            await self.delete_cooldown_record(expired_record)
+        # Return matched records
         return existing_records

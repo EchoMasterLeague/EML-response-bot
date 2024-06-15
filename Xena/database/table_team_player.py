@@ -68,15 +68,11 @@ class TeamPlayerTable(BaseTable):
         self, record_id: str = None, team_id: str = None, player_id: str = None
     ) -> list[TeamPlayerRecord]:
         """Get existing TeamPlayer records"""
-        if record_id is None and team_id is None and player_id is None:
-            raise ValueError(
-                "At least one of 'record_id', 'team_id', or 'player_id' is required"
-            )
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[TeamPlayerRecord] = []
-        for row in table:
-            if table.index(row) == 0:
-                continue
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for matched records
             if (
                 (
                     not record_id
@@ -94,5 +90,8 @@ class TeamPlayerTable(BaseTable):
                     == str(row[TeamPlayerFields.player_id]).casefold()
                 )
             ):
-                existing_records.append(TeamPlayerRecord(row))
+                # Add matched record
+                existing_record = TeamPlayerRecord(row)
+                existing_records.append(existing_record)
+        # Return matched records
         return existing_records

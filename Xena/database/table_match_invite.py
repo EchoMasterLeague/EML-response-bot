@@ -100,26 +100,14 @@ class MatchInviteTable(BaseTable):
         invite_status: str = None,
     ) -> list[MatchInviteRecord]:
         """Get an existing Match Invite records"""
-        if (
-            record_id is None
-            and from_team_id is None
-            and to_team_id is None
-            and from_player_id is None
-            and to_player_id is None
-            and invite_status is None
-        ):
-            raise ValueError(
-                "At least one of the following parameters must be provided: record_id, from_team_id, to_team_id, from_player_id, to_player_id, invite_status"
-            )
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[MatchInviteRecord] = []
-        expired_records: list[MatchInviteRecord] = []
-        for row in table:
-            # Skip the header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for expired record
             expiration_epoch = await general_helpers.epoch_timestamp(
                 row[MatchInviteFields.invite_expires_at]
             )
@@ -127,7 +115,7 @@ class MatchInviteTable(BaseTable):
                 expired_record = MatchInviteRecord(row)
                 expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -160,9 +148,11 @@ class MatchInviteTable(BaseTable):
                     == str(row[MatchInviteFields.invite_status]).casefold()
                 )
             ):
+                # Add matched record
                 existing_record = MatchInviteRecord(row)
                 existing_records.append(existing_record)
-        # Clean up expired records
+        # Delete expired records
         for expired_record in expired_records:
             await self.delete_match_invite_record(expired_record)
+        # Return matched records
         return existing_records

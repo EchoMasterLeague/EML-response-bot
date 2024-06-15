@@ -89,33 +89,25 @@ class LeagueSubMatchInviteTable(BaseTable):
         team_id: str = None,
         invite_status: InviteStatus = None,
     ) -> list[LeagueSubMatchInviteRecord]:
-        """Get existing LeagueSubMatchInvite records"""
-        if (
-            record_id is None
-            and match_id is None
-            and sub_player_id is None
-            and team_id is None
-            and invite_status is None
-        ):
-            raise ValueError(
-                "At least one of `record_id`, `match_id`, `player_id`, `team_id` or `invite_status` must be provided"
-            )
+        """Get existing LeagueSubMatchInvite records
+        Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
+        """
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
         existing_records = []
-        expired_records = []
-        for row in table:
-            # Skip the header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
+        for row in table[1:]:  # skip header row
+            # Check for expired record
             expiration_epoch = await general_helpers.epoch_timestamp(
                 row[LeagueSubMatchInviteFields.invite_expires_at]
             )
             if now > expiration_epoch:
-                expired_records.append(LeagueSubMatchInviteRecord(row))
+                expired_record = LeagueSubMatchInviteRecord(row)
+                expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched record
             if (
                 (
                     not record_id
@@ -142,8 +134,11 @@ class LeagueSubMatchInviteTable(BaseTable):
                     or invite_status == row[LeagueSubMatchInviteFields.invite_status]
                 )
             ):
-                existing_records.append(LeagueSubMatchInviteRecord(row))
+                # Add matched record
+                existing_record = LeagueSubMatchInviteRecord(row)
+                existing_records.append(existing_record)
         # Delete expired records
         for expired_record in expired_records:
             await self.delete_league_sub_match_invite_record(expired_record)
+        # Return matched records
         return existing_records

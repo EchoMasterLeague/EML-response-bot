@@ -78,32 +78,22 @@ class SuspensionTable(BaseTable):
 
         Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
         """
-        if (
-            record_id is None
-            and player_id is None
-            and expires_before is None
-            and expires_after is None
-        ):
-            raise ValueError(
-                "At least one of 'record_id', 'player_id', 'expires_before', or 'expires_after' is required"
-            )
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[SuspensionRecord] = []
-        expired_records: list[SuspensionRecord] = []
-        for row in table:
-            # Skip header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
-            expiration_epoch = int(
-                await general_helpers.epoch_timestamp(row[SuspensionFields.expires_at])
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for expired record
+            expiration_epoch = await general_helpers.epoch_timestamp(
+                row[SuspensionFields.expires_at]
             )
-            if int(now) > expiration_epoch:
+            if now > expiration_epoch:
                 expired_record = SuspensionRecord(row)
                 expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched records
             if (
                 (
                     not record_id

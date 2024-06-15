@@ -80,32 +80,25 @@ class TeamInviteTable(BaseTable):
         from_player_id: str = None,
         to_player_id: str = None,
     ) -> list[TeamInviteRecord]:
-        """Get an existing Invite record"""
-        if (
-            record_id is None
-            and from_team_id is None
-            and from_player_id is None
-            and to_player_id is None
-        ):
-            raise ValueError(
-                "At least one of the following parameters must be provided: record_id, from_team_id, from_player_id, to_player_id"
-            )
+        """Get an existing Invite record
+        Note: Since this has to walk the whole table anyway, this is also used to clean up expired records
+        """
+        # Prepare for expired records
         now = await general_helpers.epoch_timestamp()
+        expired_records = []
+        # Walk the table
         table = await self.get_table_data()
-        existing_records: list[TeamInviteRecord] = []
-        expired_records: list[TeamInviteRecord] = []
-        for row in table:
-            # Skip the header row
-            if table.index(row) == 0:
-                continue
-            # Check for expired records
+        existing_records = []
+        for row in table[1:]:  # skip header row
+            # Check for expired record
             expiration_epoch = await general_helpers.epoch_timestamp(
                 row[TeamInviteFields.invite_expires_at]
             )
             if now > expiration_epoch:
-                expired_records.append(TeamInviteRecord(row))
+                expired_record = TeamInviteRecord(row)
+                expired_records.append(expired_record)
                 continue
-            # Check for matching records
+            # Check for matched records
             if (
                 (
                     not record_id
@@ -128,8 +121,11 @@ class TeamInviteTable(BaseTable):
                     == str(row[TeamInviteFields.to_player_id]).casefold()
                 )
             ):
-                existing_records.append(TeamInviteRecord(row))
+                # Add matched record
+                existing_record = TeamInviteRecord(row)
+                existing_records.append(existing_record)
         # Delete expired records
         for expired_record in expired_records:
             await self.delete_team_invite_record(expired_record)
+        # Return matched records
         return existing_records
