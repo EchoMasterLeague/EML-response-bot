@@ -16,9 +16,6 @@ async def command_is_enabled(
     """Command availablity check"""
     try:
         command_name = interaction.command.name
-        if skip_db:
-            return default_enabled
-
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
