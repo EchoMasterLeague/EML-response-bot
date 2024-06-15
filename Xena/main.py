@@ -378,7 +378,7 @@ async def bot_admin_fix_roles(interaction: discord.Interaction):
     if await bot_helpers.command_is_enabled(
         database=db,
         interaction=interaction,
-        require_admin=False,
+        require_admin=True,
         skip_channel=True,
         skip_db=True,
     ):

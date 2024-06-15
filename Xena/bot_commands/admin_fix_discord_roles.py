@@ -132,10 +132,11 @@ async def admin_fix_discord_roles(
                 role = await discord_helpers.guild_role_get(
                     interaction.guild, role_name
                 )
-                # await member.remove_roles(role)
-                logs += [
+                # await discord_helpers.member_role_remove_by_prefix(member, role_name)
+                # logs += [
+                print(
                     f"  DISCORD: Member Removed from `{role_name}` -- {member.display_name}({member.id})"
-                ]
+                )
                 count_removed += 1
         # Add roles to players with a record
         count_added = 0
@@ -144,13 +145,14 @@ async def admin_fix_discord_roles(
                 member = await discord_helpers.member_from_discord_id(
                     interaction.guild, discord_id
                 )
-                role = await discord_helpers.guild_role_get(
+                role = await discord_helpers.guild_role_get_or_create(
                     interaction.guild, role_name
                 )
-                # await member.add_roles(role)
-                logs += [
+                # await discord_helpers.member_role_add_if_needed(member, role.name)
+                # logs += [
+                print(
                     f"  DISCORD: Member Added to `{role_name}` -- {member.display_name}({member.id})"
-                ]
+                )
                 count_added += 1
         # Remove empty roles
         count_empty = 0
@@ -164,15 +166,16 @@ async def admin_fix_discord_roles(
             if not role.members:
                 empty = True
                 if player_role:
-                    # await role.delete()
+                    # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
                     count_empty += 1
             role_type = "LEAGUE" if player_role else "SYSTEM"
             removed = "DELETED" if empty else "KEPT___"
             member_count = f"{member_count:3}"
-            logs += [
+            # logs += [
+            print(
                 f"  DISCORD: {removed} {role_type} role with ({member_count}) members -- `{role_name}`"
-            ]
-        print("\n".join(sorted(logs)))
+            )
+        # print("\n".join(sorted(logs)))
 
         #######################################################################
         #                              RESPONSE                               #
