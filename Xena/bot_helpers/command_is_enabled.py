@@ -19,6 +19,7 @@ async def command_is_enabled(
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
+        record = None
         if not skip_db:
             # Command Lock
             command_lock_records = (

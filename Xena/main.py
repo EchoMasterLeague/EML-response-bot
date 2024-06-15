@@ -371,18 +371,18 @@ async def bot_z_debug_db_cache(interaction: discord.Interaction):
         await bot_commands.system_list_cache(database=db, interaction=interaction)
 
 
-# @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINFIXROLES}")
-# async def bot_admin_fix_roles(interaction: discord.Interaction):
-#    """Fix Discord Roles"""
-#    await bot_helpers.command_log({**locals()})
-#    if await bot_helpers.command_is_enabled(
-#        database=db,
-#        interaction=interaction,
-#        require_admin=True,
-#        skip_channel=True,
-#        skip_db=True,
-#    ):
-#        await bot_commands.admin_fix_discord_roles(database=db, interaction=interaction)
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINFIXROLES}")
+async def bot_admin_fix_roles(interaction: discord.Interaction):
+    """Fix Discord Roles"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_enabled(
+        database=db,
+        interaction=interaction,
+        require_admin=True,
+        skip_channel=True,
+        skip_db=True,
+    ):
+        await bot_commands.admin_fix_discord_roles(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
