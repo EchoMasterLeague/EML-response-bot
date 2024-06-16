@@ -1,2 +1,2 @@
 from bot_helpers.command_log import command_log
-from bot_helpers.command_is_enabled import command_is_enabled
+from bot_helpers.command_is_enabled import command_is_allowed

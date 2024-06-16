@@ -14,6 +14,7 @@ async def admin_fix_discord_roles(
     """Correct any Discord Role issues"""
     try:
         await interaction.response.defer(ephemeral=True)
+        debug = False
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
@@ -111,19 +112,79 @@ async def admin_fix_discord_roles(
         for role_name, discord_ids in discord_players_by_role.items():
             discord_players_by_role[role_name] = sorted(discord_ids)
         discord_players_by_role = dict(sorted(discord_players_by_role.items()))
-        print(
-            "discord_players_by_role:",
-            json.dumps(discord_players_by_role, indent=4),
-            "\n",
-        )
+        if debug:
+            print(
+                "\n".join(
+                    [
+                        "###############################################################################",
+                        "All League Players by Role from Discord",
+                        json.dumps(discord_players_by_role, indent=4),
+                        "###############################################################################",
+                        "\n",
+                    ]
+                )
+            )
         for role_name, discord_ids in database_players_by_role.items():
             database_players_by_role[role_name] = sorted(discord_ids)
         database_players_by_role = dict(sorted(database_players_by_role.items()))
-        print(
-            "database_players_by_role:",
-            json.dumps(database_players_by_role, indent=4),
-            "\n",
-        )
+        if debug:
+            print(
+                "\n".join(
+                    [
+                        "###############################################################################",
+                        "All League Players by Role from Database",
+                        json.dumps(database_players_by_role, indent=4),
+                        "###############################################################################",
+                        "\n",
+                    ]
+                )
+            )
+
+        # Remove empty roles
+        count_empty = 0
+        other_roles = []
+        player_roles = []
+        empty_other_roles = []
+        empty_player_roles = []
+        # get guild roles
+        print("Player Role Prefixes:", role_prefixes)
+        for role in interaction.guild.roles:
+            player_role = False
+            if any(role.name.startswith(prefix) for prefix in role_prefixes):
+                player_role = True
+            if player_role:
+                player_roles += [role.name]
+            else:
+                other_roles += [role.name]
+            if not role.members:
+                if player_role:
+                    empty_player_roles += [role.name]
+                else:
+                    empty_other_roles += [role.name]
+
+        # sort roles
+        other_roles = sorted(other_roles)
+        player_roles = sorted(player_roles)
+        empty_other_roles = sorted(empty_other_roles)
+        empty_player_roles = sorted(empty_player_roles)
+        # show roles
+        all_guild_roles = {
+            "All Player Roles": player_roles,
+            "All Other Roles": other_roles,
+        }
+        empty_guild_roles = {
+            "Empty Player Roles": empty_player_roles,
+            "Empty Other Roles": empty_other_roles,
+        }
+        print("All Guild Roles:", json.dumps(all_guild_roles, indent=4))
+        print("Empty Guild Roles:", json.dumps(empty_guild_roles, indent=4))
+        # remove empty roles
+        for role_name in empty_player_roles:
+            # WARNING
+            # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
+            count_empty += 1
+            # print(f"  DISCORD: Empty Guild Role of type `{role_type}` was `{removed}` -- `{role_name}`")
+
         # Players with roles in discord, but not in the database
         discord_players_without_db = {}
         for role_name, discord_ids in discord_players_by_role.items():
@@ -136,8 +197,37 @@ async def admin_fix_discord_roles(
                     if not discord_players_without_db.get(role_name):
                         discord_players_without_db[role_name] = []
                     discord_players_without_db[role_name] += [discord_id]
+        discord_players_without_db = dict(sorted(discord_players_without_db.items()))
+        # Remove roles from players without a record
+        count_removed = 0
+        player_role_removals = {}
+        for role_name, discord_ids in discord_players_without_db.items():
+            for discord_id in discord_ids:
+                member = await discord_helpers.member_from_discord_id(
+                    interaction.guild, discord_id
+                )
+                if not player_role_removals.get(role_name):
+                    player_role_removals[role_name] = []
+                player_role_removals[role_name] += [
+                    f"{member.display_name}({member.id})"
+                ]
+                # WARNING
+                # await discord_helpers.member_role_remove_by_prefix(member, role_name)
+                count_removed += 1
+        player_role_removals = dict(sorted(player_role_removals.items()))
+        print(
+            "\n".join(
+                [
+                    "###############################################################################",
+                    "(player roles in discord that do not match database records)",
+                    "Player Roles to REMOVE:",
+                    json.dumps(player_role_removals, indent=4),
+                ]
+            )
+        )
+
         # Players with roles in the database, but not in discord
-        database_players_without_discord = {}
+        db_players_without_discord = {}
         for role_name, discord_ids in database_players_by_role.items():
             for discord_id in discord_ids:
                 is_in_other_list = False
@@ -145,105 +235,45 @@ async def admin_fix_discord_roles(
                     if discord_id == discord_id_2:
                         is_in_other_list = True
                 if not is_in_other_list:
-                    if not database_players_without_discord.get(role_name):
-                        database_players_without_discord[role_name] = []
-                    database_players_without_discord[role_name] += [discord_id]
-        print(
-            "discord_players_without_db:",
-            json.dumps(discord_players_without_db, indent=4),
-            "\n",
-        )
-        print(
-            "database_players_without_discord:",
-            json.dumps(database_players_without_discord, indent=4),
-            "\n",
-        )
-        # Remove roles from players without a record
-        count_removed = 0
-        for role_name, discord_ids in discord_players_without_db.items():
-            for discord_id in discord_ids:
-                member = await discord_helpers.member_from_discord_id(
-                    interaction.guild, discord_id
-                )
-                role = await discord_helpers.guild_role_get(
-                    interaction.guild, role_name
-                )
-                # WARNING
-                # await discord_helpers.member_role_remove_by_prefix(member, role_name)
-                print(
-                    f"  DISCORD: Member Removed from `{role_name}` -- {member.display_name}({member.id})"
-                )
-                count_removed += 1
+                    if not db_players_without_discord.get(role_name):
+                        db_players_without_discord[role_name] = []
+                    db_players_without_discord[role_name] += [discord_id]
+        db_players_without_discord = dict(sorted(db_players_without_discord.items()))
         # Add roles to players with a record
         count_added = 0
-        for role_name, discord_ids in database_players_without_discord.items():
+        player_role_additions = {}
+        for role_name, discord_ids in db_players_without_discord.items():
             for discord_id in discord_ids:
                 member = await discord_helpers.member_from_discord_id(
                     interaction.guild, discord_id
                 )
-                role = await discord_helpers.guild_role_get_or_create(
-                    interaction.guild, role_name
-                )
+                if not player_role_additions.get(role_name):
+                    player_role_additions[role_name] = []
+                player_role_additions[role_name] += [
+                    f"{member.display_name}({member.id})"
+                ]
                 # WARNING
-                # await discord_helpers.member_role_add_if_needed(member, role.name)
-                print(
-                    f"  DISCORD: Member Added to `{role_name}` -- {member.display_name}({member.id})"
-                )
+                # await discord_helpers.member_role_add_if_needed(member, role_name)
                 count_added += 1
-        # Remove empty roles
-        count_empty = 0
-        server_roles: list[discord.Role] = []
-        player_roles: list[discord.Role] = []
-        empty_roles: list[discord.Role] = []
-        # get guild roles
-        print("Player Role Prefixes:", role_prefixes)
-        for role in interaction.guild.roles:
-            player_role = False
-            for prefix in role_prefixes:
-                if role.name.startswith(prefix):
-                    player_role = True
-            if player_role:
-                player_roles += [role.name]
-            else:
-                server_roles += [role.name]
-            if not role.members:
-                empty_roles += [role.name]
-        # sort roles
-        server_roles = sorted(server_roles)
-        player_roles = sorted(player_roles)
-        empty_roles = sorted(empty_roles)
-        # show roles
-        print("server_roles:", json.dumps(server_roles, indent=4))
-        print("player_roles:", json.dumps(player_roles, indent=4))
-        print("empty_roles:", json.dumps(empty_roles, indent=4))
-        # remove empty roles
-        for role_name in empty_roles:
-            role_type = "SERVER"
-            player_role = False
-            for player_role_name in player_roles:
-                if player_role_name == role_name:
-                    player_role = True
-                    role_type = "PLAYER"
-            if player_role:
-                # WARNING
-                # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
-                removed = "DELETED"
-                count_empty += 1
-            else:
-                removed = "KEPT___"
-            # logs += [
-            print(
-                f"  DISCORD: Empty Guild Role of type `{role_type}` was `{removed}` -- `{role_name}`"
+        player_role_additions = dict(sorted(player_role_additions.items()))
+        print(
+            "\n".join(
+                [
+                    "###############################################################################",
+                    "(player roles needed in discord to match database records)",
+                    "Player Roles to ADD:",
+                    json.dumps(player_role_additions, indent=4),
+                ]
             )
-        # print("\n".join(sorted(logs)))
+        )
 
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
         response_dictionary = {
-            "player_role_removals": count_removed,
-            "player_role_additions": count_added,
-            "empty_roles_removed": count_empty,
+            "player_role_dels_needed": count_removed,
+            "player_role_adds_needed": count_added,
+            "empty_player_role_count": count_empty,
         }
         response_code_block = await discord_helpers.code_block(
             await general_helpers.format_json(response_dictionary), "json"
@@ -252,7 +282,7 @@ async def admin_fix_discord_roles(
             interaction=interaction,
             message="\n".join(
                 [
-                    f"Player roles corrected:",
+                    f"Player roles to be corrected:",
                     f"{response_code_block}",
                 ]
             ),

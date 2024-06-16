@@ -5,7 +5,7 @@ import constants
 import discord
 
 
-async def command_is_enabled(
+async def command_is_allowed(
     database: FullDatabase,
     interaction: discord.Interaction,
     default_enabled: bool = True,

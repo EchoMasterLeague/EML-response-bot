@@ -85,7 +85,7 @@ async def help(interaction: discord.Interaction):
     Displays information about available commands.
     """
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         # f"`/{BOT_PREFIX}{constants.COMMAND_REGISTRATION}`: Gives a link to the website NA Team Registration Form\n"
@@ -150,7 +150,7 @@ async def help(interaction: discord.Interaction):
 async def ranks(interaction: discord.Interaction):
     """Link to Team Rankings"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_TEAM_RANKINGS
@@ -161,7 +161,7 @@ async def ranks(interaction: discord.Interaction):
 async def matches(interaction: discord.Interaction):
     """Link to upcoming Matches"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_MATCHES
@@ -172,7 +172,7 @@ async def matches(interaction: discord.Interaction):
 async def rosters(interaction: discord.Interaction):
     """Link to League Roster"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_ROSTER
@@ -183,7 +183,7 @@ async def rosters(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to EML Website"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_EML_WEBSITE
@@ -194,7 +194,7 @@ async def website(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to Bot Instructions"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_BOT_INSTRUCTIONS
@@ -205,7 +205,7 @@ async def website(interaction: discord.Interaction):
 async def website(interaction: discord.Interaction):
     """Link to Command Reference"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_BOT_COMMANDS
@@ -216,7 +216,7 @@ async def website(interaction: discord.Interaction):
 async def leaguerules(interaction: discord.Interaction):
     """Link to EML League Rules"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_RULES
@@ -227,7 +227,7 @@ async def leaguerules(interaction: discord.Interaction):
 async def coc(interaction: discord.Interaction):
     """Link to EML Code of Conduct"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_COC
@@ -238,7 +238,7 @@ async def coc(interaction: discord.Interaction):
 async def ticket(interaction: discord.Interaction):
     """Link to EML Tickets"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
@@ -249,7 +249,7 @@ async def ticket(interaction: discord.Interaction):
 async def support(interaction: discord.Interaction):
     """Link to EML Support (FAQ)"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
@@ -260,7 +260,7 @@ async def support(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to EML Staff Application"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_STAFF_APPLICATION
@@ -271,7 +271,7 @@ async def staff_app(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to EU Calendar"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_CALENDAR_EU
@@ -282,7 +282,7 @@ async def staff_app(interaction: discord.Interaction):
 async def staff_app(interaction: discord.Interaction):
     """Link to NA Calendar"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_CALENDAR_NA
@@ -293,7 +293,7 @@ async def staff_app(interaction: discord.Interaction):
 async def ap(interaction: discord.Interaction):
     """Link to Accumulated Points"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_ACCUMULATED_POINTS
@@ -304,7 +304,7 @@ async def ap(interaction: discord.Interaction):
 async def action_list(interaction: discord.Interaction):
     """Link to Action List"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_ACTION_LIST
@@ -315,7 +315,7 @@ async def action_list(interaction: discord.Interaction):
 async def lounge_report(interaction: discord.Interaction):
     """Link to Echo VR Lounge Reporting"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         link_lounge = constants.LINK_ECHO_VR_LOUNGE
@@ -342,7 +342,7 @@ async def bot_rolelookup(
             "role2": f"{role2.name}" if role2 else None,
         }
     )
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
         await bot_commands.show_role_members(
@@ -359,7 +359,7 @@ async def bot_rolelookup(
 async def bot_z_debug_db_queue(interaction: discord.Interaction):
     """Debug the pending writes"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.system_list_writes(database=db, interaction=interaction)
 
 
@@ -367,7 +367,7 @@ async def bot_z_debug_db_queue(interaction: discord.Interaction):
 async def bot_z_debug_db_cache(interaction: discord.Interaction):
     """Debug the local cache"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.system_list_cache(database=db, interaction=interaction)
 
 
@@ -375,7 +375,7 @@ async def bot_z_debug_db_cache(interaction: discord.Interaction):
 async def bot_admin_fix_roles(interaction: discord.Interaction):
     """Fix Discord Roles"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db,
         interaction=interaction,
         require_admin=True,
@@ -394,7 +394,7 @@ async def bot_admin_suspend_player(
 ):
     """Suspend a Player"""
     await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, require_admin=True
     ):
         await bot_commands.admin_suspend_player(
@@ -432,7 +432,7 @@ async def bot_admin_manual_match_entry(
     round_3_b: int = None,
 ):
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(
+    if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, require_admin=True
     ):
         scores = [
@@ -476,7 +476,7 @@ async def bot_lookup_player(
     await bot_helpers.command_log(
         {**locals(), "player": f"{player.display_name}({player.id})"}
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.show_player_details(
             database=db,
             interaction=interaction,
@@ -488,7 +488,7 @@ async def bot_lookup_player(
 async def bot_player_register(interaction: discord.Interaction):
     """Register to become a Player"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.player_register(database=db, interaction=interaction)
 
 
@@ -496,7 +496,7 @@ async def bot_player_register(interaction: discord.Interaction):
 async def bot_player_unregister(interaction: discord.Interaction):
     """Unregister as a Player"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.player_unregister(database=db, interaction=interaction)
 
 
@@ -504,7 +504,7 @@ async def bot_player_unregister(interaction: discord.Interaction):
 async def bot_lookup_cooldown_players(interaction: discord.Interaction):
     """List players on cooldown"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.show_list_cooldown(database=db, interaction=interaction)
 
 
@@ -512,7 +512,7 @@ async def bot_lookup_cooldown_players(interaction: discord.Interaction):
 async def bot_lookup_suspended_players(interaction: discord.Interaction):
     """List suspended players"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.show_list_suspension(database=db, interaction=interaction)
 
 
@@ -525,7 +525,7 @@ async def bot_lookup_suspended_players(interaction: discord.Interaction):
 async def bot_lookup_team(interaction: discord.Interaction, team: discord.Role):
     """Lookup a Team by name"""
     await bot_helpers.command_log({**locals(), "team": f"{team.name}"})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.show_team_details(
             database=db, interaction=interaction, discord_role=team
         )
@@ -535,7 +535,7 @@ async def bot_lookup_team(interaction: discord.Interaction, team: discord.Role):
 async def bot_team_create(interaction: discord.Interaction, team_name: str):
     """Create a new Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_create(
             database=db,
             interaction=interaction,
@@ -551,7 +551,7 @@ async def bot_team_invite_offer(
     await bot_helpers.command_log(
         {**locals(), "player": f"{player.display_name}({player.id})"}
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_player_invite(
             database=db, interaction=interaction, discord_member=player
         )
@@ -561,7 +561,7 @@ async def bot_team_invite_offer(
 async def bot_team_invite_accept(interaction: discord.Interaction):
     """Accept an invite to join a Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_player_accept(database=db, interaction=interaction)
 
 
@@ -573,7 +573,7 @@ async def bot_team_player_remove(
     await bot_helpers.command_log(
         {**locals(), "player": f"{player.display_name}({player.id})"}
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_player_remove(
             database=db,
             interaction=interaction,
@@ -589,7 +589,7 @@ async def bot_team_player_promote(
     await bot_helpers.command_log(
         {**locals(), "player": f"{player.display_name}({player.id})"}
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_cocaptain_promote(
             database=db,
             interaction=interaction,
@@ -605,7 +605,7 @@ async def bot_team_player_demote(
     await bot_helpers.command_log(
         {**locals(), "player": f"{player.display_name}({player.id})"}
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_cocaptain_demote(
             database=db,
             interaction=interaction,
@@ -617,7 +617,7 @@ async def bot_team_player_demote(
 async def bot_team_leave(interaction: discord.Interaction):
     """Leave your current Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_player_leave(database=db, interaction=interaction)
 
 
@@ -625,7 +625,7 @@ async def bot_team_leave(interaction: discord.Interaction):
 async def bot_team_disband(interaction: discord.Interaction):
     """Disband your Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.team_disband(database=db, interaction=interaction)
 
 
@@ -647,7 +647,7 @@ async def bot_match_propose(
 ):
     """Propose a Match with another Team"""
     await bot_helpers.command_log({**locals(), "opponent": f"{opponent.name}"})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.match_invite(
             database=db,
             interaction=interaction,
@@ -665,7 +665,7 @@ async def bot_match_propose(
 async def bot_match_accept(interaction: discord.Interaction):
     """Accept a Match with another Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.match_accept(database=db, interaction=interaction)
 
 
@@ -684,7 +684,7 @@ async def bot_match_result_offer(
 ):
     """Propose a Match Result with another Team"""
     await bot_helpers.command_log({**locals(), "opponent": f"{opponent.name}"})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         scores = [
             (round_1_us, round_1_them),
             (round_2_us, round_2_them),
@@ -704,7 +704,7 @@ async def bot_match_result_offer(
 async def bot_match_result_accept(interaction: discord.Interaction):
     """Accept a Match Result with another Team"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.match_result_accept(database=db, interaction=interaction)
 
 
@@ -717,7 +717,7 @@ async def bot_match_result_accept(interaction: discord.Interaction):
 async def bot_league_sub_register(interaction: discord.Interaction):
     """Register as a League Sub"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.league_sub_register(database=db, interaction=interaction)
 
 
@@ -725,7 +725,7 @@ async def bot_league_sub_register(interaction: discord.Interaction):
 async def bot_league_sub_unregister(interaction: discord.Interaction):
     """Unregister as a League Sub"""
     await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.league_sub_unregister(database=db, interaction=interaction)
 
 
@@ -751,7 +751,7 @@ async def bot_league_sub_match_propose(
             "opponent": f"{opponent.name}",
         }
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.league_sub_match_invite(
             database=db,
             interaction=interaction,
@@ -781,7 +781,7 @@ async def bot_league_sub_match_accept(
             "sub_team": f"{sub_team.name}",
         }
     )
-    if await bot_helpers.command_is_enabled(database=db, interaction=interaction):
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
         await bot_commands.league_sub_match_accept(
             database=db,
             interaction=interaction,
