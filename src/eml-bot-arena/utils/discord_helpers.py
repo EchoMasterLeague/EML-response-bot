@@ -38,17 +38,21 @@ async def error_message(
 
 async def log_to_channel(
     channel: discord.TextChannel = None,
+    channel_name: str = None,
     interaction: discord.Interaction = None,
     message: str = None,
+    embed: discord.Embed = None,
 ):
     """Send a log message to a channel"""
     if not channel and not interaction:
         return False
     if interaction:
+        if not channel_name:
+            channel_name = constants.DISCORD_CHANNEL_BOT_LOGS
         channel = await get_guild_channel(
-            interaction=interaction, channel_name=constants.DISCORD_CHANNEL_BOT_LOGS
+            interaction=interaction, channel_name=channel_name
         )
-    return await channel.send(content=message)
+    return await channel.send(content=message, embed=embed)
 
 
 ### Channels ###

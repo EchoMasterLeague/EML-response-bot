@@ -87,6 +87,8 @@ async def epoch_from_eml_datetime_strings(
     To epoch timestamp (e.g. 1584661872)
     """
     try:
+        if ":" not in time:
+            time = f"{time}:00"
         tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
         date_time = f"{year}-{month}-{day} {time}{am_pm}"
         date_time_obj = tz.localize(

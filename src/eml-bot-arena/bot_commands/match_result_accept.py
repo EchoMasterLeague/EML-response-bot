@@ -8,9 +8,10 @@ from database.fields import (
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import MatchResult, MatchStatus, InviteStatus
-from database.records import MatchRecord
+from database.records import MatchRecord, PlayerRecord
 from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
+import constants
 
 
 async def match_result_accept(
@@ -195,6 +196,33 @@ async def match_result_accept(
             selected_invite
         )
 
+        # Get team "A" Player Records
+        team_a_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await match_record.get_field(MatchFields.team_a_id)
+            )
+        )
+        team_a_player_records: list[PlayerRecord] = []
+        for teamplayer_record in team_a_teamplayer_records:
+            player_records = await database.table_player.get_player_records(
+                record_id=await teamplayer_record.get_field(TeamPlayerFields.player_id)
+            )
+            if player_records:
+                team_a_player_records.append(player_records[0])
+        # Get team "B" Player Records
+        team_b_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await match_record.get_field(MatchFields.team_b_id)
+            )
+        )
+        team_b_player_records: list[PlayerRecord] = []
+        for teamplayer_record in team_b_teamplayer_records:
+            player_records = await database.table_player.get_player_records(
+                record_id=await teamplayer_record.get_field(TeamPlayerFields.player_id)
+            )
+            if player_records:
+                team_b_player_records.append(player_records[0])
+
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
@@ -249,6 +277,75 @@ async def match_result_accept(
         await discord_helpers.log_to_channel(
             interaction=interaction,
             message=f"{team_a_mention} {log_outcome} {team_b_mention} in a `{match_type}` match",
+        )
+
+        # Also log in the match-results channel
+        team_a_name = await match_record.get_field(MatchFields.vw_team_a)
+        team_b_name = await match_record.get_field(MatchFields.vw_team_b)
+        team_a_player_mentions = []
+        for player_record in team_a_player_records:
+            team_a_player_mentions.append(
+                f"{await discord_helpers.role_mention(guild=interaction.guild,discord_id=await player_record.get_field(PlayerFields.discord_id))}"
+            )
+        team_b_player_mentions = []
+        for player_record in team_b_player_records:
+            team_b_player_mentions.append(
+                f"{await discord_helpers.role_mention(guild=interaction.guild,discord_id=await player_record.get_field(PlayerFields.discord_id))}"
+            )
+        scores = await match_record.get_scores()
+        match_type = await match_record.get_field(MatchFields.match_type)
+        if MatchResult.WIN != await match_record.get_field(MatchFields.outcome):
+            scores = await match_helpers.get_reversed_scores(scores)
+            team_a_name, team_b_name = team_b_name, team_a_name
+            team_a_player_records, team_b_player_records = (
+                team_b_player_records,
+                team_a_player_records,
+            )
+        rounds = 0
+        for score in scores:
+            if score and score[0] != None and score[1] != None:
+                rounds += 1
+        for i in range(len(scores)):
+            for j in range(len(scores[i])):
+                if scores[i][j] == None:
+                    scores[i][j] = "_"
+        embed = discord.Embed(
+            description=f"**{team_a_name}** Wins vs **{team_b_name}** in (`{rounds}`) Rounds",
+            color=discord.Colour.green(),
+        )
+
+        embed.add_field(
+            name="Round Scores",
+            value="\n".join(
+                [
+                    f"- Round 1:  (`{scores[0][0]}` to `{scores[0][1]}`)",
+                    f"- Round 2:  (`{scores[1][0]}` to `{scores[1][1]}`)",
+                    f"- Round 3:  (`{scores[2][0]}` to `{scores[2][1]}`)",
+                ]
+            ),
+            inline=True,
+        )
+        embed.add_field(
+            name="Match Type",
+            value="\n".join(
+                [
+                    f"- {match_type}",
+                    "",
+                    f"[Rankings](https://echomasterleague.com/2024-season-1-team-rankings/)",
+                ],
+            ),
+            inline=True,
+        )
+        await discord_helpers.log_to_channel(
+            interaction=interaction,
+            channel_name=constants.DISCORD_CHANNEL_MATCH_RESULTS,
+            message="\n".join(
+                [
+                    f"[{team_a_name}]: {', '.join(team_a_player_mentions)}",
+                    f"[{team_b_name}]: {', '.join(team_b_player_mentions)}",
+                ]
+            ),
+            embed=embed,
         )
 
     # Errors

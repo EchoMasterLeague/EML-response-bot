@@ -362,6 +362,18 @@ async def bot_rolelookup(
 #######################
 ### System Commands ###
 #######################
+# @bot.tree.command(name=f"{BOT_PREFIX}matchresultformat")
+# async def bot_matchresultformat(interaction: discord.Interaction):
+#    """Format a Match Result"""
+#    await bot_helpers.command_log({**locals()})
+#    if await bot_helpers.command_is_allowed(
+#        database=db,
+#        interaction=interaction,
+#        skip_channel=True,
+#        skip_db=True,
+#        default_enabled=True,
+#    ):
+#        await bot_commands.match_result_format(database=db, interaction=interaction)
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}")
