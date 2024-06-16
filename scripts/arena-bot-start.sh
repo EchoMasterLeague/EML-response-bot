@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
+
+# This script is used to start the Arena Bot on linux compatible systems.
+# It will pull the latest changes from the repository, create a Virtual Environment (if not exists),
+# activate the Virtual Environment, install the dependencies, and start the Arena Bot.
+# The script will stop the bot and exit the script if an error occurs.
+# The script will return to the initial working directory before exiting.
+
+# Directories
 SCRIPTS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd -P )
 PROJECT_DIR=$(dirname "$SCRIPTS_DIR")
 VRARENA_DIR=$PROJECT_DIR/src/eml-bot-arena
 WORKING_DIR=$(pwd)
 
+# Exit Codes
 EXIT_CODE_NORMAL=0
 EXIT_CODE_SIGINT=1
 EXIT_CODE_START_BOT=10
@@ -30,31 +39,35 @@ ctrl_c() {
 # Catch SIGINT signal (ctrl+c)
 trap ctrl_c INT
 
-echo "# EML Arena Discord Bot #"
-echo "Project Directory: $PROJECT_DIR"
-echo "Scripts Directory: $SCRIPTS_DIR"
+log() {
+    echo "[EML Arena Bot Startup] $1"
+}
+
+log "# EML Arena Discord Bot #"
+log "Project Directory: $PROJECT_DIR"
+log "Scripts Directory: $SCRIPTS_DIR"
 cd "$PROJECT_DIR" || die $EXIT_CODE_PROJECT_DIR "Failed to change directory to $PROJECT_DIR"
 
-echo "Removing Cache..."
-find .. -type d -name '__pycache__' | while read cache; do echo $cache; rm -rf $cache; done
+log "Removing Cache (__pycache__)..."
+find . -type d -name '__pycache__' | sort -r | while read cache; do rm -rf $cache; done
 
-echo "Pulling latest changes..."
-git pull || echo "WARNING: Failed to pull latest changes"
+log "Pulling latest changes..."
+git pull || log "WARNING: Failed to pull latest changes"
 
 # VENV
 if [ ! -d "$PROJECT_DIR/venv" ]; then
-    echo "Creating Virtual Environment..."
+    log "Creating Virtual Environment..."
     python3 -m venv "$PROJECT_DIR/venv" || die $EXIT_CODE_VENV_DIR "Failed to create Virtual Environment"
 fi
 
 
-echo "Activating Virtual Environment..."
+log "Activating Virtual Environment..."
 source "$PROJECT_DIR/venv/bin/activate" || die $EXIT_CODE_VENV_START "Failed to activate Virtual Environment"
 
-echo "Installing dependencies..."
-pip install -r requirements.txt || die $EXIT_CODE_DEPENDENCIES "Failed to install dependencies"
+log "Installing dependencies..."
+pip install --quiet -r requirements.txt || die $EXIT_CODE_DEPENDENCIES "Failed to install dependencies"
 
-echo "Starting Arena Bot..."
+log "Starting Arena Bot..."
 cd "$VRARENA_DIR" || die $EXIT_CODE_VRARENA_DIR "Failed to change directory to $VRARENA_DIR"
 python main.py || die $EXIT_CODE_START_BOT "Failed to start Arena Bot"
 
