@@ -36,6 +36,13 @@ async def command_is_allowed(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+        if (
+            require_admin
+            and str(interaction.user.id)
+            == constants.DISCORD_IDS_ADMIN_OVERRIDE_TEKEMPEROR
+        ):
+            print("Admin check overridden for TekEmperor")
+            require_admin = False
         # Admin Check
         if require_admin:
             if not await discord_helpers.member_is_admin(interaction.user):

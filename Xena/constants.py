@@ -52,6 +52,7 @@ DISCORD_ROLE_PREFIX_CO_CAPTAIN = "CoCaptain"
 DISCORD_ROLE_PREFIX_PLAYER = "Player"
 DISCORD_ROLE_PREFIX_TEAM = "Team:"
 DISCORD_ROLES_LIST_ADMIN = "Director, Server Mod"
+DISCORD_IDS_ADMIN_OVERRIDE_TEKEMPEROR = "230139622036865025"
 INPUT_ALLOWED_CHARS_LIMITED = "-_ "  # Comment added to keep line long enough for the formatter to ignore, and this one is even longer
 INPUT_ALLOWED_CHARS_PLAYER_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"  # Comment added to keep line long enough for the formatter to ignore
 INPUT_ALLOWED_CHARS_TEAM_NAME = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_ "  # Comment added to keep line long enough for the formatter to ignore
