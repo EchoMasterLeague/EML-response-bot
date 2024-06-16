@@ -8,14 +8,23 @@ import discord.ext.commands as commands
 import dotenv
 import gspread
 import os
+import json
 
 # Configuration
 THIS_DIR = os.path.dirname(__file__)
+REPO_DIR = os.path.dirname(os.path.dirname(THIS_DIR))
 SECRETS_DIR = os.environ.get("SECRETS_DIR")
-SECRETS_DIR = SECRETS_DIR if SECRETS_DIR else os.path.join(THIS_DIR, ".secrets")
+SECRETS_DIR = SECRETS_DIR if SECRETS_DIR else os.path.join(REPO_DIR, ".secrets")
+dir_dict = {
+    "PROJECT_DIR": REPO_DIR,
+    "SECRETS_DIR": SECRETS_DIR,
+    "SCRIPTS_DIR": THIS_DIR,
+}
+print(json.dumps(dir_dict, indent=4))
 dotenv.load_dotenv()
 dotenv.load_dotenv(os.path.join(SECRETS_DIR, ".env"))
-GOOGLE_CREDENTIALS_FILE = os.path.join(SECRETS_DIR, "google_credentials.json")
+GOOGLE_CREDENTIALS_FILE = os.environ.get("GOOGLE_CREDENTIALS_FILE")
+GOOGLE_CREDENTIALS_FILE = f'{GOOGLE_CREDENTIALS_FILE if GOOGLE_CREDENTIALS_FILE else os.path.join(SECRETS_DIR, "google_credentials.json")}'
 
 # Environment Variables
 BOT_PREFIX = os.environ.get("BOT_PREFIX")

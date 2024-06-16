@@ -15,7 +15,7 @@ DISCORD_TOKEN=
 SECRETS_FOLDER=
 ```
 2. Run `set -a` then `source .env` to initialize and setup the environment variables.
-3. Add the Google Credentials file of a Service Account with access to the Google Sheet being used for the database to `{PROJECT}/Xena/.secrets`.
+3. Add the Google Credentials file of a Service Account with access to the Google Sheet being used for the database to `{PROJECT}/.secrets`.
 
 ### Local:
 For developers setting up their local environments for quickly iterating and testing, using [Docker Desktop](https://www.docker.com/products/docker-desktop/) locally.
