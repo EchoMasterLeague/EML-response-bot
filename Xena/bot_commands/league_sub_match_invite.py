@@ -106,10 +106,12 @@ async def league_sub_match_invite(
             year=year, month=month, day=day, time=time, am_pm=am_pm
         )
         assert match_epoch, "\n".join(
-            f"Year, Month, and Day must be numeric. e.g. year: `1776`, month: `07`, day: `04` for July 4, 1776.",
-            f"Time must be in 12-hour format. e.g. `12:00` for ambiguous noon or midnight.",
-            f"AM_PM must be `AM` for morning or `PM` for afternoon.",
-            f"{constants.TIME_ENTRY_FORMAT_INVALID_ENCOURAGEMENT_MESSAGE}",
+            [
+                f"Year, Month, and Day must be numeric. e.g. year: `1776`, month: `07`, day: `04` for July 4, 1776.",
+                f"Time must be in 12-hour format. e.g. `12:00` for ambiguous noon or midnight.",
+                f"AM_PM must be `AM` for morning or `PM` for afternoon.",
+                f"{constants.TIME_ENTRY_FORMAT_INVALID_ENCOURAGEMENT_MESSAGE}",
+            ]
         )
         match_timestamp = await general_helpers.iso_timestamp(match_epoch)
         match_records = await database.table_match.get_match_records(
