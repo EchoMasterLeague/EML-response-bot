@@ -26,7 +26,7 @@ async def show_list_suspension(
         for suspension in suspensions:
             player_discord_id = await suspension.get_field(SuspensionFields.player_id)
             player_member = await discord_helpers.member_from_discord_id(
-                guild=interaction.guild, discord_id=player_discord_id
+                guild=interaction.guild, discord_id=str(player_discord_id)
             )
             player_name = await suspension.get_field(SuspensionFields.vw_player)
             player_name = (

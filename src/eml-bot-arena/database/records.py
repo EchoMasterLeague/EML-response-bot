@@ -237,6 +237,10 @@ class SuspensionRecord(BaseRecord):
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
+        # Conversion / Validaton
+        ## Discord ID
+        discord_id = self._data_dict[SuspensionFields.player_id.name]
+        self._data_dict[SuspensionFields.player_id.name] = str(discord_id)
 
 
 ### Teams ###
