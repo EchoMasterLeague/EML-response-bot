@@ -32,7 +32,7 @@ async def admin_fix_discord_roles(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
-        logs = []
+        logs = ""
         # Role Prefixes
         role_prefixes = [
             constants.DISCORD_ROLE_PREFIX_TEAM,
@@ -113,31 +113,28 @@ async def admin_fix_discord_roles(
             discord_players_by_role[role_name] = sorted(discord_ids)
         discord_players_by_role = dict(sorted(discord_players_by_role.items()))
         if debug:
-            print(
-                "\n".join(
-                    [
-                        "###############################################################################",
-                        "All League Players by Role from Discord",
-                        json.dumps(discord_players_by_role, indent=4),
-                        "###############################################################################",
-                        "\n",
-                    ]
-                )
+            logs += "\n".join(
+                [
+                    "###############################################################################",
+                    "All League Players by Role from Discord",
+                    json.dumps(discord_players_by_role, indent=4),
+                    "###############################################################################",
+                    "",
+                ]
             )
+
         for role_name, discord_ids in database_players_by_role.items():
             database_players_by_role[role_name] = sorted(discord_ids)
         database_players_by_role = dict(sorted(database_players_by_role.items()))
         if debug:
-            print(
-                "\n".join(
-                    [
-                        "###############################################################################",
-                        "All League Players by Role from Database",
-                        json.dumps(database_players_by_role, indent=4),
-                        "###############################################################################",
-                        "\n",
-                    ]
-                )
+            logs += "\n".join(
+                [
+                    "###############################################################################",
+                    "All League Players by Role from Database",
+                    json.dumps(database_players_by_role, indent=4),
+                    "###############################################################################",
+                    "",
+                ]
             )
 
         # Remove empty roles
@@ -147,7 +144,13 @@ async def admin_fix_discord_roles(
         empty_other_roles = []
         empty_player_roles = []
         # get guild roles
-        print("Player Role Prefixes:", role_prefixes)
+        logs += "\n".join(
+            [
+                "Player Role Prefixes:",
+                json.dumps(role_prefixes, indent=4),
+                "",
+            ]
+        )
         for role in interaction.guild.roles:
             player_role = False
             if any(role.name.startswith(prefix) for prefix in role_prefixes):
@@ -176,8 +179,20 @@ async def admin_fix_discord_roles(
             "Empty Player Roles": empty_player_roles,
             "Empty Other Roles": empty_other_roles,
         }
-        print("All Guild Roles:", json.dumps(all_guild_roles, indent=4))
-        print("Empty Guild Roles:", json.dumps(empty_guild_roles, indent=4))
+        logs += "\n".join(
+            [
+                "All Guild Roles:",
+                json.dumps(all_guild_roles, indent=4),
+                "",
+            ]
+        )
+        logs += "\n".join(
+            [
+                "Empty Guild Roles:",
+                json.dumps(empty_guild_roles, indent=4),
+                "",
+            ]
+        )
         # remove empty roles
         for role_name in empty_player_roles:
             # WARNING
@@ -215,15 +230,14 @@ async def admin_fix_discord_roles(
                 # await discord_helpers.member_role_remove_by_prefix(member, role_name)
                 count_removed += 1
         player_role_removals = dict(sorted(player_role_removals.items()))
-        print(
-            "\n".join(
-                [
-                    "###############################################################################",
-                    "(player roles in discord that do not match database records)",
-                    "Player Roles to REMOVE:",
-                    json.dumps(player_role_removals, indent=4),
-                ]
-            )
+        logs += "\n".join(
+            [
+                "###############################################################################",
+                "(player roles in discord that do not match database records)",
+                "Player Roles to REMOVE:",
+                json.dumps(player_role_removals, indent=4),
+                "",
+            ]
         )
 
         # Players with roles in the database, but not in discord
@@ -256,15 +270,14 @@ async def admin_fix_discord_roles(
                 # await discord_helpers.member_role_add_if_needed(member, role_name)
                 count_added += 1
         player_role_additions = dict(sorted(player_role_additions.items()))
-        print(
-            "\n".join(
-                [
-                    "###############################################################################",
-                    "(player roles needed in discord to match database records)",
-                    "Player Roles to ADD:",
-                    json.dumps(player_role_additions, indent=4),
-                ]
-            )
+        logs += "\n".join(
+            [
+                "###############################################################################",
+                "(player roles needed in discord to match database records)",
+                "Player Roles to ADD:",
+                json.dumps(player_role_additions, indent=4),
+                "",
+            ]
         )
 
         #######################################################################
@@ -284,8 +297,10 @@ async def admin_fix_discord_roles(
                 [
                     f"Player roles to be corrected:",
                     f"{response_code_block}",
+                    "",
                 ]
             ),
+            files=[await discord_helpers.discord_file_from_string(logs, "output.txt")],
             ephemeral=True,
         )
 

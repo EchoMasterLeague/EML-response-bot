@@ -1,5 +1,6 @@
 import discord
 import constants
+from io import BytesIO
 
 
 ### Formatting ###
@@ -14,15 +15,28 @@ async def code_block(text: str, language: str = "json") -> str:
 
 
 async def final_message(
-    interaction: discord.Interaction, message: str, ephemeral: bool = False
+    interaction: discord.Interaction,
+    message: str,
+    ephemeral: bool = False,
+    files: list[discord.File] = [],
 ):
     """Send a final message to an interaction"""
+    message_file = None
+    if len(message) > constants.DISCORD_MESSAGE_SIZE_LIMIT:
+        # create a temporary file to hold the message
+        data_buffer = BytesIO(message.encode("utf-8"))
+        message_file = discord.File(fp=data_buffer, filename="message.txt")
+        message = "Message too long. See attached file."
+    if message_file:
+        files = [message_file] + files
     if not interaction.response.is_done():
         return await interaction.response.send_message(
-            content=message, ephemeral=ephemeral
+            content=message, ephemeral=ephemeral, files=files
         )
     else:
-        return await interaction.followup.send(content=message, ephemeral=ephemeral)
+        return await interaction.followup.send(
+            content=message, ephemeral=ephemeral, files=files
+        )
 
 
 async def error_message(
@@ -53,6 +67,17 @@ async def log_to_channel(
             interaction=interaction, channel_name=channel_name
         )
     return await channel.send(content=message, embed=embed)
+
+
+### Files ###
+
+
+async def discord_file_from_string(
+    content: str, filename: str = "file.txt"
+) -> discord.File:
+    """Convert a string to a Discord file"""
+    data_buffer = BytesIO(content.encode("utf-8"))
+    return discord.File(fp=data_buffer, filename=filename)
 
 
 ### Channels ###

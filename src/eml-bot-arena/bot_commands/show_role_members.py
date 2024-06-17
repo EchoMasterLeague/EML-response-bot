@@ -1,5 +1,6 @@
-import discord
 from utils import discord_helpers
+import constants
+import discord
 
 
 async def show_role_members(
@@ -42,7 +43,7 @@ async def show_role_members(
         response_prefix = f"Members with {discord_role_1.mention} {'and ' + discord_role_2.mention  + ' roles' if discord_role_2 else 'role'}"
         response_message = f"{response_prefix}: [{response_list_string}]"
         # Length
-        length_limit = 2000
+        length_limit = constants.DISCORD_MESSAGE_SIZE_LIMIT
         attempts = 0
         while len(response_message) > length_limit and attempts < 100:
             attempts += 1
