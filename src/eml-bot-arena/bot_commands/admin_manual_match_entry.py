@@ -61,7 +61,7 @@ async def admin_manual_match_entry(
                 record_id=match_id
             )
         match_record = match_records[0] if match_records else None
-        print(match_record)
+        print(general_helpers.format_json(match_record))
 
         #######################################################################
         #                             PROCESSING                              #
@@ -125,6 +125,8 @@ async def admin_manual_match_entry(
         if scores:
             is_sores_valid = await match_helpers.is_score_structure_valid(scores)
             assert is_sores_valid, f"Error: Scores could not be parsed."
+            print(general_helpers.format_json(scores))
+            print(general_helpers.format_json(outcome))
             assert await match_helpers.is_outcome_consistent_with_scores(
                 outcome=outcome, scores=scores
             ), f"The scores and outcome do not match."
