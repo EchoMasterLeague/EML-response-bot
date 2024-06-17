@@ -163,7 +163,7 @@ async def ranks(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_TEAM_RANKINGS
-        await interaction.response.send_message(f"Team Rankings: {link}")
+        await interaction.response.send_message(f"Team Rankings: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHES}")
@@ -174,7 +174,7 @@ async def matches(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_MATCHES
-        await interaction.response.send_message(f"Upcoming Matches: {link}")
+        await interaction.response.send_message(f"Upcoming Matches: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ROSTERS}")
@@ -185,7 +185,7 @@ async def rosters(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_ROSTER
-        await interaction.response.send_message(f"Roster: {link}")
+        await interaction.response.send_message(f"Roster: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_WEBSITE}")
@@ -196,7 +196,7 @@ async def website(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_EML_WEBSITE
-        await interaction.response.send_message(f"EML Website: {link}")
+        await interaction.response.send_message(f"EML Website: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}")
@@ -207,7 +207,7 @@ async def website(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_BOT_INSTRUCTIONS
-        await interaction.response.send_message(f"Bot Instructions: {link}")
+        await interaction.response.send_message(f"Bot Instructions: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COMMANDS}")
@@ -218,7 +218,7 @@ async def website(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_BOT_COMMANDS
-        await interaction.response.send_message(f"Command Reference: {link}")
+        await interaction.response.send_message(f"Command Reference: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LEAGUE_RULES}")
@@ -229,7 +229,7 @@ async def leaguerules(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_LEAGUE_RULES
-        await interaction.response.send_message(f"League Rules: {link}")
+        await interaction.response.send_message(f"League Rules: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_COC}")
@@ -240,7 +240,7 @@ async def coc(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_COC
-        await interaction.response.send_message(f"EML Code of Conduct: {link}")
+        await interaction.response.send_message(f"EML Code of Conduct: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_TICKET}")
@@ -251,7 +251,7 @@ async def ticket(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
-        await interaction.response.send_message(f"EML Tickets: {link}")
+        await interaction.response.send_message(f"EML Tickets: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_SUPPORT}")
@@ -262,7 +262,7 @@ async def support(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
-        await interaction.response.send_message(f"EML Support (FAQ): {link}")
+        await interaction.response.send_message(f"EML Support (FAQ): <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_STAFF_APP}")
@@ -273,7 +273,7 @@ async def staff_app(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_STAFF_APPLICATION
-        await interaction.response.send_message(f"Staff Application: {link}")
+        await interaction.response.send_message(f"Staff Application: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_CALENDAR_EU}")
@@ -306,7 +306,7 @@ async def ap(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_ACCUMULATED_POINTS
-        await interaction.response.send_message(f"Accumlulated Points: {link}")
+        await interaction.response.send_message(f"Accumlulated Points: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ACTION_LIST}")
@@ -317,7 +317,7 @@ async def action_list(interaction: discord.Interaction):
         database=db, interaction=interaction, skip_channel=True
     ):
         link = constants.LINK_ACTION_LIST
-        await interaction.response.send_message(f"Action List: {link}")
+        await interaction.response.send_message(f"Action List: <{link}>")
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOUNGE_REPORT}")
