@@ -55,6 +55,11 @@ async def team_player_remove(
             their_player_records
         ), f"Player `{discord_member.display_name}` not found."
         their_player_record = their_player_records[0]
+        assert await their_player_record.get_field(
+            PlayerFields.record_id
+        ) != await my_player_record.get_field(
+            PlayerFields.record_id
+        ), f"You cannot forcibly remove yourself from the team. Use `/{constants.COMMAND_TEAMLEAVE}` or `/{constants.COMMAND_TEAMDISBAND}` instead."
         # "Their" TeamPlayer
         their_player_name = await their_player_record.get_field(
             PlayerFields.player_name
