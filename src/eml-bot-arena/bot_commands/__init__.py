@@ -28,4 +28,3 @@ from bot_commands.team_player_accept import team_player_accept
 from bot_commands.team_player_invite import team_player_invite
 from bot_commands.team_player_leave import team_player_leave
 from bot_commands.team_player_remove import team_player_remove
-from bot_commands.matchresultformat import match_result_format
