@@ -40,6 +40,9 @@ async def team_create(
             player_id=await my_player.get_field(PlayerFields.record_id)
         )
         assert not my_teamplayers, "You are already a member of a team."
+        # "Existing" Team
+        existing_teams = await database.table_team.get_team_records(team_name=team_name)
+        assert not existing_teams, "Team name is already in use."
 
         #######################################################################
         #                             PROCESSING                              #
