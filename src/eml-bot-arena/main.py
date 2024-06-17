@@ -360,118 +360,6 @@ async def bot_rolelookup(
 
 
 #######################
-### System Commands ###
-#######################
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}")
-async def bot_z_debug_db_queue(interaction: discord.Interaction):
-    """Debug the pending writes"""
-    await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
-        await bot_commands.system_list_writes(database=db, interaction=interaction)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}")
-async def bot_z_debug_db_cache(interaction: discord.Interaction):
-    """Debug the local cache"""
-    await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
-        await bot_commands.system_list_cache(database=db, interaction=interaction)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINFIXROLES}")
-async def bot_admin_fix_roles(interaction: discord.Interaction):
-    """Fix Discord Roles"""
-    await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_allowed(
-        database=db,
-        interaction=interaction,
-        require_admin=True,
-        skip_channel=True,
-        skip_db=True,
-    ):
-        await bot_commands.admin_fix_discord_roles(database=db, interaction=interaction)
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
-async def bot_admin_suspend_player(
-    interaction: discord.Interaction,
-    player: discord.Member,
-    reason: str,
-    duration_days: int,
-):
-    """Suspend a Player"""
-    await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
-    if await bot_helpers.command_is_allowed(
-        database=db, interaction=interaction, require_admin=True
-    ):
-        await bot_commands.admin_suspend_player(
-            database=db,
-            interaction=interaction,
-            discord_member=player,
-            reason=reason,
-            expiration_days=duration_days,
-        )
-
-
-@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINMATCHENTRY}")
-async def bot_admin_manual_match_entry(
-    interaction: discord.Interaction,
-    year: int = None,
-    month: int = None,
-    day: int = None,
-    time: str = None,
-    am_pm: str = None,
-    team_a_id: str = None,
-    team_b_id: str = None,
-    team_a_name: str = None,
-    team_b_name: str = None,
-    sub_a_name: str = None,
-    sub_b_name: str = None,
-    match_id: str = None,
-    match_type: str = None,
-    match_status: str = None,
-    outcome: str = None,
-    round_1_a: int = None,
-    round_1_b: int = None,
-    round_2_a: int = None,
-    round_2_b: int = None,
-    round_3_a: int = None,
-    round_3_b: int = None,
-):
-    await bot_helpers.command_log({**locals()})
-    if await bot_helpers.command_is_allowed(
-        database=db, interaction=interaction, require_admin=True
-    ):
-        scores = [
-            [round_1_a, round_1_b],
-            [round_2_a, round_2_b],
-            [round_3_a, round_3_b],
-        ]
-        await bot_commands.admin_manual_match_entry(
-            database=db,
-            interaction=interaction,
-            year=year,
-            month=month,
-            day=day,
-            time=time,
-            am_pm=am_pm,
-            team_a_id=team_a_id,
-            team_b_id=team_b_id,
-            team_a_name=team_a_name,
-            team_b_name=team_b_name,
-            sub_a_name=sub_a_name,
-            sub_b_name=sub_b_name,
-            match_id=match_id,
-            match_type=match_type,
-            match_status=match_status,
-            outcome=outcome,
-            scores=scores,
-        )
-
-
-#######################
 ### Player Commands ###
 #######################
 
@@ -796,6 +684,118 @@ async def bot_league_sub_match_accept(
             interaction=interaction,
             sub_player_member=sub_player,
             our_team_role=sub_team,
+        )
+
+
+#######################
+### System Commands ###
+#######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBQUEUE}")
+async def bot_z_debug_db_queue(interaction: discord.Interaction):
+    """Debug the pending writes"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
+        await bot_commands.system_list_writes(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZDEBUGDBCACHE}")
+async def bot_z_debug_db_cache(interaction: discord.Interaction):
+    """Debug the local cache"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
+        await bot_commands.system_list_cache(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINFIXROLES}")
+async def bot_admin_fix_roles(interaction: discord.Interaction):
+    """Fix Discord Roles"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(
+        database=db,
+        interaction=interaction,
+        require_admin=True,
+        skip_channel=True,
+        skip_db=True,
+    ):
+        await bot_commands.admin_fix_discord_roles(database=db, interaction=interaction)
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
+async def bot_admin_suspend_player(
+    interaction: discord.Interaction,
+    player: discord.Member,
+    reason: str,
+    duration_days: int,
+):
+    """Suspend a Player"""
+    await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
+    if await bot_helpers.command_is_allowed(
+        database=db, interaction=interaction, require_admin=True
+    ):
+        await bot_commands.admin_suspend_player(
+            database=db,
+            interaction=interaction,
+            discord_member=player,
+            reason=reason,
+            expiration_days=duration_days,
+        )
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINMATCHENTRY}")
+async def bot_admin_manual_match_entry(
+    interaction: discord.Interaction,
+    year: int = None,
+    month: int = None,
+    day: int = None,
+    time: str = None,
+    am_pm: str = None,
+    team_a_id: str = None,
+    team_b_id: str = None,
+    team_a_name: str = None,
+    team_b_name: str = None,
+    sub_a_name: str = None,
+    sub_b_name: str = None,
+    match_id: str = None,
+    match_type: str = None,
+    match_status: str = None,
+    outcome: str = None,
+    round_1_a: int = None,
+    round_1_b: int = None,
+    round_2_a: int = None,
+    round_2_b: int = None,
+    round_3_a: int = None,
+    round_3_b: int = None,
+):
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(
+        database=db, interaction=interaction, require_admin=True
+    ):
+        scores = [
+            [round_1_a, round_1_b],
+            [round_2_a, round_2_b],
+            [round_3_a, round_3_b],
+        ]
+        await bot_commands.admin_manual_match_entry(
+            database=db,
+            interaction=interaction,
+            year=year,
+            month=month,
+            day=day,
+            time=time,
+            am_pm=am_pm,
+            team_a_id=team_a_id,
+            team_b_id=team_b_id,
+            team_a_name=team_a_name,
+            team_b_name=team_b_name,
+            sub_a_name=sub_a_name,
+            sub_b_name=sub_b_name,
+            match_id=match_id,
+            match_type=match_type,
+            match_status=match_status,
+            outcome=outcome,
+            scores=scores,
         )
 
 
