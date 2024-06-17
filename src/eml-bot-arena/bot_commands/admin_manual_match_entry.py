@@ -61,6 +61,7 @@ async def admin_manual_match_entry(
                 record_id=match_id
             )
         match_record = match_records[0] if match_records else None
+        print(match_record)
 
         #######################################################################
         #                             PROCESSING                              #
