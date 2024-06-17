@@ -722,6 +722,20 @@ async def bot_admin_fix_roles(interaction: discord.Interaction):
         await bot_commands.admin_fix_discord_roles(database=db, interaction=interaction)
 
 
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINGENERATEUUID}")
+async def bot_admin_generate_uuid(interaction: discord.Interaction):
+    """Generate a UUID"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(
+        database=db,
+        interaction=interaction,
+        require_admin=True,
+        skip_channel=True,
+        skip_db=True,
+    ):
+        await bot_commands.admin_generate_uuid(database=db, interaction=interaction)
+
+
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
 async def bot_admin_suspend_player(
     interaction: discord.Interaction,

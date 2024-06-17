@@ -1,4 +1,5 @@
 from bot_commands.admin_fix_discord_roles import admin_fix_discord_roles
+from bot_commands.admin_generate_uuid import admin_generate_uuid
 from bot_commands.admin_manual_match_entry import admin_manual_match_entry
 from bot_commands.admin_suspend_player import admin_suspend_player
 from bot_commands.command_disable import command_disable
