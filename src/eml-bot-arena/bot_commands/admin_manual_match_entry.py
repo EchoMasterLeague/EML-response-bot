@@ -61,7 +61,6 @@ async def admin_manual_match_entry(
                 record_id=match_id
             )
         match_record = match_records[0] if match_records else None
-        print(await general_helpers.format_json(await match_record.to_dict()))
 
         #######################################################################
         #                             PROCESSING                              #
@@ -69,6 +68,7 @@ async def admin_manual_match_entry(
         # Existing values
         match_epoch = None
         if match_record:
+            print(await general_helpers.format_json(await match_record.to_dict()))
             if not match_epoch:
                 match_epoch = await general_helpers.epoch_timestamp(
                     iso_timestamp=await match_record.get_field(
@@ -85,6 +85,7 @@ async def admin_manual_match_entry(
                 outcome = await match_record.get_field(MatchFields.outcome)
             if not scores:
                 scores = await match_record.get_scores()
+                print(await general_helpers.format_json(scores))
             if not team_a_id:
                 team_a_id = await match_record.get_field(MatchFields.team_a_id)
             if not team_b_id:
