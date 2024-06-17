@@ -22,7 +22,8 @@ async def admin_generate_uuid(database: FullDatabase, interaction: discord.Inter
         now_epoch = await general_helpers.epoch_timestamp()
         monday_epoch = await general_helpers.upcoming_monday()
         response_dictionary = {
-            "uuid": await general_helpers.random_id(),
+            "uuid_1": await general_helpers.random_id(),
+            "uuid_2": await general_helpers.random_id(),
             "now_epoch": now_epoch,
             "now_utc": await general_helpers.iso_timestamp(now_epoch),
             "now_eml": f"{await general_helpers.eml_date(now_epoch)} {await general_helpers.eml_time(now_epoch)}",
