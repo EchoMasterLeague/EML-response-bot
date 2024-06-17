@@ -68,7 +68,6 @@ async def admin_manual_match_entry(
         # Existing values
         match_epoch = None
         if match_record:
-            print(await general_helpers.format_json(await match_record.to_dict()))
             if not match_epoch:
                 match_epoch = await general_helpers.epoch_timestamp(
                     iso_timestamp=await match_record.get_field(
@@ -85,7 +84,6 @@ async def admin_manual_match_entry(
                 outcome = await match_record.get_field(MatchFields.outcome)
             if not scores:
                 scores = await match_record.get_scores()
-                print(await general_helpers.format_json(scores))
             if not team_a_id:
                 team_a_id = await match_record.get_field(MatchFields.team_a_id)
             if not team_b_id:
@@ -126,8 +124,6 @@ async def admin_manual_match_entry(
         if scores:
             is_sores_valid = await match_helpers.is_score_structure_valid(scores)
             assert is_sores_valid, f"Error: Scores could not be parsed."
-            print(await general_helpers.format_json(scores))
-            print(await general_helpers.format_json(outcome))
             assert await match_helpers.is_outcome_consistent_with_scores(
                 outcome=outcome, scores=scores
             ), f"The scores and outcome do not match."
