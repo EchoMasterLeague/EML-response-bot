@@ -786,11 +786,13 @@ async def bot_admin_manual_match_entry(
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, require_admin=True
     ):
-        scores = [
-            [round_1_a, round_1_b],
-            [round_2_a, round_2_b],
-            [round_3_a, round_3_b],
-        ]
+        scores = None
+        if round_1_a or round_1_b:
+            scores = [
+                [round_1_a, round_1_b],
+                [round_2_a, round_2_b],
+                [round_3_a, round_3_b],
+            ]
         await bot_commands.admin_manual_match_entry(
             database=db,
             interaction=interaction,
