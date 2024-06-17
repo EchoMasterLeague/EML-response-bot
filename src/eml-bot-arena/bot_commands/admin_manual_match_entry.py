@@ -61,7 +61,7 @@ async def admin_manual_match_entry(
                 record_id=match_id
             )
         match_record = match_records[0] if match_records else None
-        print(await general_helpers.format_json(await match_record.to_dict))
+        print(await general_helpers.format_json(await match_record.to_dict()))
 
         #######################################################################
         #                             PROCESSING                              #
