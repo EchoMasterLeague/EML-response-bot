@@ -22,7 +22,7 @@ async def final_message(
 ):
     """Send a final message to an interaction"""
     message_file = None
-    if len(message) > constants.DISCORD_MESSAGE_SIZE_LIMIT:
+    if len(str(message)) > constants.DISCORD_MESSAGE_SIZE_LIMIT:
         # create a temporary file to hold the message
         data_buffer = BytesIO(message.encode("utf-8"))
         message_file = discord.File(fp=data_buffer, filename="message.txt")
