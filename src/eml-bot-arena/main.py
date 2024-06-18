@@ -1,3 +1,4 @@
+import bot_commands.show_matches
 from database.database_core import CoreDatabase
 from database.database_full import FullDatabase
 import bot_commands
@@ -102,7 +103,8 @@ async def help(interaction: discord.Interaction):
             ephemeral=True,
             content="\n".join(
                 [
-                    f"**Help**\n",
+                    f"**Basic Commands**",
+                    f"**Help**",
                     f"`/{BOT_PREFIX}{constants.COMMAND_HELP}`: Show this message",
                     f"`/{BOT_PREFIX}{constants.COMMAND_COMMANDS}`: Link command reference",
                     f"`/{BOT_PREFIX}{constants.COMMAND_INSTRUCTIONS}`: Link to bot guide",
@@ -529,6 +531,16 @@ async def bot_team_disband(interaction: discord.Interaction):
 ######################
 ### Match Commands ###
 ######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_LOOKUPMATCHES}")
+async def bot_lookup_matches(interaction: discord.Interaction, team: discord.Role):
+    """Show upcoming Matches for a Team"""
+    await bot_helpers.command_log({**locals(), "team": f"{team.name}"})
+    if await bot_helpers.command_is_allowed(database=db, interaction=interaction):
+        await bot_commands.show_matches(
+            database=db, interaction=interaction, discord_team_role=team
+        )
 
 
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_MATCHDATEPROPOSE}")

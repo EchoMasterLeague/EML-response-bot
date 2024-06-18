@@ -16,6 +16,7 @@ from bot_commands.player_register import player_register
 from bot_commands.player_unregister import player_unregister
 from bot_commands.show_list_cooldown import show_list_cooldown
 from bot_commands.show_list_suspension import show_list_suspension
+from bot_commands.show_matches import show_matches
 from bot_commands.show_player_details import show_player_details
 from bot_commands.show_role_members import show_role_members
 from bot_commands.show_team_details import show_team_details
