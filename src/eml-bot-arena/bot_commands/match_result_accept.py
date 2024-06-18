@@ -301,6 +301,10 @@ async def match_result_accept(
                 team_b_player_records,
                 team_a_player_records,
             )
+            team_a_player_mentions, team_b_player_mentions = (
+                team_b_player_mentions,
+                team_a_player_mentions,
+            )
         rounds = 0
         for score in scores:
             if score and score[0] != None and score[1] != None:
