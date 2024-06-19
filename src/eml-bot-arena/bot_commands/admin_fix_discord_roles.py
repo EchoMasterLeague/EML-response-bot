@@ -271,7 +271,7 @@ async def admin_fix_discord_roles(
                 if not player_role_additions.get(role_name):
                     player_role_additions[role_name] = []
                 player_role_additions[role_name] += [
-                    f"{member_display_name}({member.id})"
+                    f"{member_display_name}({discord_id})"
                 ]
                 # WARNING
                 # await discord_helpers.member_role_add_if_needed(member, role_name)
