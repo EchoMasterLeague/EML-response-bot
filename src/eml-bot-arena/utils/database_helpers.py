@@ -7,6 +7,9 @@ from database.fields import (
     VwRosterFields,
 )
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 ### Roster ###

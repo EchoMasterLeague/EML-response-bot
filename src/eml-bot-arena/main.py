@@ -10,24 +10,37 @@ import dotenv
 import gspread
 import os
 import json
+import logging
+from datetime import datetime, timezone
+import logging
+from utils import general_helpers
 
-# Configuration
+# Initialize logger
+logger = logging.getLogger("")
+logger.setLevel(logging.INFO)
+log_format_time = "%Y-%m-%dT%H:%M:%S%z"
+log_format_line = "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d in %(funcName)s]"
+log_format_line = "%(asctime)s %(levelname)s: %(message)s"
+# Logger - Console
+console_handler = logging.StreamHandler()
+# console_handler.setLevel(logging.DEBUG)
+console_format = logging.Formatter(log_format_line, log_format_time)
+console_handler.setFormatter(console_format)
+logger.addHandler(console_handler)
+
+# Base Configuration
 THIS_DIR = os.path.dirname(__file__)
 REPO_DIR = os.path.dirname(os.path.dirname(THIS_DIR))
 SECRETS_DIR = os.environ.get("SECRETS_DIR")
 SECRETS_DIR = SECRETS_DIR if SECRETS_DIR else os.path.join(REPO_DIR, ".secrets")
-dir_dict = {
-    "PROJECT_DIR": REPO_DIR,
-    "SECRETS_DIR": SECRETS_DIR,
-    "SCRIPTS_DIR": THIS_DIR,
-}
-print(json.dumps(dir_dict, indent=4))
-dotenv.load_dotenv()
-dotenv.load_dotenv(os.path.join(SECRETS_DIR, ".env"))
-GOOGLE_CREDENTIALS_FILE = os.environ.get("GOOGLE_CREDENTIALS_FILE")
-GOOGLE_CREDENTIALS_FILE = f'{GOOGLE_CREDENTIALS_FILE if GOOGLE_CREDENTIALS_FILE else os.path.join(SECRETS_DIR, "google_credentials.json")}'
 
 # Environment Variables
+dotenv.load_dotenv()
+dotenv.load_dotenv(os.path.join(SECRETS_DIR, ".env"))
+LOG_DIR = os.environ.get("LOGGING_DIR")
+LOG_DIR = LOG_DIR if LOG_DIR else os.path.join(REPO_DIR, "logs")
+GOOGLE_CREDENTIALS_FILE = os.environ.get("GOOGLE_CREDENTIALS_FILE")
+GOOGLE_CREDENTIALS_FILE = f'{GOOGLE_CREDENTIALS_FILE if GOOGLE_CREDENTIALS_FILE else os.path.join(SECRETS_DIR, "google_credentials.json")}'
 BOT_PREFIX = os.environ.get("BOT_PREFIX")
 BOT_PREFIX = BOT_PREFIX.rstrip("_") + "_" if BOT_PREFIX else ""
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
@@ -35,6 +48,35 @@ GUILD_ID = os.environ.get("GUILD_ID")
 SPREADSHEET_URL = os.environ.get("SPREADSHEET_URL")
 SPREADSHEET_URL = (
     SPREADSHEET_URL if SPREADSHEET_URL else constants.LINK_DB_SPREADSHEET_URL
+)
+
+# Logger - File
+now = datetime.now(timezone.utc)
+logfile_path = LOG_DIR
+logfile_path = os.path.join(logfile_path, now.strftime("%Y"))
+logfile_path = os.path.join(logfile_path, now.strftime("%Y-%m"))
+logfile_path = os.path.join(logfile_path, now.strftime("%Y-%m-%dT%H.%M.%SZ") + ".log")
+os.makedirs(os.path.dirname(logfile_path), exist_ok=True)
+file_handler = logging.FileHandler(f"{logfile_path}", "a", "utf-8")
+# file_handler.setLevel(logging.DEBUG)
+file_format = logging.Formatter(log_format_line, log_format_time)
+file_handler.setFormatter(file_format)
+logger.addHandler(file_handler)
+
+# Show Configuration
+config_dict = {
+    "PROJECT_DIR": REPO_DIR,
+    "SECRETS_DIR": SECRETS_DIR,
+    "SCRIPTS_DIR": THIS_DIR,
+    "LOGGER_FILE": logfile_path,
+}
+logger.info(
+    "\n".join(
+        [
+            "Configuration:",
+            json.dumps(config_dict, indent=4),
+        ]
+    )
 )
 
 # Google Sheets "Database"
@@ -63,21 +105,18 @@ async def on_ready():
         return
     bot_state["synced"] = True
     # Sync Commands
-    if GUILD_ID and False:
-        guild = await bot.fetch_guild(int(GUILD_ID))
-        bot.tree.copy_global_to(guild=guild)
-        synced = await bot.tree.sync(guild=guild)
-    else:
-        synced = await bot.tree.sync()
-
-    # Print Synced Commands
-    print(f"synced {len(synced)} command(s)")
-    command_list = []
-    for thing in synced:
-        command_list.append(thing.name)
-    command_list.sort()
-    for thing in command_list:
-        print(thing)
+    synced_commands = await bot.tree.sync()
+    # Log Synced Commands
+    command_list = sorted([command.name for command in synced_commands])
+    logger.info(
+        "\n".join(
+            [
+                f"Synchronized {len(synced_commands)} command(s):",
+                json.dumps(sorted(command_list), indent=4),
+            ]
+        )
+    )
+    logger.info("Initialization Complete. Waiting for commands.")
 
 
 #######################################################################################################################

@@ -48,7 +48,7 @@ log "Project Directory: $PROJECT_DIR"
 log "Scripts Directory: $SCRIPTS_DIR"
 cd "$PROJECT_DIR" || die $EXIT_CODE_PROJECT_DIR "Failed to change directory to $PROJECT_DIR"
 
-log "Removing Cache (__pycache__)..."
+log "Removing Cache..."
 find . -type d -name '__pycache__' | sort -r | while read cache; do rm -rf $cache; done
 
 log "Pulling latest changes..."

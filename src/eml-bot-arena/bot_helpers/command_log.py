@@ -1,16 +1,28 @@
-from utils import general_helpers
 import discord
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def command_log(args: dict = {}):
     """Log command usage to console"""
     try:
         # Variables
-        timstamp = await general_helpers.iso_timestamp()
         interaction: discord.Interaction = args.pop("interaction")
-        user = f"{interaction.user.display_name}({interaction.user.id})"
-        command_name = interaction.command.name
+        command_dict = {
+            # "User": f"{interaction.user.display_name}({interaction.user.id})",
+            "command": f"/{interaction.command.name}",
+            "args": args,
+        }
         # Message
-        print(f"{timstamp}: /{command_name} {args} -- {user}")
+        logger.info(
+            "\n".join(
+                [
+                    f"Command Execution by: {interaction.user.display_name}({interaction.user.id})",
+                    f"{json.dumps(command_dict,indent=4)}",
+                ]
+            )
+        )
     except Exception as error:
-        print(error)
+        logger.exception(error)

@@ -7,6 +7,9 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 from utils import general_helpers, match_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 """

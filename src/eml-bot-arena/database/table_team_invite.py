@@ -7,6 +7,9 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 import utils.general_helpers as general_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Team Invite Table

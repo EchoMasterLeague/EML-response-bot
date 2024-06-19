@@ -1,4 +1,7 @@
 from enum import IntEnum, EnumCheck, verify
+import logging
+
+logger = logging.getLogger(__name__)
 
 ### Base ###
 

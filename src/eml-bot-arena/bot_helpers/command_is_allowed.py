@@ -3,6 +3,9 @@ from database.fields import CommandLockFields
 from utils import discord_helpers
 import constants
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def command_is_allowed(
@@ -41,7 +44,7 @@ async def command_is_allowed(
             and str(interaction.user.id)
             == constants.DISCORD_IDS_ADMIN_OVERRIDE_TEKEMPEROR
         ):
-            print("Admin check overridden for TekEmperor")
+            logger.warning("Admin check overridden for TekEmperor")
             require_admin = False
         # Admin Check
         if require_admin:

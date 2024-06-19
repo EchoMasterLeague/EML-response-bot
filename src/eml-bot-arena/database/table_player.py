@@ -5,6 +5,9 @@ from database.records import PlayerRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Player Table

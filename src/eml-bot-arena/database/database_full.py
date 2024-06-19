@@ -12,6 +12,9 @@ from database.table_team import TeamTable
 from database.table_team_invite import TeamInviteTable
 from database.table_team_player import TeamPlayerTable
 from database.table_vw_roster import VwRosterTable
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FullDatabase:

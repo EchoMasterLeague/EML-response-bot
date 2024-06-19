@@ -6,6 +6,10 @@ import discord
 import constants
 from utils import discord_helpers, general_helpers
 import json
+import bot_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def admin_fix_discord_roles(
@@ -198,7 +202,7 @@ async def admin_fix_discord_roles(
             # WARNING
             # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
             count_empty += 1
-            # print(f"  DISCORD: Empty Guild Role of type `{role_type}` was `{removed}` -- `{role_name}`")
+            # logger.warn(f"  DISCORD: Empty Guild Role of type `{role_type}` was `{removed}` -- `{role_name}`")
 
         # Players with roles in discord, but not in the database
         discord_players_without_db = {}
@@ -310,6 +314,6 @@ async def admin_fix_discord_roles(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message, ephemeral=True)
+        await discord_helpers.fail_message(interaction, message, ephemeral=True)
     except Exception as error:
         await discord_helpers.error_message(interaction, error, ephemeral=True)

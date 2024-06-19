@@ -2,6 +2,9 @@ from database.database_full import FullDatabase
 from database.fields import CommandLockFields
 from utils import discord_helpers, general_helpers
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def command_enable(
@@ -56,6 +59,6 @@ async def command_enable(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

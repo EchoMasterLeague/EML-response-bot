@@ -5,6 +5,9 @@ from database.records import SuspensionRecord
 import constants
 import gspread
 import utils.general_helpers as general_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Suspension Table

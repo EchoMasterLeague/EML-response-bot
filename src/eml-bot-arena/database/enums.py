@@ -1,5 +1,7 @@
 from enum import EnumCheck, StrEnum, verify
+import logging
 
+logger = logging.getLogger(__name__)
 
 ### Database ###
 

@@ -3,6 +3,9 @@ from database.fields import CooldownFields
 from utils import discord_helpers, general_helpers
 import datetime
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def show_list_cooldown(database: FullDatabase, interaction: discord.Interaction):
@@ -50,6 +53,6 @@ async def show_list_cooldown(database: FullDatabase, interaction: discord.Intera
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

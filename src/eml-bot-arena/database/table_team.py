@@ -6,6 +6,9 @@ from database.records import TeamRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Team Table

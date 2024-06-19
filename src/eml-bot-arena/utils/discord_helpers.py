@@ -1,6 +1,10 @@
 import discord
 import constants
 from io import BytesIO
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 ### Formatting ###
@@ -19,6 +23,7 @@ async def final_message(
     message: str,
     ephemeral: bool = False,
     files: list[discord.File] = [],
+    failure: bool = False,
 ):
     """Send a final message to an interaction"""
     message_file = None
@@ -30,13 +35,41 @@ async def final_message(
     if message_file:
         files = [message_file] + files
     if not interaction.response.is_done():
-        return await interaction.response.send_message(
+        await interaction.response.send_message(
             content=message, ephemeral=ephemeral, files=files
         )
     else:
-        return await interaction.followup.send(
+        await interaction.followup.send(
             content=message, ephemeral=ephemeral, files=files
         )
+    # Log result
+    command_dict = {
+        "command": f"/{interaction.command.name}",
+        "success": not failure,
+        "message": str(message),
+    }
+    if files:
+        command_dict["files"] = len(files)
+    logger.info(
+        "\n".join(
+            [
+                f"Command Result for: {interaction.user.display_name}({interaction.user.id})",
+                f"{json.dumps(command_dict, indent=4)}",
+            ]
+        )
+    )
+    return
+
+
+async def fail_message(
+    interaction: discord.Interaction,
+    message: str,
+    ephemeral: bool = False,
+):
+    """Send an error message to an interaction, and raise the error."""
+    await final_message(
+        interaction=interaction, message=message, ephemeral=ephemeral, failure=True
+    )
 
 
 async def error_message(
@@ -46,7 +79,9 @@ async def error_message(
     ephemeral: bool = False,
 ):
     """Send an error message to an interaction, and raise the error."""
-    await final_message(interaction=interaction, message=message, ephemeral=ephemeral)
+    await final_message(
+        interaction=interaction, message=message, ephemeral=ephemeral, failure=True
+    )
     raise error
 
 

@@ -5,6 +5,9 @@ from database.records import ExampleRecord
 import constants
 import errors.database_errors as DbErrors
 import gspread
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Example Table

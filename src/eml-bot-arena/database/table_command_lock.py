@@ -5,6 +5,9 @@ from database.fields import CommandLockFields
 from database.records import CommandLockRecord
 import constants
 import gspread
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 CommandLock Table

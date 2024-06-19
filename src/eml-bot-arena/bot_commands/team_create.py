@@ -3,6 +3,9 @@ from database.fields import PlayerFields, TeamFields, TeamPlayerFields, Suspensi
 from utils import discord_helpers, database_helpers, general_helpers
 import discord
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def team_create(
@@ -141,6 +144,6 @@ async def team_create(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

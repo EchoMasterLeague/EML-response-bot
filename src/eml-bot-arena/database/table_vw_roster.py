@@ -8,6 +8,9 @@ import errors.database_errors as DbErrors
 import gspread
 import time
 import utils.general_helpers as general_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 """
@@ -158,11 +161,11 @@ class VwRosterTable(BaseTable):
         self, roster_table: list[list[int | float | str | None]]
     ) -> None:
         """Write a new list of VwRoster records to the database"""
-        print("[ 2 write, 0 read ] UPDATE of vwRoster")
+        logger.debug("[ 2 write, 0 read ] UPDATE of vwRoster")
         try:
             self._tab.clear()
             time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
             self._tab.append_rows(roster_table)
             time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
         except Exception as error:
-            print(f"    Failed to commit write: {error}")
+            logger.exception(f"    Failed to commit write: {error}")

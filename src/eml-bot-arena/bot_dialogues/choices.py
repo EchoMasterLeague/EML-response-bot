@@ -1,4 +1,7 @@
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 This module contains classes for creating multiple choice questions with buttons.

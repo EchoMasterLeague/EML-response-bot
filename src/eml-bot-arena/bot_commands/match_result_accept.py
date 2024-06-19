@@ -12,6 +12,9 @@ from database.records import MatchRecord, PlayerRecord
 from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def match_result_accept(
@@ -138,8 +141,14 @@ async def match_result_accept(
                 await database.table_match_result_invite.delete_match_result_invite_record(
                     invite
                 )
-            message = "Match Result Invites cleared."
-            return await discord_helpers.final_message(interaction, message)
+            return await discord_helpers.final_message(
+                interaction=interaction,
+                message="\n".join(
+                    [
+                        f"Match Result Invites cleared.",
+                    ]
+                ),
+            )
         # Choice: Accept (#)
         selected_invite = None
         for invite in match_result_invite_records:
@@ -354,6 +363,6 @@ async def match_result_accept(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

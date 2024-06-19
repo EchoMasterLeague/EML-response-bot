@@ -1,6 +1,9 @@
 from utils import discord_helpers
 import constants
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def show_role_members(

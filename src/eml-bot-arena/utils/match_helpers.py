@@ -1,5 +1,7 @@
 from database.enums import MatchResult, MatchType, MatchStatus
+import logging
 
+logger = logging.getLogger(__name__)
 
 ###############################################################################
 #                                 MATCH TYPE                                  #

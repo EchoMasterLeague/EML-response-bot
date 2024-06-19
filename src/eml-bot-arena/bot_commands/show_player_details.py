@@ -1,8 +1,17 @@
 from database.database_full import FullDatabase
-from database.fields import CooldownFields, PlayerFields, TeamFields, TeamPlayerFields, SuspensionFields
+from database.fields import (
+    CooldownFields,
+    PlayerFields,
+    TeamFields,
+    TeamPlayerFields,
+    SuspensionFields,
+)
 from database.records import CooldownRecord
 from utils import discord_helpers, general_helpers
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def show_player_details(
@@ -21,12 +30,16 @@ async def show_player_details(
             player_id=discord_member.id
         )
         suspension_record = suspension_records[0] if suspension_records else None
-        assert not suspension_record, f"Player {discord_member.mention} is suspended until {await suspension_record.get_field(SuspensionFields.expires_at)}."
+        assert (
+            not suspension_record
+        ), f"Player {discord_member.mention} is suspended until {await suspension_record.get_field(SuspensionFields.expires_at)}."
         # Player
         player_records = await database.table_player.get_player_records(
             discord_id=discord_member.id
         )
-        assert player_records, f"Player `{discord_member.display_name}` not found. Are they registered?"
+        assert (
+            player_records
+        ), f"Player `{discord_member.display_name}` not found. Are they registered?"
         player_record = player_records[0]
         # TeamPlayer
         teamplayer_records = await database.table_team_player.get_team_player_records(
@@ -57,9 +70,21 @@ async def show_player_details(
         response_dictionary = {
             "player": await player_record.get_field(PlayerFields.player_name),
             "region": await player_record.get_field(PlayerFields.region),
-            "cooldown_end": f"{await cooldown_record.get_field(CooldownFields.expires_at)}" if cooldown_record else None,
-            "team": f"{await team_record.get_field(TeamFields.team_name)}" if team_record else None,
-            "team_role": f"{"captain" if await teamplayer_record.get_field(TeamPlayerFields.is_captain) else "co-captain" if await teamplayer_record.get_field(TeamPlayerFields.is_co_captain) else "member"}" if teamplayer_record else None,
+            "cooldown_end": (
+                f"{await cooldown_record.get_field(CooldownFields.expires_at)}"
+                if cooldown_record
+                else None
+            ),
+            "team": (
+                f"{await team_record.get_field(TeamFields.team_name)}"
+                if team_record
+                else None
+            ),
+            "team_role": (
+                f'{"captain" if await teamplayer_record.get_field(TeamPlayerFields.is_captain) else "co-captain" if await teamplayer_record.get_field(TeamPlayerFields.is_co_captain) else "member"}'
+                if teamplayer_record
+                else None
+            ),
         }
         if not response_dictionary["cooldown_end"]:
             response_dictionary.pop("cooldown_end")
@@ -81,6 +106,6 @@ async def show_player_details(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

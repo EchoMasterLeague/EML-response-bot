@@ -2,6 +2,9 @@ from database.enums import Regions
 from utils import discord_helpers
 import constants
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def normalize_region(region: str):

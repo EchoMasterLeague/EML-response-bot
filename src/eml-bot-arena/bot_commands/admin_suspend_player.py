@@ -2,6 +2,9 @@ from database.database_full import FullDatabase
 from database.fields import SuspensionFields, PlayerFields, TeamFields, TeamPlayerFields
 from utils import discord_helpers, general_helpers
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def admin_suspend_player(
@@ -173,6 +176,6 @@ async def admin_suspend_player(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message, ephemeral=True)
+        await discord_helpers.fail_message(interaction, message, ephemeral=True)
     except Exception as error:
         await discord_helpers.error_message(interaction, error, ephemeral=True)

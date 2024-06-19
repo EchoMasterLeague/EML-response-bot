@@ -10,6 +10,9 @@ from database.enums import MatchType, MatchResult, MatchStatus
 from database.records import MatchResultInviteRecord
 from utils import discord_helpers, general_helpers, match_helpers
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def match_result_invite(
@@ -185,6 +188,6 @@ async def match_result_invite(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

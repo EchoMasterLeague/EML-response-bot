@@ -2,6 +2,9 @@ from database.database_full import FullDatabase
 from utils import discord_helpers, general_helpers
 import discord
 from utils import discord_helpers, general_helpers
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def admin_generate_uuid(database: FullDatabase, interaction: discord.Interaction):
@@ -51,6 +54,6 @@ async def admin_generate_uuid(database: FullDatabase, interaction: discord.Inter
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message, ephemeral=True)
+        await discord_helpers.fail_message(interaction, message, ephemeral=True)
     except Exception as error:
         await discord_helpers.error_message(interaction, error, ephemeral=True)

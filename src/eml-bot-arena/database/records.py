@@ -18,6 +18,9 @@ from database.fields import (
 )
 from typing import Type
 import errors.database_errors as DbErrors
+import logging
+
+logger = logging.getLogger(__name__)
 
 ### Base ###
 
@@ -190,7 +193,7 @@ class PlayerRecord(BaseRecord):
                 self._data_dict[PlayerFields.region.name] = allowed_region
                 break
         if self._data_dict[PlayerFields.region.name] not in region_list:
-            raise DbErrors.EmlRegionNotFound(
+            raise ValueError(
                 f"Region '{region}' not available. Available Regions: {region_list}"
             )
         ## League Substitute

@@ -1,5 +1,8 @@
 import discord
 import discord.ext.commands as commands
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 ############################

@@ -11,6 +11,9 @@ from database.records import MatchResultInviteRecord
 from utils import discord_helpers, general_helpers, match_helpers
 import discord
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def admin_manual_match_entry(
@@ -241,6 +244,6 @@ async def admin_manual_match_entry(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)

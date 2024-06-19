@@ -3,6 +3,9 @@ import datetime
 import uuid
 import pytz
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 This module contains common functions for any module.
@@ -16,7 +19,7 @@ async def random_id():
 
 
 async def format_json(data, sort_keys=False):
-    """Pretty print JSON data"""
+    """Pretty format JSON data"""
     return json.dumps(data, sort_keys=sort_keys, indent=4)
 
 
@@ -97,7 +100,7 @@ async def epoch_from_eml_datetime_strings(
         epoch_timestamp = int(date_time_obj.timestamp())
         return epoch_timestamp
     except Exception as e:
-        print(e)
+        logger.exception(e)
         return None
 
 

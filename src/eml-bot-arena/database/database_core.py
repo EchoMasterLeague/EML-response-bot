@@ -3,6 +3,9 @@ import constants
 import errors.database_errors as DbErrors
 import gspread
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CoreDatabase:
@@ -26,7 +29,7 @@ class CoreDatabase:
         self._db_local_cache: dict[str, list[list[int | float | str | None]]] = {}
         self._db_write_queue: list[list[int | float | str | None]] = []
         try:
-            print(f"Connecting to Spreadsheet: {spreadsheet_url}")
+            logger.debug(f"Connecting to Spreadsheet: {spreadsheet_url}")
             self._db_spreadsheet = gs_client.open_by_url(spreadsheet_url)
         except gspread.SpreadsheetNotFound as error:
             raise DbErrors.EmlSpreadsheetDoesNotExist(f"Spreadsheet not found: {error}")
@@ -49,7 +52,7 @@ class CoreDatabase:
         """Get a worksheet from the DB spreadsheet by title"""
         try:
             if table_name not in self._worksheets:
-                print(f"[ 0 write, 1 read ] Getting Worksheet: {table_name}")
+                logger.info(f"[ 0 write, 1 read ] Getting Worksheet: {table_name}")
                 self._worksheets[table_name] = self._db_spreadsheet.worksheet(
                     table_name
                 )
@@ -75,14 +78,17 @@ class CoreDatabase:
         )
         is_safe = len(self._db_write_queue) == 0
         if not is_cached or (is_stale and is_safe):
-            print(f"[ 0 write, 1 read ] Getting Table: {table_name}")
+            logger.debug(f"[ 0 write, 1 read ] Getting Table: {table_name}")
             try:
                 worksheet = self.get_table_worksheet(table_name)
                 table_data = worksheet.get_all_values()
                 self._db_local_cache[table_name] = table_data
                 self._db_cache_pull_times[table_name] = time.time()
+                logger.debug(f"DB Read cache updated for {table_name}")
             except Exception as error:
-                print(f"    Failed to update table data cache: {error}")
+                logger.exception(
+                    f"Failed to update DB Read cache for {table_name}:\n{error}"
+                )
         return self._db_local_cache[table_name]
 
     async def append_row(
@@ -147,14 +153,14 @@ class CoreDatabase:
         row_data = write[2:]
         worksheet = self.get_table_worksheet(table_name)
         if operation == WriteOperations.INSERT:
-            print(f"[ 1 write, 0 read ] INSERT in {worksheet.title}")
+            logger.debug(f"[ 1 write, 0 read ] INSERT in {worksheet.title}")
             worksheet.append_row(row_data, table_range="A1")
         elif operation == WriteOperations.UPDATE:
-            print(f"[ 1 write, 1 read ] UPDATE in {worksheet.title}")
+            logger.debug(f"[ 1 write, 1 read ] UPDATE in {worksheet.title}")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.update(f"A{cell.row}", [row_data])
         elif operation == WriteOperations.DELETE:
-            print(f"[ 1 write, 1 read ] DELETE in {worksheet.title}")
+            logger.debug(f"[ 1 write, 1 read ] DELETE in {worksheet.title}")
             cell = worksheet.find(record_id, in_column=1)
             worksheet.delete_rows(cell.row)
         self._db_write_queue.pop(0)
@@ -166,7 +172,10 @@ class CoreDatabase:
                 await self.commit_next_write()
                 time.sleep(constants.LEAGUE_DB_QUEUE_WRITE_DELAY_SECONDS)
         except Exception as error:
-            print(f"    Failed to commit write: {error}")
+            logger.exception(f"Failed to commit write: {error}")
+        finally:
+            if len(self._db_write_queue) > 0:
+                logger.warn(f"DB Write Queue Length: {len(self._db_write_queue)}")
 
     async def get_pending_writes(
         self,

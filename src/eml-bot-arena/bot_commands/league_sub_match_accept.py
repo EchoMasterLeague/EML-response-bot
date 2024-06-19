@@ -12,6 +12,9 @@ from database.enums import MatchResult, MatchStatus, InviteStatus
 from database.records import MatchRecord
 from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def league_sub_match_accept(
@@ -198,8 +201,14 @@ async def league_sub_match_accept(
                 await database.table_league_sub_match_invite.delete_league_sub_match_invite_record(
                     invite
                 )
-            message = "League Sub Match Invites cleared."
-            return await discord_helpers.final_message(interaction, message)
+            return await discord_helpers.final_message(
+                interaction=interaction,
+                message="\n".join(
+                    [
+                        f"League Sub Match Invites cleared.",
+                    ]
+                ),
+            )
         # Choice: Accept (#)
         selected_invite = None
         for invite in league_sub_match_invite_records:
@@ -335,6 +344,6 @@ async def league_sub_match_accept(
 
     # Errors
     except AssertionError as message:
-        await discord_helpers.final_message(interaction, message)
+        await discord_helpers.fail_message(interaction, message)
     except Exception as error:
         await discord_helpers.error_message(interaction, error)
