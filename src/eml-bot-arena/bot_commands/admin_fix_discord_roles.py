@@ -262,13 +262,16 @@ async def admin_fix_discord_roles(
         player_role_additions = {}
         for role_name, discord_ids in db_players_without_discord.items():
             for discord_id in discord_ids:
+                member_display_name = ""
                 member = await discord_helpers.member_from_discord_id(
                     interaction.guild, discord_id
                 )
+                if member:
+                    member_display_name = member.display_name
                 if not player_role_additions.get(role_name):
                     player_role_additions[role_name] = []
                 player_role_additions[role_name] += [
-                    f"{member.display_name}({member.id})"
+                    f"{member_display_name}({member.id})"
                 ]
                 # WARNING
                 # await discord_helpers.member_role_add_if_needed(member, role_name)
