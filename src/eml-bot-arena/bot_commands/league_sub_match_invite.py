@@ -151,7 +151,7 @@ async def league_sub_match_invite(
         )
         assert (
             not existing_match_invites
-        ), f"LeagueSubMatchInvite for `{sub_player_record.get_field(PlayerFields.player_name)}` playing for `{our_team_record.get_field(TeamFields.team_name)}` already exists"
+        ), f"LeagueSubMatchInvite for `{await sub_player_record.get_field(PlayerFields.player_name)}` playing for `{await our_team_record.get_field(TeamFields.team_name)}` already exists"
 
         # Create League Sub Match Invite
         captain_player_id = None
