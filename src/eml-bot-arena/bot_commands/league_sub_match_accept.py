@@ -101,6 +101,13 @@ async def league_sub_match_accept(
             these_match_records = await database.table_match.get_match_records(
                 record_id=await invite.get_field(SubInviteFields.match_id)
             )
+            captain_player_id = await invite.get_field(
+                SubInviteFields.captain_player_id
+            )
+            if captain_player_id and my_player_id != sub_player_id:
+                continue
+            if not captain_player_id and my_player_id == sub_player_id:
+                continue
             match_records.extend(these_match_records)
 
         #######################################################################

@@ -211,7 +211,7 @@ async def league_sub_match_invite(
                 [
                     f"League Sub Match Declaration sent to {to_mention}:",
                     f"{response_code_block}",
-                    f"Waiting on {by_mention} to confirm.",
+                    f"Waiting on {to_mention} to confirm.",
                 ]
             ),
         )
