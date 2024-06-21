@@ -1,6 +1,7 @@
 import discord
 import constants
 from io import BytesIO
+from utils import general_helpers
 import json
 import logging
 
@@ -43,8 +44,9 @@ async def final_message(
             content=message, ephemeral=ephemeral, files=files
         )
     # Log result
+    command = f"/{interaction.command.name}"
     command_dict = {
-        "command": f"/{interaction.command.name}",
+        "command": command,
         "success": not failure,
         "message": str(message),
     }
@@ -58,7 +60,13 @@ async def final_message(
             ]
         )
     )
-    return
+    await log_to_debug_channel(
+        interaction=interaction,
+        command=command,
+        response=message,
+        success=not failure,
+        files=files,
+    )
 
 
 async def fail_message(
@@ -101,7 +109,42 @@ async def log_to_channel(
         channel = await get_guild_channel(
             interaction=interaction, channel_name=channel_name
         )
-    return await channel.send(content=message, embed=embed)
+    await channel.send(content=message, embed=embed)
+
+
+async def log_to_debug_channel(
+    interaction: discord.Interaction,
+    request: str = None,
+    response: str = None,
+    files: list[discord.File] = [],
+    success: bool = True,
+    command: str = None,
+    command_args: dict[str, any] = {},
+):
+    """Send a log message to the debugging channel"""
+    debug_channel = await get_guild_channel(
+        interaction=interaction, channel_name=constants.DISCORD_CHANNEL_BOT_DEBUG_LOGS
+    )
+
+    if request:
+        color = discord.Color.blue()
+        command_args_block = await code_block(
+            await general_helpers.format_json(command_args)
+        )
+        debug_embed = discord.Embed(description=f"{request}", color=color)
+        debug_embed.add_field(name="Command", value=command)
+        debug_embed.add_field(name="Args", value=command_args_block, inline=False)
+        await debug_channel.send(embed=debug_embed, files=files)
+    if response:
+        color = discord.Color.green()
+        if not success:
+            color = discord.Color.red()
+        heading = f"Command Result for: {interaction.user.display_name}({interaction.user.id})"
+        debug_embed = discord.Embed(description=f"{heading}", color=color)
+        debug_embed.add_field(name="Success", value=success)
+        debug_embed.add_field(name="Command", value=command)
+        debug_embed.add_field(name="Response", value=response, inline=False)
+        await debug_channel.send(embed=debug_embed, files=files)
 
 
 ### Files ###
