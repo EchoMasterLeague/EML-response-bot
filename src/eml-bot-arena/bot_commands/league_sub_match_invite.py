@@ -75,6 +75,7 @@ async def league_sub_match_invite(
         captain_player_id = None
         cocaptain_player_id = None
         for teamplayer_record in our_teamplayer_records:
+
             if await teamplayer_record.get_field(TeamPlayerFields.is_captain):
                 captain_player_id = await teamplayer_record.get_field(
                     TeamPlayerFields.player_id
@@ -85,6 +86,22 @@ async def league_sub_match_invite(
                     TeamPlayerFields.player_id
                 )
                 break
+        print(
+            {
+                "my_player_id": my_player_id,
+                "sub_player_id": sub_player_id,
+                "captain_player_id": captain_player_id,
+                "cocaptain_player_id": cocaptain_player_id,
+                "list": [sub_player_id, captain_player_id, cocaptain_player_id],
+                "is_in_list": my_player_id
+                and my_player_id
+                in [
+                    sub_player_id,
+                    captain_player_id,
+                    cocaptain_player_id,
+                ],
+            }
+        )
         assert my_player_id and my_player_id in [
             sub_player_id,
             captain_player_id,
