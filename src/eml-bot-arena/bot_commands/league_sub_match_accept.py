@@ -9,7 +9,7 @@ from database.fields import (
 from bot_dialogues import choices
 from database.database_full import FullDatabase
 from database.enums import MatchResult, MatchStatus, InviteStatus
-from database.records import MatchRecord
+from database.records import MatchRecord, LeagueSubMatchInviteRecord
 from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
 import json
@@ -98,6 +98,7 @@ async def league_sub_match_accept(
         ), f"No League Sub Match Invites available to confirm."
         # Match
         match_records: list[MatchRecord] = []
+        invite_records: list[LeagueSubMatchInviteRecord] = []
         for invite in league_sub_match_invite_records:
             these_match_records = await database.table_match.get_match_records(
                 record_id=await invite.get_field(SubInviteFields.match_id)
@@ -106,14 +107,11 @@ async def league_sub_match_accept(
                 SubInviteFields.captain_player_id
             )
             if captain_player_id and my_player_id != sub_player_id:
-                print("captain skipped")
                 continue
             if not captain_player_id and my_player_id == sub_player_id:
-                print("sub skipped")
                 continue
             match_records.extend(these_match_records)
-        for match_record in match_records:
-            print(json.dumps(await match_record.to_dict(), indent=4))
+            invite_records.extend(invite)
 
         #######################################################################
         #                               OPTIONS                               #
@@ -122,7 +120,7 @@ async def league_sub_match_accept(
         descriptions = {}
         options_dict = {}
         option_number = 0
-        for invite in league_sub_match_invite_records:
+        for invite in invite_records:
             option_number += 1
             match_record = None
             for match in match_records:
@@ -203,7 +201,7 @@ async def league_sub_match_accept(
             )
         # Choice: Clear all invites
         if choice == "clearall":
-            for invite in league_sub_match_invite_records:
+            for invite in invite_records:
                 await invite.set_field(
                     SubInviteFields.invite_status, InviteStatus.DECLINED
                 )
@@ -223,7 +221,7 @@ async def league_sub_match_accept(
             )
         # Choice: Accept (#)
         selected_invite = None
-        for invite in league_sub_match_invite_records:
+        for invite in invite_records:
             invite_id = await invite.get_field(SubInviteFields.record_id)
             if invite_id == choice:
                 selected_invite = invite
