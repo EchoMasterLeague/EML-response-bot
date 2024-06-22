@@ -106,8 +106,10 @@ async def league_sub_match_accept(
                 SubInviteFields.captain_player_id
             )
             if captain_player_id and my_player_id != sub_player_id:
+                print("captain skipped")
                 continue
             if not captain_player_id and my_player_id == sub_player_id:
+                print("sub skipped")
                 continue
             match_records.extend(these_match_records)
         for match_record in match_records:
