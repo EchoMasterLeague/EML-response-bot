@@ -12,6 +12,7 @@ from database.enums import MatchResult, MatchStatus, InviteStatus
 from database.records import MatchRecord
 from utils import discord_helpers, database_helpers, general_helpers, match_helpers
 import discord
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -109,6 +110,8 @@ async def league_sub_match_accept(
             if not captain_player_id and my_player_id == sub_player_id:
                 continue
             match_records.extend(these_match_records)
+        for match_record in match_records:
+            print(json.dumps(await match_record.to_dict(), indent=4))
 
         #######################################################################
         #                               OPTIONS                               #
@@ -126,7 +129,7 @@ async def league_sub_match_accept(
                 if match_record_id == invite_match_id:
                     match_record = match
                     break
-            assert match_record, f"Match record not found."
+            assert match_record, f"Match record not found for a match invite."
             winner_dict = {
                 MatchResult.WIN: "team_a",
                 MatchResult.LOSS: "team_b",
@@ -256,7 +259,7 @@ async def league_sub_match_accept(
             if match_record_id == invite_match_id:
                 match_record = match
                 break
-        assert match_record, f"Match record not found."
+        assert match_record, f"Match record not found for selected invite."
         team_a_id = await match_record.get_field(MatchFields.team_a_id)
         team_b_id = await match_record.get_field(MatchFields.team_b_id)
         sub_team_id = await selected_invite.get_field(SubInviteFields.team_id)
