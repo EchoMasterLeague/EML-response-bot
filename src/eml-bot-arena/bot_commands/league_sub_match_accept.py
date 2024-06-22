@@ -111,7 +111,7 @@ async def league_sub_match_accept(
             if not captain_player_id and my_player_id == sub_player_id:
                 continue
             match_records.extend(these_match_records)
-            invite_records.extend(invite)
+            invite_records.append(invite)
 
         #######################################################################
         #                               OPTIONS                               #
