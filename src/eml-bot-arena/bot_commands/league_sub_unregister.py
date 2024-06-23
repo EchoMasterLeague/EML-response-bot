@@ -34,7 +34,7 @@ async def league_sub_unregister(
         await database.table_player.update_player_record(my_player_record)
 
         # Remove League Substitute role
-        await discord_helpers.member_remove_league_sub_role(interaction.user)
+        await discord_helpers.member_remove_league_sub_roles(interaction.user)
 
         #######################################################################
         #                              RESPONSE                               #

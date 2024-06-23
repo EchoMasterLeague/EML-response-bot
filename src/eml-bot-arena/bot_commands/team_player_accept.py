@@ -181,7 +181,7 @@ async def team_player_accept(
         from_teamplayer_records.append(new_teamplayer_record)
 
         # Update "To" Discord Roles
-        await discord_helpers.add_member_to_team(
+        await discord_helpers.member_add_team_role(
             member=interaction.user,
             team_name=await new_teamplayer_record.get_field(TeamPlayerFields.vw_team),
         )

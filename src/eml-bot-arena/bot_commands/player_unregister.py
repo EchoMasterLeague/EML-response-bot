@@ -44,7 +44,7 @@ async def player_unregister(
         #######################################################################
 
         # Remove Discord Roles
-        await discord_helpers.member_remove_player_role(
+        await discord_helpers.member_remove_player_roles(
             await discord_helpers.member_from_discord_id(
                 guild=interaction.guild,
                 discord_id=await my_player_record.get_field(PlayerFields.discord_id),

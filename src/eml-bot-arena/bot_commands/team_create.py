@@ -93,7 +93,7 @@ async def team_create(
         assert new_teamplayer_record, "Error: Failed to add captain to new team."
 
         # Add Discord roles
-        await discord_helpers.add_member_to_team(
+        await discord_helpers.member_add_team_role(
             member=interaction.user,
             team_name=await new_team_record.get_field(TeamFields.team_name),
         )

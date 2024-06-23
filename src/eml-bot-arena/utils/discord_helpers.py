@@ -16,6 +16,17 @@ async def code_block(text: str, language: str = "json") -> str:
     return f"```{language}\n{text}```"
 
 
+### Files ###
+
+
+async def discord_file_from_string(
+    content: str, filename: str = "file.txt"
+) -> discord.File:
+    """Convert a string to a Discord file"""
+    data_buffer = BytesIO(content.encode("utf-8"))
+    return discord.File(fp=data_buffer, filename=filename)
+
+
 ### Messages ###
 
 
@@ -147,33 +158,15 @@ async def log_to_debug_channel(
         await debug_channel.send(embed=debug_embed, files=files)
 
 
-### Files ###
-
-
-async def discord_file_from_string(
-    content: str, filename: str = "file.txt"
-) -> discord.File:
-    """Convert a string to a Discord file"""
-    data_buffer = BytesIO(content.encode("utf-8"))
-    return discord.File(fp=data_buffer, filename=filename)
-
-
 ### Channels ###
 
 
 async def get_guild_channel(
-    guild: discord.Guild = None,
-    interaction: discord.Interaction = None,
-    channel_name: str = None,
+    interaction: discord.Interaction,
+    channel_name: str,
 ):
     """Get log channel"""
-    if not guild and not interaction:
-        raise ValueError("Guild or Interaction required")
-    if interaction:
-        guild = interaction.guild
-    if not channel_name:
-        raise ValueError("Channel name required")
-    return discord.utils.get(guild.channels, name=channel_name)
+    return discord.utils.get(interaction.guild.channels, name=channel_name)
 
 
 ### Members ###
@@ -203,95 +196,14 @@ async def member_is_admin(member: discord.Member):
 ### Players ###
 
 
-async def member_add_player_role(member: discord.Member, region: str):
-    """Add a Player role to a Guild Member"""
-    role_name = f"{constants.DISCORD_ROLE_PREFIX_PLAYER}{region}"
-    role = await guild_role_get_or_create(member.guild, role_name)
-    await member.add_roles(role)
-    return True
-
-
-async def member_remove_player_role(member: discord.Member):
-    """Remove a Player role from a Guild Member"""
-    prefixes = [constants.DISCORD_ROLE_PREFIX_PLAYER]
-    for role in member.roles:
-        if any(role.name.startswith(prefix) for prefix in prefixes):
-            await member.remove_roles(role)
-    return True
-
-
-async def member_add_league_sub_role(member: discord.Member):
-    """Add the League Substitute role to a Guild Member"""
-    role = await guild_role_get_or_create(
-        guild=member.guild, role_name=constants.DISCORD_ROLE_LEAGUE_SUB
-    )
-    await member.add_roles(role)
-    return True
-
-
-async def member_remove_league_sub_role(member: discord.Member):
-    """Remove the League Substitute role from a Guild Member"""
-    for role in member.roles:
-        if role.name == constants.DISCORD_ROLE_LEAGUE_SUB:
-            await member.remove_roles(role)
-    return True
-
-
 async def member_remove_all_league_roles(member: discord.Member):
     """Remove all League roles from a Guild Member"""
+    await member_remove_league_sub_roles(member)
+    await member_remove_player_roles(member)
     await member_remove_team_roles(member)
-    await member_remove_league_sub_role(member)
-    await member_remove_player_role(member)
-    return True
 
 
 ### Roles ###
-
-
-async def guild_role_get(guild: discord.Guild, role_name: str) -> discord.Role:
-    """Get a role from a Discord server"""
-    try:
-        existing_role = discord.utils.get(guild.roles, name=role_name)
-        return existing_role
-    except discord.errors.NotFound:
-        return None
-
-
-async def guild_role_get_or_create(
-    guild: discord.Guild, role_name: str
-) -> discord.Role:
-    """Ensure a role exists in the Discord server"""
-    existing_role = discord.utils.get(guild.roles, name=role_name)
-    if existing_role:
-        return existing_role
-    return await guild.create_role(name=role_name)
-
-
-async def guild_role_remove_if_exists(guild: discord.Guild, role_name: str) -> bool:
-    """Remove a role from the Discord server if it exists"""
-    existing_role = discord.utils.get(guild.roles, name=role_name)
-    if existing_role:
-        await existing_role.delete()
-    return True
-
-
-async def member_role_add_if_needed(member: discord.Member, role_name: str) -> bool:
-    """Add a role to a member if it does not already exist"""
-    role = discord.utils.get(member.roles, name=role_name)
-    if not role:
-        role = await guild_role_get_or_create(member.guild, role_name)
-    await member.add_roles(role)
-    return True
-
-
-async def member_role_remove_by_prefix(
-    member: discord.Member, role_prefix: str
-) -> bool:
-    """Remove all roles from a member that match a prefix"""
-    for role in member.roles:
-        if role.name.startswith(role_prefix):
-            await member.remove_roles(role)
-    return True
 
 
 async def role_mention(
@@ -319,28 +231,36 @@ async def role_mention(
     return f"`(unknown)`"
 
 
-### Roles for Teams ###
+### Role Management - Guild ###
 
 
-async def member_add_team_role(member: discord.Member, team_name: str):
-    """Add a Team role to a Guild Member"""
-    role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
-    role = await guild_role_get_or_create(member.guild, role_name)
-    await member.add_roles(role)
-    return True
+async def guild_role_get(guild: discord.Guild, role_name: str) -> discord.Role:
+    """Get a role from a Discord server"""
+    try:
+        existing_role = discord.utils.get(guild.roles, name=role_name)
+        return existing_role
+    except discord.errors.NotFound:
+        return None
 
 
-async def member_remove_team_roles(member: discord.Member):
-    """Remove all Team roles from a Guild Member"""
-    prefixes = [
-        constants.DISCORD_ROLE_PREFIX_TEAM,
-        constants.DISCORD_ROLE_PREFIX_CAPTAIN,
-        constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN,
-    ]
-    for role in member.roles:
-        if any(role.name.startswith(prefix) for prefix in prefixes):
-            await member.remove_roles(role)
-    return True
+async def guild_role_get_or_create(
+    guild: discord.Guild, role_name: str
+) -> discord.Role:
+    """Ensure a role exists in the Discord server"""
+    existing_role = await guild_role_get(guild, role_name)
+    if existing_role:
+        return existing_role
+    return await guild.create_role(name=role_name)
+
+
+async def guild_role_remove_if_exists(guild: discord.Guild, role_name: str):
+    """Remove a role from the Discord server if it exists"""
+    existing_role = await guild_role_get(guild, role_name)
+    if existing_role:
+        await existing_role.delete()
+
+
+### Role Management - Guild League Roles ###
 
 
 async def guild_remove_team_role(guild: discord.Guild, team_name: str):
@@ -349,35 +269,123 @@ async def guild_remove_team_role(guild: discord.Guild, team_name: str):
     return await guild_role_remove_if_exists(guild, role_name)
 
 
+### Role Management - Member ###
+
+
+async def member_add_role(member: discord.Member, role_name: str) -> bool:
+    """Add a role to a member if it does not already exist"""
+    role = discord.utils.get(member.roles, name=role_name)
+    if not role:
+        role = await guild_role_get_or_create(member.guild, role_name)
+    await member.add_roles(role)
+    return True
+
+
+async def member_remove_roles(
+    member: discord.Member,
+    role_name_list: list[str] = [],
+    role_prefix_list: list[str] = [],
+    role_suffix_list: list[str] = [],
+):
+    """Remove a role from a guild member by name, prefix, or suffix"""
+    for role in member.roles:
+        if (
+            any(role.name == role_name for role_name in role_name_list)
+            or any(role.name.startswith(suffix) for suffix in role_suffix_list)
+            or any(role.name.endswith(prefix) for prefix in role_prefix_list)
+        ):
+            await member.remove_roles(role)
+
+
+### Role Management - Member League Roles ###
+
+
+async def member_remove_all_league_roles(member: discord.Member):
+    """Remove all League roles from a Guild Member"""
+    prefixes = [
+        constants.DISCORD_ROLE_LEAGUE_SUB,
+        constants.DISCORD_ROLE_PREFIX_CAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_COCAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_PLAYER,
+        constants.DISCORD_ROLE_PREFIX_TEAM,
+    ]
+    await member_remove_roles(member=member, role_prefix_list=prefixes)
+
+
+### Role Management - Players ###
+
+
+async def member_add_player_role(member: discord.Member, region: str):
+    """Add a Player role to a Guild Member"""
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_PLAYER}{region}"
+    await member_add_role(member=member, role_name=role_name)
+
+
+async def member_remove_player_roles(member: discord.Member):
+    """Remove a Player role from a Guild Member"""
+    prefixes = [constants.DISCORD_ROLE_PREFIX_PLAYER]
+    await member_remove_roles(member=member, role_prefix_list=prefixes)
+
+
+### Role Management - Teams ###
+
+
+async def get_team_name_from_role(team_role: discord.Role):
+    """Get the Team name from a role name"""
+    return team_role.name.replace(constants.DISCORD_ROLE_PREFIX_TEAM, "")
+
+
+async def member_add_team_role(member: discord.Member, team_name: str):
+    """Add a Team role to a Guild Member"""
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
+    await member_add_role(member=member, role_name=role_name)
+
+
+async def member_remove_team_roles(member: discord.Member):
+    """Remove Team roles from a Guild Member"""
+    prefixes = [
+        constants.DISCORD_ROLE_PREFIX_TEAM,
+    ]
+    await member_remove_roles(member=member, role_prefix_list=prefixes)
+    await member_remove_captain_roles(member=member)
+
+
+### Role Management - Team Captains ###
+
+
 async def member_add_captain_role(member: discord.Member, region: str):
     """Add a Captain role to a Guild Member"""
     role_name = f"{constants.DISCORD_ROLE_PREFIX_CAPTAIN}{region}"
-    role = await guild_role_get_or_create(member.guild, role_name)
-    await member.add_roles(role)
-    return True
+    await member_add_role(member=member, role_name=role_name)
+
+
+async def member_add_cocaptain_role(member: discord.Member, region: str):
+    """Add a Captain role to a Guild Member"""
+    role_name = f"{constants.DISCORD_ROLE_PREFIX_COCAPTAIN}{region}"
+    await member_add_role(member=member, role_name=role_name)
 
 
 async def member_remove_captain_roles(member: discord.Member):
     """Remove a Captain role from a Guild Member"""
     prefixes = [
         constants.DISCORD_ROLE_PREFIX_CAPTAIN,
-        constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN,
+        constants.DISCORD_ROLE_PREFIX_COCAPTAIN,
     ]
-    for role in member.roles:
-        if any(role.name.startswith(prefix) for prefix in prefixes):
-            await member.remove_roles(role)
-    return True
+    await member_remove_roles(member=member, role_prefix_list=prefixes)
 
 
-async def add_member_to_team(member: discord.Member, team_name: str):
-    """Add a Discord Member to a Team
-
-    Note: This only handles the Discord roles. Database changes are not handled."""
-    await member_remove_team_roles(member)
-    await member_add_team_role(member, team_name)
-    return True
+### Role Management - League Substitutes ###
 
 
-async def get_team_name_from_role(team_role: discord.Role):
-    """Get the Team name from a role name"""
-    return team_role.name.replace(constants.DISCORD_ROLE_PREFIX_TEAM, "")
+async def member_add_league_sub_role(member: discord.Member):
+    """Add the League Substitute role to a Guild Member"""
+    role_name = f"{constants.DISCORD_ROLE_LEAGUE_SUB}"
+    await member_add_role(member=member, role_name=role_name)
+
+
+async def member_remove_league_sub_roles(member: discord.Member):
+    """Remove the League Substitute role from a Guild Member"""
+    exact_names = [
+        f"{constants.DISCORD_ROLE_LEAGUE_SUB}",
+    ]
+    await member_remove_roles(member=member, role_name_list=exact_names)

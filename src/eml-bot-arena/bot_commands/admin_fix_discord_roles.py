@@ -42,7 +42,7 @@ async def admin_fix_discord_roles(
             constants.DISCORD_ROLE_PREFIX_TEAM,
             constants.DISCORD_ROLE_PREFIX_PLAYER,
             constants.DISCORD_ROLE_PREFIX_CAPTAIN,
-            constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN,
+            constants.DISCORD_ROLE_PREFIX_COCAPTAIN,
             constants.DISCORD_ROLE_LEAGUE_SUB,
         ]
         database_players_by_role = {}
@@ -108,7 +108,7 @@ async def admin_fix_discord_roles(
                 database_players_by_role[role_name] += [str(discord_id)]
             # CoCaptain<REGION>
             if is_co_captain:
-                role_name = f"{constants.DISCORD_ROLE_PREFIX_CO_CAPTAIN}{region}"
+                role_name = f"{constants.DISCORD_ROLE_PREFIX_COCAPTAIN}{region}"
                 if not database_players_by_role.get(role_name):
                     database_players_by_role[role_name] = []
                 database_players_by_role[role_name] += [str(discord_id)]

@@ -24,52 +24,59 @@ async def team_cocaptain_demote(
             discord_id=interaction.user.id
         )
         assert my_player_records, "You are not registered as a player."
-        my_player = my_player_records[0]
+        my_player_record = my_player_records[0]
         # "Their" Player
         their_player_records = await database.table_player.get_player_records(
             discord_id=discord_member.id
         )
         assert (
             their_player_records
-        ), f"Player `{discord_member.display_name}` not found."
-        their_player = their_player_records[0]
+        ), f"Player `{discord_member.display_name}` not found. Are they registered?"
+        their_player_record = their_player_records[0]
+        assert my_player_record.get_field(
+            PlayerFields.record_id
+        ) != their_player_record.get_field(
+            PlayerFields.record_id
+        ), "Cannot demote yourself."
         # "My" TeamPlayer
         my_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
-                player_id=await my_player.get_field(PlayerFields.record_id)
+                player_id=await my_player_record.get_field(PlayerFields.record_id)
             )
         )
         assert my_teamplayer_records, "You are not a member of a team."
-        my_teamplayer = my_teamplayer_records[0]
-        assert await my_teamplayer.get_field(
+        my_teamplayer_record = my_teamplayer_records[0]
+        assert await my_teamplayer_record.get_field(
             TeamPlayerFields.is_captain
         ), "You are not a captain."
-        # "Our" TeamPlayer
-        our_teamplayer_records = (
+        # "Their" TeamPlayer
+        their_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
-                team_id=await my_teamplayer.get_field(TeamPlayerFields.team_id)
+                player_id=await their_player_record.get_field(PlayerFields.record_id)
             )
         )
-        assert our_teamplayer_records, "No teammates found."
-        # "Their" TeamPlayer
-        their_teamplayer_records: list[TeamPlayerRecord] = []
-        for teamplayer in our_teamplayer_records:
-            their_id = await their_player.get_field(PlayerFields.record_id)
-            if their_id == await teamplayer.get_field(TeamPlayerFields.player_id):
-                their_teamplayer_records.append(teamplayer)
-        assert their_teamplayer_records, "Player is not your team."
-        their_teamplayer = their_teamplayer_records[0]
-        assert await their_teamplayer.get_field(
+        assert (
+            their_teamplayer_records
+        ), f"Player `{await their_player_record.get_field(PlayerFields.name)}` is not on any team."
+        their_teamplayer_record = their_player_records[0]
+        assert my_teamplayer_record.get_field(
+            TeamPlayerFields.team_id
+        ) == their_teamplayer_record.get_field(
+            TeamPlayerFields.team_id
+        ), f"Player `{await their_player_record.get_field(PlayerFields.name)}` is not on your team."
+        assert their_teamplayer_record.get_field(
             TeamPlayerFields.is_co_captain
-        ), "Player is not a co-captain."
-        assert await their_teamplayer.get_field(
-            TeamPlayerFields.player_id
-        ) != await my_teamplayer.get_field(
-            TeamPlayerFields.player_id
-        ), "You cannot demote yourself."
+        ), f"Player `{await their_player_record.get_field(PlayerFields.name)}` is not a co-captain."
+        # "Our" TeamPlayers
+        our_teamplayer_records = (
+            await database.table_team_player.get_team_player_records(
+                team_id=await my_teamplayer_record.get_field(TeamPlayerFields.team_id)
+            )
+        )
+        assert our_teamplayer_records, "No team members found."
         # "Our" Team
         our_team_records = await database.table_team.get_team_records(
-            record_id=await my_teamplayer.get_field(TeamPlayerFields.team_id)
+            record_id=await my_teamplayer_record.get_field(TeamPlayerFields.team_id)
         )
         assert our_team_records, "Your team could not be found."
         our_team = our_team_records[0]
@@ -88,13 +95,15 @@ async def team_cocaptain_demote(
         await discord_helpers.member_remove_captain_roles(
             await discord_helpers.member_from_discord_id(
                 guild=interaction.guild,
-                discord_id=await their_player.get_field(PlayerFields.discord_id),
+                discord_id=await their_player_record.get_field(PlayerFields.discord_id),
             )
         )
 
         # Update "Their" TeamPlayer record
-        await their_teamplayer.set_field(TeamPlayerFields.is_co_captain, False)
-        await database.table_team_player.update_team_player_record(their_teamplayer)
+        await their_teamplayer_record.set_field(TeamPlayerFields.is_co_captain, False)
+        await database.table_team_player.update_team_player_record(
+            their_teamplayer_record
+        )
 
         # Update roster view
         await database_helpers.update_roster_view(
@@ -104,7 +113,9 @@ async def team_cocaptain_demote(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
-        their_player_name = await their_player.get_field(PlayerFields.player_name)
+        their_player_name = await their_player_record.get_field(
+            PlayerFields.player_name
+        )
         captain = None
         cocaptain = None
         players = []
@@ -138,7 +149,7 @@ async def team_cocaptain_demote(
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await their_player.get_field(PlayerFields.discord_id))}"
+        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=await their_player_record.get_field(PlayerFields.discord_id))}"
         team_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, team_name=await our_team.get_field(TeamFields.team_name))}"
         await discord_helpers.log_to_channel(
             interaction=interaction,
