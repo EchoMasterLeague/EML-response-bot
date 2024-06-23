@@ -19,12 +19,15 @@ async def code_block(text: str, language: str = "json") -> str:
 ### Files ###
 
 
-async def discord_file_from_string(
-    content: str, filename: str = "file.txt"
-) -> discord.File:
-    """Convert a string to a Discord file"""
-    data_buffer = BytesIO(content.encode("utf-8"))
-    return discord.File(fp=data_buffer, filename=filename)
+class EmlDiscordPseudoFile:
+
+    def __init__(self, name: str, content: str):
+        self._name = name
+        self._content = content
+
+    async def to_discord_file(self):
+        data_buffer = BytesIO(self._content.encode("utf-8"))
+        return discord.File(fp=data_buffer, filename=self._name)
 
 
 ### Messages ###
@@ -34,25 +37,29 @@ async def final_message(
     interaction: discord.Interaction,
     message: str,
     ephemeral: bool = False,
-    files: list[discord.File] = [],
+    files: list[EmlDiscordPseudoFile] = [],
     failure: bool = False,
 ):
     """Send a final message to an interaction"""
-    message_file = None
-    if len(str(message)) > constants.DISCORD_MESSAGE_SIZE_LIMIT:
-        # create a temporary file to hold the message
-        data_buffer = BytesIO(message.encode("utf-8"))
-        message_file = discord.File(fp=data_buffer, filename="message.txt")
+    original_message = message
+    if len(str(original_message)) > constants.DISCORD_MESSAGE_SIZE_LIMIT:
+        # we need two of these because the buffer gets consumed when first used
+        message_as_file = EmlDiscordPseudoFile(
+            name="message.txt", content=original_message
+        )
+        files = [message_as_file] + files
         message = "Message too long. See attached file."
-    if message_file:
-        files = [message_file] + files
     if not interaction.response.is_done():
         await interaction.response.send_message(
-            content=message, ephemeral=ephemeral, files=files
+            content=message,
+            ephemeral=ephemeral,
+            files=[await file.to_discord_file() for file in files],
         )
     else:
         await interaction.followup.send(
-            content=message, ephemeral=ephemeral, files=files
+            content=message,
+            ephemeral=ephemeral,
+            files=[await file.to_discord_file() for file in files],
         )
     # Log result
     command = f"/{interaction.command.name}"
@@ -76,7 +83,7 @@ async def final_message(
         command=command,
         response=message,
         success=not failure,
-        files=files,
+        files=[await file.to_discord_file() for file in files],
     )
 
 

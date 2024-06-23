@@ -144,43 +144,43 @@ async def admin_fix_discord_roles(
         # Remove empty roles
         count_empty = 0
         other_roles = []
-        player_roles = []
+        league_roles = []
         empty_other_roles = []
-        empty_player_roles = []
+        empty_league_roles = []
         # get guild roles
         logs += "\n".join(
             [
-                "Player Role Prefixes:",
+                "League Role Prefixes:",
                 json.dumps(role_prefixes, indent=4),
                 "",
             ]
         )
         for role in interaction.guild.roles:
-            player_role = False
+            league_role = False
             if any(role.name.startswith(prefix) for prefix in role_prefixes):
-                player_role = True
-            if player_role:
-                player_roles += [role.name]
+                league_role = True
+            if league_role:
+                league_roles += [role.name]
             else:
                 other_roles += [role.name]
             if not role.members:
-                if player_role:
-                    empty_player_roles += [role.name]
+                if league_role:
+                    empty_league_roles += [role.name]
                 else:
                     empty_other_roles += [role.name]
 
         # sort roles
         other_roles = sorted(other_roles)
-        player_roles = sorted(player_roles)
+        league_roles = sorted(league_roles)
         empty_other_roles = sorted(empty_other_roles)
-        empty_player_roles = sorted(empty_player_roles)
+        empty_league_roles = sorted(empty_league_roles)
         # show roles
         all_guild_roles = {
-            "All Player Roles": player_roles,
+            "All League Roles": league_roles,
             "All Other Roles": other_roles,
         }
         empty_guild_roles = {
-            "Empty Player Roles": empty_player_roles,
+            "Empty League Roles": empty_league_roles,
             "Empty Other Roles": empty_other_roles,
         }
         logs += "\n".join(
@@ -198,7 +198,7 @@ async def admin_fix_discord_roles(
             ]
         )
         # remove empty roles
-        for role_name in empty_player_roles:
+        for role_name in empty_league_roles:
             # WARNING
             # await discord_helpers.guild_role_remove_if_exists(interaction.guild, role_name)
             count_empty += 1
@@ -293,7 +293,7 @@ async def admin_fix_discord_roles(
         response_dictionary = {
             "player_role_dels_needed": count_removed,
             "player_role_adds_needed": count_added,
-            "empty_player_role_count": count_empty,
+            "empty_league_role_count": count_empty,
         }
         response_code_block = await discord_helpers.code_block(
             await general_helpers.format_json(response_dictionary), "json"
@@ -307,7 +307,9 @@ async def admin_fix_discord_roles(
                     "",
                 ]
             ),
-            files=[await discord_helpers.discord_file_from_string(logs, "output.txt")],
+            files=[
+                discord_helpers.EmlDiscordPseudoFile(name="output.txt", content=logs)
+            ],
             ephemeral=True,
         )
 
