@@ -300,8 +300,8 @@ async def admin_fix_discord_roles(
         #                              RESPONSE                               #
         #######################################################################
         response_dictionary = {
-            "player_role_dels_needed": count_removed,
             "player_role_adds_needed": count_added,
+            "player_role_dels_needed": count_removed,
             "empty_league_role_count": count_empty,
         }
         response_code_block = await discord_helpers.code_block(
