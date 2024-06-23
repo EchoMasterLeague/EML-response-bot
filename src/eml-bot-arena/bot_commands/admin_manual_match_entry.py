@@ -239,7 +239,12 @@ async def admin_manual_match_entry(
         )
         await discord_helpers.log_to_channel(
             interaction=interaction,
-            message=f"Match updated for {match_type} match between {team_a_mention} and {team_b_mention}",
+            message="\n".join(
+                [
+                    f"Match updated for `{match_type}` match between {team_a_mention} and {team_b_mention}:",
+                    f"{response_code_block}",
+                ]
+            ),
         )
 
     # Errors
