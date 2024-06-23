@@ -150,6 +150,7 @@ async def admin_fix_discord_roles(
         # get guild roles
         logs += "\n".join(
             [
+                "###############################################################################",
                 "League Role Prefixes:",
                 json.dumps(role_prefixes, indent=4),
                 "",
@@ -185,15 +186,17 @@ async def admin_fix_discord_roles(
         }
         logs += "\n".join(
             [
-                "All Guild Roles:",
-                json.dumps(all_guild_roles, indent=4),
+                "###############################################################################",
+                "Empty Guild Roles:",
+                json.dumps(empty_guild_roles, indent=4),
                 "",
             ]
         )
         logs += "\n".join(
             [
-                "Empty Guild Roles:",
-                json.dumps(empty_guild_roles, indent=4),
+                "###############################################################################",
+                "All Guild Roles:",
+                json.dumps(all_guild_roles, indent=4),
                 "",
             ]
         )
@@ -234,14 +237,17 @@ async def admin_fix_discord_roles(
                 # await discord_helpers.member_role_remove_by_prefix(member, role_name)
                 count_removed += 1
         player_role_removals = dict(sorted(player_role_removals.items()))
-        logs += "\n".join(
-            [
-                "###############################################################################",
-                "(player roles in discord that do not match database records)",
-                "Player Roles to REMOVE:",
-                json.dumps(player_role_removals, indent=4),
-                "",
-            ]
+        logs = (
+            "\n".join(
+                [
+                    "###############################################################################",
+                    "(player roles in discord that do not match database records)",
+                    "Player Roles to REMOVE:",
+                    json.dumps(player_role_removals, indent=4),
+                    "",
+                ]
+            )
+            + logs
         )
 
         # Players with roles in the database, but not in discord
@@ -277,14 +283,17 @@ async def admin_fix_discord_roles(
                 # await discord_helpers.member_role_add_if_needed(member, role_name)
                 count_added += 1
         player_role_additions = dict(sorted(player_role_additions.items()))
-        logs += "\n".join(
-            [
-                "###############################################################################",
-                "(player roles needed in discord to match database records)",
-                "Player Roles to ADD:",
-                json.dumps(player_role_additions, indent=4),
-                "",
-            ]
+        logs = (
+            "\n".join(
+                [
+                    "###############################################################################",
+                    "(player roles needed in discord to match database records)",
+                    "Player Roles to ADD:",
+                    json.dumps(player_role_additions, indent=4),
+                    "",
+                ]
+            )
+            + logs
         )
 
         #######################################################################
