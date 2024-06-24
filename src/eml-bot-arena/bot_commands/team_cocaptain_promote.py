@@ -57,13 +57,13 @@ async def team_cocaptain_promote(
         )
         assert (
             their_teamplayer_records
-        ), f"Player `{await their_player_record.get_field(PlayerFields.name)}` is not on any team."
+        ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not on any team."
         their_teamplayer_record = their_player_records[0]
         assert my_teamplayer_record.get_field(
             TeamPlayerFields.team_id
         ) == their_teamplayer_record.get_field(
             TeamPlayerFields.team_id
-        ), f"Player `{await their_player_record.get_field(PlayerFields.name)}` is not on your team."
+        ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not on your team."
         # "Our" TeamPlayers
         our_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
