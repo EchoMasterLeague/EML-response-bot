@@ -96,10 +96,11 @@ async def team_cocaptain_promote(
 
         # Update "Their" Discord roles
         await discord_helpers.member_add_cocaptain_role(
-            await discord_helpers.member_from_discord_id(
+            member=await discord_helpers.member_from_discord_id(
                 guild=interaction.guild,
                 discord_id=await their_player_record.get_field(PlayerFields.discord_id),
-            )
+            ),
+            region=await their_player_record.get_field(PlayerFields.region),
         )
 
         # Update "Their" TeamPlayer record
