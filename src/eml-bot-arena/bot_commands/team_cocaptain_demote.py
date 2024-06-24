@@ -58,7 +58,7 @@ async def team_cocaptain_demote(
         assert (
             their_teamplayer_records
         ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not on any team."
-        their_teamplayer_record = their_player_records[0]
+        their_teamplayer_record = their_teamplayer_records[0]
         assert await my_teamplayer_record.get_field(
             TeamPlayerFields.team_id
         ) == await their_teamplayer_record.get_field(
