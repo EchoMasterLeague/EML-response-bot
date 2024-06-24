@@ -33,9 +33,9 @@ async def team_cocaptain_demote(
             their_player_records
         ), f"Player `{discord_member.display_name}` not found. Are they registered?"
         their_player_record = their_player_records[0]
-        assert my_player_record.get_field(
+        assert await my_player_record.get_field(
             PlayerFields.record_id
-        ) != their_player_record.get_field(
+        ) != await their_player_record.get_field(
             PlayerFields.record_id
         ), "Cannot demote yourself."
         # "My" TeamPlayer
@@ -59,12 +59,12 @@ async def team_cocaptain_demote(
             their_teamplayer_records
         ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not on any team."
         their_teamplayer_record = their_player_records[0]
-        assert my_teamplayer_record.get_field(
+        assert await my_teamplayer_record.get_field(
             TeamPlayerFields.team_id
-        ) == their_teamplayer_record.get_field(
+        ) == await their_teamplayer_record.get_field(
             TeamPlayerFields.team_id
         ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not on your team."
-        assert their_teamplayer_record.get_field(
+        assert await their_teamplayer_record.get_field(
             TeamPlayerFields.is_co_captain
         ), f"Player `{await their_player_record.get_field(PlayerFields.player_name)}` is not a co-captain."
         # "Our" TeamPlayers
