@@ -115,8 +115,7 @@ async def admin_suspend_player(
                     )
                     # Remove Discord Team Roles
                     await discord_helpers.member_remove_team_roles(
-                        guild=interaction.guild,
-                        discord_member=await discord_helpers.member_from_discord_id(
+                        member=await discord_helpers.member_from_discord_id(
                             guild=interaction.guild,
                             discord_id=await teammate_teamplayer.get_field(
                                 TeamPlayerFields.player_id
