@@ -124,7 +124,7 @@ async def admin_manual_match_entry(
                 outcome
             ), f"Outcome must be one of: [{', '.join([str(option.value) for option in MatchResult if option != MatchResult.DRAW])}]"
         # Match - Scores
-        if scores:
+        if scores and scores[0] and scores[0][0] is not None:
             is_sores_valid = await match_helpers.is_score_structure_valid(scores)
             assert is_sores_valid, f"Error: Scores could not be parsed."
             assert await match_helpers.is_outcome_consistent_with_scores(
