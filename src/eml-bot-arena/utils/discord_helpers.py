@@ -298,8 +298,8 @@ async def member_remove_roles(
     for role in member.roles:
         if (
             any(role.name == role_name for role_name in role_name_list)
-            or any(role.name.startswith(suffix) for suffix in role_suffix_list)
-            or any(role.name.endswith(prefix) for prefix in role_prefix_list)
+            or any(role.name.startswith(prefix) for prefix in role_prefix_list)
+            or any(role.name.endswith(suffix) for suffix in role_suffix_list)
         ):
             await member.remove_roles(role)
 
