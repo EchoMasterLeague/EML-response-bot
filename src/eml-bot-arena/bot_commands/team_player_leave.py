@@ -33,7 +33,7 @@ async def team_player_leave(
         )
         assert my_teamplayer_records, "You are not a member of a team."
         my_teamplayer_record = my_teamplayer_records[0]
-        # "Our" TeamPlayer
+        # "Our" TeamPlayers
         our_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
                 team_id=await my_teamplayer_record.get_field(TeamPlayerFields.team_id)
@@ -46,6 +46,44 @@ async def team_player_leave(
         )
         assert our_team_records, "Your team could not be found."
         our_team_record = our_team_records[0]
+
+        # "Our" Players
+        our_player_records = []
+        for teamplayer_record in our_teamplayer_records:
+            palyer_records = await database.table_player.get_player_records(
+                record_id=await teamplayer_record.get_field(TeamPlayerFields.player_id)
+            )
+            our_player_records.extend(palyer_records)
+        # "Co-Captain" TeamPlayer
+        cocaptain_teamplayer_record = None
+        for teamplayer_record in our_teamplayer_records:
+            if await teamplayer_record.get_field(TeamPlayerFields.is_co_captain):
+                cocaptain_teamplayer_record = teamplayer_record
+        # "Co-Captain" Player
+        cocaptain_player_record = None
+        if cocaptain_teamplayer_record:
+            cocaptain_player_records = await database.table_player.get_player_records(
+                record_id=await cocaptain_teamplayer_record.get_field(
+                    TeamPlayerFields.player_id
+                )
+            )
+            assert cocaptain_player_records, "Error: Could not find co-captain player."
+            cocaptain_player_record = cocaptain_player_records[0]
+        # "Captain" TeamPlayer
+        captain_teamplayer_record = None
+        for teamplayer_record in our_teamplayer_records:
+            if await teamplayer_record.get_field(TeamPlayerFields.is_captain):
+                captain_teamplayer_record = teamplayer_record
+        # "Captain" Player
+        captain_player_record = None
+        if captain_teamplayer_record:
+            captain_player_records = await database.table_player.get_player_records(
+                record_id=await captain_teamplayer_record.get_field(
+                    TeamPlayerFields.player_id
+                )
+            )
+            assert captain_player_records, "Error: Could not find captain player."
+            captain_player_record = captain_player_records[0]
 
         #######################################################################
         #                             PROCESSING                              #
@@ -64,20 +102,42 @@ async def team_player_leave(
         )
         assert new_cooldown, "Error: Could not apply cooldown."
 
-        # Delete "My" TeamPlayer
+        # If "My" TeamPlayer is Captain
         if await my_teamplayer_record.get_field(TeamPlayerFields.is_captain):
-            # Get co-captain record
-            cocaptain_record = None
-            for teamplayer in our_teamplayer_records:
-                if await teamplayer.get_field(TeamPlayerFields.is_co_captain):
-                    cocaptain_record = teamplayer
+            # Ensure co-captain record
             assert (
-                cocaptain_record
+                cocaptain_teamplayer_record
             ), "You must promote a co-captain before leaving the team."
-            # Promote co-captain to captain
-            await cocaptain_record.set_field(TeamPlayerFields.is_captain, True)
-            await cocaptain_record.set_field(TeamPlayerFields.is_co_captain, False)
-            await database.table_team_player.update_team_player_record(cocaptain_record)
+            # Promote co-captain to captain - Database
+            await cocaptain_teamplayer_record.set_field(
+                TeamPlayerFields.is_captain, True
+            )
+            await cocaptain_teamplayer_record.set_field(
+                TeamPlayerFields.is_co_captain, False
+            )
+            await database.table_team_player.update_team_player_record(
+                cocaptain_teamplayer_record
+            )
+            # Promote co-captain to captain - Discord
+            assert cocaptain_player_record, "Error: Could not find co-captain player."
+            cocaptain_discord_member = await discord_helpers.member_from_discord_id(
+                guild=interaction.guild,
+                discord_id=await cocaptain_player_record.get_field(
+                    PlayerFields.discord_id
+                ),
+            )
+            await discord_helpers.member_remove_captain_roles(
+                member=cocaptain_discord_member
+            )
+            await discord_helpers.member_add_captain_role(
+                member=cocaptain_discord_member,
+                region=await cocaptain_player_record.get_field(PlayerFields.region),
+            )
+            # Promote co-captain to captain - Response
+            captain_player_record = cocaptain_player_record
+            cocaptain_player_record = None
+
+        # Delete "My" TeamPlayer
         await database.table_team_player.delete_team_player_record(my_teamplayer_record)
 
         # Update "Our" Team Active Status
@@ -95,19 +155,29 @@ async def team_player_leave(
         #                              RESPONSE                               #
         #######################################################################
         team_name = f"{await our_team_record.get_field(TeamFields.team_name)}"
-        captain = None
-        cocaptain = None
+        captain = (
+            await captain_player_record.get_field(PlayerFields.name)
+            if captain_player_record
+            else None
+        )
+        cocaptain = (
+            await cocaptain_player_record.get_field(PlayerFields.name)
+            if cocaptain_player_record
+            else None
+        )
         players = []
-        for player in our_teamplayer_records:
+        for teamplayer_record in our_teamplayer_records:
             my_id = await my_player_record.get_field(PlayerFields.record_id)
-            if my_id == await player.get_field(TeamPlayerFields.player_id):
+            if my_id == await teamplayer_record.get_field(TeamPlayerFields.player_id):
                 continue
-            elif await player.get_field(TeamPlayerFields.is_captain):
-                captain = await player.get_field(TeamPlayerFields.vw_player)
-            elif await player.get_field(TeamPlayerFields.is_co_captain):
-                cocaptain = await player.get_field(TeamPlayerFields.vw_player)
+            if await teamplayer_record.get_field(TeamPlayerFields.is_captain):
+                continue
+            if await teamplayer_record.get_field(TeamPlayerFields.is_co_captain):
+                continue
             else:
-                players.append(await player.get_field(TeamPlayerFields.vw_player))
+                players.append(
+                    await teamplayer_record.get_field(TeamPlayerFields.vw_player)
+                )
         response_dictionary = {
             "team_name": f"{await our_team_record.get_field(TeamFields.team_name)}",
             "is_active": f"{await our_team_record.get_field(TeamFields.status)}",
