@@ -156,12 +156,12 @@ async def team_player_leave(
         #######################################################################
         team_name = f"{await our_team_record.get_field(TeamFields.team_name)}"
         captain = (
-            await captain_player_record.get_field(PlayerFields.name)
+            await captain_player_record.get_field(PlayerFields.player_name)
             if captain_player_record
             else None
         )
         cocaptain = (
-            await cocaptain_player_record.get_field(PlayerFields.name)
+            await cocaptain_player_record.get_field(PlayerFields.player_name)
             if cocaptain_player_record
             else None
         )
