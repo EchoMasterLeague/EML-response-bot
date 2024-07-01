@@ -46,16 +46,13 @@ async def iso_timestamp(epoch_timestamp: int = None) -> str:
 
 async def season_week(epoch_timestamp: int = None) -> str:
     """Return the current season week based on the epoch timestamp (e.g. 202050)"""
+    tz = pytz.timezone(constants.TIME_TIMEZONE_EML_OFFICIAL)
     if epoch_timestamp is None:
         epoch_timestamp = datetime.datetime.now().timestamp()
-    # Determine year in UTC from the timestamp
-    year = datetime.datetime.fromtimestamp(
-        epoch_timestamp, tz=datetime.timezone.utc
-    ).year
-    # Determine the week of the year in UTC from the timestamp
-    week = datetime.datetime.fromtimestamp(
-        epoch_timestamp, tz=datetime.timezone.utc
-    ).isocalendar()[1]
+    # Determine year from the timestamp
+    year = datetime.datetime.fromtimestamp(epoch_timestamp, tz=tz).year
+    # Determine the week of the year from the timestamp
+    week = datetime.datetime.fromtimestamp(epoch_timestamp, tz=tz).isocalendar()[1]
     # Calculate the season week
     year_week = f"{year}{week:02d}"
     return year_week
