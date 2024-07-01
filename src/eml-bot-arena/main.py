@@ -866,6 +866,27 @@ async def bot_admin_manual_match_entry(
         )
 
 
+#######################
+### Vanity Commands ###
+#######################
+
+
+@bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_VANITY_REDACTED}")
+async def vanity_redacted(interaction: discord.Interaction):
+    """Returns number of days since the user {redacted} attempted to register with invalid characters in EML"""
+    await bot_helpers.command_log({**locals()})
+    if await bot_helpers.command_is_allowed(
+        database=db, interaction=interaction, skip_channel=True
+    ):
+        now = datetime.now(timezone.utc)
+        june_28 = datetime(2024, 6, 28, 0, 0, 0, 0, timezone.utc)
+        days_since = (now - june_28).days
+        redacted = "{redacted}"
+        await interaction.response.send_message(
+            f"Day {days_since} of the Great {redacted} League Name Rule Boycott"
+        )
+
+
 ###^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^###
 ###                                          Bot Commands End                                                       ###
 #######################################################################################################################
