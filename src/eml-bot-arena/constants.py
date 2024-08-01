@@ -99,7 +99,7 @@ LINK_ACTION_LIST = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETy
 LINK_BOT_COMMANDS = "https://echomasterleague.com/eml-bot-commands/"
 LINK_BOT_INSTRUCTIONS = "https://echomasterleague.com/eml-bot-instructions/"
 LINK_CALENDAR_EU = "https://cdn.discordapp.com/attachments/1184569245800083637/1229790087814840340/EML_CAL_EU_1PNG.png?ex=6630f645&is=661e8145&hm=29f34543a8d2f4aa3ddd22025922cbc917523c364f91a808b8581bcad1d003a6&"
-LINK_CALENDAR_NA = "https://echomasterleague.com/wp-content/uploads/2024/08/echo-master-league-calendar-1.png?w=960"
+LINK_CALENDAR_NA = "https://echomasterleague.com/wp-content/uploads/2024/08/echo-master-league-calendar-1.png?"
 LINK_DB_DEV_SPREADHEET_URL = "https://docs.google.com/spreadsheets/d/1tQ9BuaCF8kKx_oIc5T5erqkkXt7CtnUopAiOfBaPKVI"
 LINK_DB_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Pl2-PB9c2BUDszs68U_ZCBqffRH2REXPe5RCj4xCcS8"
 LINK_DB_VIEW_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1z_gAHwQaakiRP4dsenxpDC0brStTTWmnWjm_YSU2w5c"
