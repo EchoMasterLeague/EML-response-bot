@@ -203,7 +203,9 @@ async def ranks(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_TEAM_RANKINGS
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_TEAM_RANKINGS", default_str=constants.LINK_TEAM_RANKINGS,
+            skip_db=False)
         await interaction.response.send_message(f"Team Rankings: <{link}>")
 
 
@@ -214,7 +216,9 @@ async def matches(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_LEAGUE_MATCHES
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_LEAGUE_MATCHES", default_str=constants.LINK_LEAGUE_MATCHES,
+            skip_db=False)
         await interaction.response.send_message(f"Upcoming Matches: <{link}>")
 
 
@@ -225,7 +229,9 @@ async def rosters(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_LEAGUE_ROSTER
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_LEAGUE_ROSTER", default_str=constants.LINK_LEAGUE_ROSTER,
+            skip_db=False)
         await interaction.response.send_message(f"Roster: <{link}>")
 
 
@@ -236,7 +242,9 @@ async def website(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_EML_WEBSITE
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_EML_WEBSITE", default_str=constants.LINK_EML_WEBSITE,
+            skip_db=False)
         await interaction.response.send_message(f"EML Website: <{link}>")
 
 
@@ -247,7 +255,9 @@ async def website(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_BOT_INSTRUCTIONS
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_BOT_INSTRUCTIONS", default_str=constants.LINK_BOT_INSTRUCTIONS,
+            skip_db=False)
         await interaction.response.send_message(f"Bot Instructions: <{link}>")
 
 
@@ -258,7 +268,9 @@ async def website(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_BOT_COMMANDS
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_BOT_COMMANDS", default_str=constants.LINK_BOT_COMMANDS,
+            skip_db=False)
         await interaction.response.send_message(f"Command Reference: <{link}>")
 
 
@@ -269,7 +281,9 @@ async def leaguerules(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_LEAGUE_RULES
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_LEAGUE_RULES", default_str=constants.LINK_LEAGUE_RULES,
+            skip_db=False)
         await interaction.response.send_message(f"League Rules: <{link}>")
 
 
@@ -280,7 +294,9 @@ async def coc(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_DISCORD_CHANNEL_EML_COC
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_DISCORD_CHANNEL_EML_COC", default_str=constants.LINK_DISCORD_CHANNEL_EML_COC,
+            skip_db=False)
         await interaction.response.send_message(f"EML Code of Conduct: <{link}>")
 
 
@@ -291,7 +307,9 @@ async def ticket(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_DISCORD_CHANNEL_EML_TICKETS
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_DISCORD_CHANNEL_EML_TICKETS", default_str=constants.LINK_DISCORD_CHANNEL_EML_TICKETS,
+            skip_db=False)
         await interaction.response.send_message(f"EML Tickets: <{link}>")
 
 
@@ -302,7 +320,9 @@ async def support(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_DISCORD_CHANNEL_EML_SUPPORT
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_DISCORD_CHANNEL_EML_SUPPORT", default_str=constants.LINK_DISCORD_CHANNEL_EML_SUPPORT,
+            skip_db=False)
         await interaction.response.send_message(f"EML Support (FAQ): <{link}>")
 
 
@@ -313,7 +333,9 @@ async def staff_app(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_STAFF_APPLICATION
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_STAFF_APPLICATION", default_str=constants.LINK_STAFF_APPLICATION,
+            skip_db=False)
         await interaction.response.send_message(f"Staff Application: <{link}>")
 
 
@@ -324,7 +346,9 @@ async def staff_app(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_CALENDAR_EU
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_CALENDAR_EU", default_str=constants.LINK_CALENDAR_EU,
+            skip_db=False)
         await interaction.response.send_message(f"**Europe**: [EU]({link})")
 
 
@@ -335,7 +359,9 @@ async def staff_app(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_CALENDAR_NA
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_CALENDAR_NA", default_str=constants.LINK_CALENDAR_NA,
+            skip_db=False)
         await interaction.response.send_message(f"**North America**: [NA]({link})")
 
 
@@ -346,7 +372,9 @@ async def ap(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_ACCUMULATED_POINTS
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_ACCUMULATED_POINTS", default_str=constants.LINK_ACCUMULATED_POINTS,
+            skip_db=False)
         await interaction.response.send_message(f"Accumlulated Points: <{link}>")
 
 
@@ -357,7 +385,9 @@ async def action_list(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link = constants.LINK_ACTION_LIST
+        link = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_ACTION_LIST", default_str=constants.LINK_ACTION_LIST,
+            skip_db=False)
         await interaction.response.send_message(f"Action List: <{link}>")
 
 
@@ -368,8 +398,12 @@ async def lounge_report(interaction: discord.Interaction):
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, skip_channel=True
     ):
-        link_lounge = constants.LINK_ECHO_VR_LOUNGE
-        link_report = constants.LINK_ECHO_VR_LOUNGE_TICKETS
+        link_lounge = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_ECHO_VR_LOUNGE", default_str=constants.LINK_ECHO_VR_LOUNGE,
+            skip_db=False)
+        link_report = await bot_helpers.get_constant(database=db, interaction=interaction,
+            constant_name="LINK_ECHO_VR_LOUNGE_TICKETS", default_str=constants.LINK_ECHO_VR_LOUNGE_TICKETS,
+            skip_db=False)
         await interaction.response.send_message(
             f"**Echo VR Lounge Reporting**:\n"
             f"Gameplay violations such as halfcycling, cheat engine, etc. need to reported with evidence in a ticket to the Echo VR Lounge. Any action taken by EVRL will be considered for action by the EML AP system.\n\n"

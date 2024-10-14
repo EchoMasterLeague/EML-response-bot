@@ -12,6 +12,7 @@ from database.table_team import TeamTable
 from database.table_team_invite import TeamInviteTable
 from database.table_team_player import TeamPlayerTable
 from database.table_vw_roster import VwRosterTable
+from database.table_constants import ConstantsTable
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,3 +37,5 @@ class FullDatabase:
         self.table_team_invite = TeamInviteTable(core_database)
         self.table_team_player = TeamPlayerTable(core_database)
         self.table_vw_roster = VwRosterTable(core_database)
+        self.table_constants = ConstantsTable(core_database)
+

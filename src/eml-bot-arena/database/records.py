@@ -15,6 +15,7 @@ from database.fields import (
     TeamInviteFields,
     TeamPlayerFields,
     VwRosterFields,
+    ConstantsFields,
 )
 from typing import Type
 import errors.database_errors as DbErrors
@@ -590,3 +591,22 @@ class LeagueSubMatchInviteRecord(BaseRecord):
     ):
         """Create a record from a list of data (e.g. from `gsheets`)"""
         super().__init__(data_list, fields)
+
+
+### Constants ###
+
+
+class ConstantsRecord(BaseRecord):
+    """Record class for table Example"""
+
+    fields: Type[ConstantsFields]
+
+    def __init__(
+        self,
+        data_list: list[int | float | str | None],
+        fields: Type[ConstantsFields] = ConstantsFields,
+    ):
+        """Create a record from a list of data (e.g. from `gsheets`)"""
+        super().__init__(data_list, fields)
+
+

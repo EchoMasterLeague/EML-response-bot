@@ -94,6 +94,7 @@ LEAGUE_DB_TAB_TEAM = "Team"
 LEAGUE_DB_TAB_TEAM_INVITE = "TeamInvite"
 LEAGUE_DB_TAB_TEAM_PLAYER = "TeamPlayer"
 LEAGUE_DB_TAB_VW_ROSTER = "vwRoster"
+LEAGUE_DB_TAB_CONSTANTS = "Constants"
 LINK_ACCUMULATED_POINTS = "https://echomasterleague.com/eml-accumulated-points-ap-system/"  # Comment added to keep line long enough for the formatter to ignore
 LINK_ACTION_LIST = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhkQIBw9ETybdGNVggWnAf9ueizzDMc0lbKcsDPQsD6c1jDd8p8u8OUwl5gdcR2M14KmCV6-eF03p4/pubhtml"
 LINK_BOT_COMMANDS = "https://echomasterleague.com/eml-bot-commands/"
