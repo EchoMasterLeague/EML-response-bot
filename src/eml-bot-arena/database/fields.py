@@ -282,3 +282,15 @@ class LeagueSubMatchInviteFields(IntEnum):
     vw_sub = 9  # The name of the sub player
     vw_team = 10  # The name of the team
     vw_captain = 11  # The name of the captain
+
+### Constants ###
+# this table is designed to be manually edited, so no provision is provided for unique id's, timestamps, etc
+
+@verify(EnumCheck.UNIQUE, EnumCheck.CONTINUOUS)
+class ConstantsFields(IntEnum):
+    """Lookup for column numbers of fields in the Constants table"""
+
+    name = 0
+    value = 1
+
+
