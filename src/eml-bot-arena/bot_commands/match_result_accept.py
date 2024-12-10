@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 async def match_result_accept(
     database: FullDatabase,
     interaction: discord.Interaction,
+    rankings_link: str = constants.LINK_TEAM_RANKINGS,
 ):
     """Accept a Match Result Invite"""
     try:
@@ -344,7 +345,7 @@ async def match_result_accept(
                 [
                     f"- {match_type}",
                     "",
-                    f"[Rankings](https://echomasterleague.com/2024-season-1-team-rankings/)",
+                    f"[Rankings]({rankings_link})",
                 ],
             ),
             inline=True,
