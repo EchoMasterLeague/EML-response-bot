@@ -94,8 +94,6 @@ async def admin_fix_discord_roles(
             )
             discord_id = lookup_player_discord_id_by_id.get(player_id)
             region = lookup_player_region_by_id.get(player_id)
-            if not region:
-                print("debug: ", player_id, region)
             team_name = lookup_team_name_by_id.get(team_id)
             # Team
             role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
@@ -269,9 +267,7 @@ async def admin_fix_discord_roles(
         count_added = 0
         player_role_additions = {}
         for role_name, discord_ids in db_players_without_discord.items():
-            print("debug: ", role_name, discord_ids)
             for discord_id in discord_ids:
-                print("    debug: ", discord_id)
                 member_display_name = ""
                 member = await discord_helpers.member_from_discord_id(
                     interaction.guild, discord_id

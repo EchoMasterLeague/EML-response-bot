@@ -181,8 +181,6 @@ async def get_guild_channel(
 
 async def member_from_discord_id(guild: discord.Guild, discord_id: str):
     """Get a Guild Member from a Discord ID"""
-    if not discord_id:
-        return None
     try:
         member = guild.get_member(discord_id)
         member = await guild.fetch_member(discord_id) if not member else member
