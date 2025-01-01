@@ -904,7 +904,7 @@ async def bot_admin_suspend_player(
     reason: str,
     duration_days: int,
     player_id: str = None,
-    player: discord.Member = None,
+    discord_member: discord.Member = None,
 ):
     """Suspend a Player"""
     await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
@@ -917,7 +917,7 @@ async def bot_admin_suspend_player(
             reason=reason,
             expiration_days=duration_days,
             player_id=player_id,
-            discord_member=player,
+            discord_member=discord_member,
         )
 
 
