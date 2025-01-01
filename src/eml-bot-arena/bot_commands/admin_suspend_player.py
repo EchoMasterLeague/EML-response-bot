@@ -83,8 +83,10 @@ async def admin_suspend_player(
         # Get Player Name
         if discord_member:
             player_name = discord_member.display_name
-        else:
+        elif their_player_record:
             player_name = await their_player_record.get_field(PlayerFields.player_name)
+        else:
+            player_name = None
 
         # Delete Existing Suspension
         if their_existing_suspension_record:
