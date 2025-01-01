@@ -94,6 +94,8 @@ async def admin_fix_discord_roles(
             )
             discord_id = lookup_player_discord_id_by_id.get(player_id)
             region = lookup_player_region_by_id.get(player_id)
+            if not region:
+                print("debug: ", player_id, region)
             team_name = lookup_team_name_by_id.get(team_id)
             # Team
             role_name = f"{constants.DISCORD_ROLE_PREFIX_TEAM}{team_name}"
