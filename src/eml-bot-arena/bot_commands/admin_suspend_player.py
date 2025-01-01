@@ -25,6 +25,11 @@ async def admin_suspend_player(
         if not player_id and discord_member:
             player_id = str(discord_member.id)
         assert player_id, f"Error: Player not specified."
+        # "Their" discord_member
+        if not discord_member:
+            discord_member = await discord_helpers.member_from_discord_id(
+                guild=interaction.guild, discord_id=player_id
+            )
 
         #######################################################################
         #                               RECORDS                               #
@@ -106,7 +111,8 @@ async def admin_suspend_player(
         if their_player_record:
             await database.table_player.delete_player_record(their_player_record)
         # Remove All "Their" Discord League Roles
-        await discord_helpers.member_remove_all_league_roles(member=discord_member)
+        if discord_member:
+            await discord_helpers.member_remove_all_league_roles(member=discord_member)
 
         # Disband "Their" Team (if captain)
         if their_teamplayer_record:
