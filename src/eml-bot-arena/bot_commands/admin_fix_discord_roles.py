@@ -267,7 +267,9 @@ async def admin_fix_discord_roles(
         count_added = 0
         player_role_additions = {}
         for role_name, discord_ids in db_players_without_discord.items():
+            print("debug: ", role_name, discord_ids)
             for discord_id in discord_ids:
+                print("    debug: ", discord_id)
                 member_display_name = ""
                 member = await discord_helpers.member_from_discord_id(
                     interaction.guild, discord_id
