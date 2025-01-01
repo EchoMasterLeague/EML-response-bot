@@ -901,9 +901,10 @@ async def bot_admin_generate_uuid(interaction: discord.Interaction):
 @bot.tree.command(name=f"{BOT_PREFIX}{constants.COMMAND_ZADMINSUSPEND}")
 async def bot_admin_suspend_player(
     interaction: discord.Interaction,
-    player: discord.Member,
     reason: str,
     duration_days: int,
+    player_id: str = None,
+    player: discord.Member = None,
 ):
     """Suspend a Player"""
     await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
@@ -913,9 +914,10 @@ async def bot_admin_suspend_player(
         await bot_commands.admin_suspend_player(
             database=db,
             interaction=interaction,
-            discord_member=player,
             reason=reason,
             expiration_days=duration_days,
+            player_id=player_id,
+            discord_member=player,
         )
 
 

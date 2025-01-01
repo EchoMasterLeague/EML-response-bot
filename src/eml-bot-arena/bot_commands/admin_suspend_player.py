@@ -10,25 +10,34 @@ logger = logging.getLogger(__name__)
 async def admin_suspend_player(
     database: FullDatabase,
     interaction: discord.Interaction,
-    discord_member: discord.Member,
     reason: str,
     expiration_days: int,
+    player_id: str = None,
+    discord_member: discord.Member = None,
 ):
-    """Disable a command"""
+    """Suspend a Player"""
     try:
         await interaction.response.defer(ephemeral=True)
+        #######################################################################
+        #                              PARSE ARGS                             #
+        #######################################################################
+        # "Their" player_id
+        if not player_id and discord_member:
+            player_id = str(discord_member.id)
+        assert player_id, "Error: Player not specified."
+
         #######################################################################
         #                               RECORDS                               #
         #######################################################################
         # "Their" Player
         their_player_records = await database.table_player.get_player_records(
-            discord_id=discord_member.id
+            discord_id=player_id
         )
         their_player_record = their_player_records[0] if their_player_records else None
         # "Their" TeamPlayer
         their_teamplayer_records = (
             await database.table_team_player.get_team_player_records(
-                player_id=discord_member.id
+                player_id=player_id
             )
         )
         their_teamplayer_record = (
@@ -55,9 +64,7 @@ async def admin_suspend_player(
         )
         # "Their" (Existing) Suspension
         their_existing_suspension_records = (
-            await database.table_suspension.get_suspension_records(
-                player_id=discord_member.id
-            )
+            await database.table_suspension.get_suspension_records(player_id=player_id)
         )
         their_existing_suspension_record = (
             their_existing_suspension_records[0]
@@ -68,6 +75,11 @@ async def admin_suspend_player(
         #######################################################################
         #                             PROCESSING                              #
         #######################################################################
+        # Get Player Name
+        if discord_member:
+            player_name = discord_member.display_name
+        else:
+            player_name = await their_player_record.get_field(PlayerFields.player_name)
 
         # Delete Existing Suspension
         if their_existing_suspension_record:
@@ -77,8 +89,8 @@ async def admin_suspend_player(
         # Create New Suspension
         new_suspension_record = (
             await database.table_suspension.create_suspension_record(
-                player_id=discord_member.id,
-                player_name=discord_member.display_name,
+                player_id=player_id,
+                player_name=player_name,
                 reason=reason,
                 expiration=expiration_days,
             )
@@ -137,7 +149,7 @@ async def admin_suspend_player(
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
-        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
+        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=player_id)}"
         suspension_expiration = (
             f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
         )
@@ -164,7 +176,7 @@ async def admin_suspend_player(
         #######################################################################
         #                               LOGGING                               #
         #######################################################################
-        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=discord_member.id)}"
+        their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=player_id)}"
         suspension_expiration = (
             f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
         )
