@@ -907,7 +907,12 @@ async def bot_admin_suspend_player(
     discord_member: discord.Member = None,
 ):
     """Suspend a Player"""
-    await bot_helpers.command_log({**locals(), "player": f"{player.display_name}"})
+    await bot_helpers.command_log(
+        {
+            **locals(),
+            "display_name": f"{discord_member.display_name if discord_member else None}",
+        }
+    )
     if await bot_helpers.command_is_allowed(
         database=db, interaction=interaction, require_admin=True
     ):

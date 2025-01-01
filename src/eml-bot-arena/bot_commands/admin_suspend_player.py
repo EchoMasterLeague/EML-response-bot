@@ -24,7 +24,7 @@ async def admin_suspend_player(
         # "Their" player_id
         if not player_id and discord_member:
             player_id = str(discord_member.id)
-        assert player_id, "Error: Player not specified."
+        assert player_id, f"Error: Player not specified."
 
         #######################################################################
         #                               RECORDS                               #
