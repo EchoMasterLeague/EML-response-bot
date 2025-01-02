@@ -17,8 +17,7 @@ async def admin_suspend_player(
 ):
     """Suspend a Player"""
     try:
-        if interaction:
-            await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer(ephemeral=True)
         #######################################################################
         #                              PARSE ARGS                             #
         #######################################################################
@@ -27,7 +26,7 @@ async def admin_suspend_player(
             player_id = str(discord_member.id)
         assert player_id, f"Error: Player not specified."
         # "Their" discord_member
-        if not discord_member and interaction:
+        if not discord_member:
             discord_member = await discord_helpers.member_from_discord_id(
                 guild=interaction.guild, discord_id=player_id
             )
@@ -135,34 +134,29 @@ async def admin_suspend_player(
                         teammate_teamplayer
                     )
                     # Remove Discord Team Roles
-                    if interaction:
-                        await discord_helpers.member_remove_team_roles(
-                            member=await discord_helpers.member_from_discord_id(
-                                guild=interaction.guild,
-                                discord_id=await teammate_teamplayer.get_field(
-                                    TeamPlayerFields.player_id
-                                ),
+                    await discord_helpers.member_remove_team_roles(
+                        member=await discord_helpers.member_from_discord_id(
+                            guild=interaction.guild,
+                            discord_id=await teammate_teamplayer.get_field(
+                                TeamPlayerFields.player_id
                             ),
-                        )
+                        ),
+                    )
                 # Team
                 if their_team_record:
                     # Delete Team Record
                     await database.table_team.delete_team_record(their_team_record)
                     # Remove Discord Guild Team Role
-                    if interaction:
-                        await discord_helpers.guild_remove_team_role(
-                            guild=interaction.guild,
-                            team_name=await their_team_record.get_field(
-                                TeamFields.team_name
-                            ),
-                        )
+                    await discord_helpers.guild_remove_team_role(
+                        guild=interaction.guild,
+                        team_name=await their_team_record.get_field(
+                            TeamFields.team_name
+                        ),
+                    )
 
         #######################################################################
         #                              RESPONSE                               #
         #######################################################################
-        if not interaction:
-            logger.info(f"Member Auto-Suspended: {player_name}({player_id})")
-            return
         their_player_mention = f"{await discord_helpers.role_mention(guild=interaction.guild, discord_id=player_id)}"
         suspension_expiration = (
             f"{await new_suspension_record.get_field(SuspensionFields.expires_at)}"
@@ -201,12 +195,6 @@ async def admin_suspend_player(
 
     # Errors
     except AssertionError as message:
-        if interaction:
-            await discord_helpers.fail_message(interaction, message, ephemeral=True)
-        else:
-            logger.error(message)
+        await discord_helpers.fail_message(interaction, message, ephemeral=True)
     except Exception as error:
-        if interaction:
-            await discord_helpers.error_message(interaction, error, ephemeral=True)
-        else:
-            logger.error(error)
+        await discord_helpers.error_message(interaction, error, ephemeral=True)
