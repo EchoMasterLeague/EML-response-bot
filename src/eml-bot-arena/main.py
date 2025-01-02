@@ -119,6 +119,20 @@ async def on_ready():
     logger.info("Initialization Complete. Waiting for commands.")
 
 
+@bot.event
+async def on_member_remove(member: discord.Member):
+    """Event triggered when a member leaves the server."""
+    logger.info(f"Member Removed: {member.display_name}({member.id})")
+    await bot_commands.admin_suspend_player(
+        database=db,
+        interaction=None,
+        reason="Member Left Server",
+        expiration_days=await general_helpers.days_until_monday(),
+        player_id=member.id,
+        discord_member=member,
+    )
+
+
 #######################################################################################################################
 ###                                          Bot Commands Begin                                                     ###
 ###vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv###

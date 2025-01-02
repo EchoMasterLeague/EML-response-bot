@@ -75,6 +75,15 @@ async def upcoming_monday() -> int:
     return epoch_time
 
 
+async def days_until_monday() -> int:
+    """Return the number of days until the next Monday"""
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    days_until_monday = (0 - now.weekday()) % 7
+    if days_until_monday == 0:
+        days_until_monday = 7
+    return days_until_monday
+
+
 ### EML Localized Time Helpers ###
 
 
