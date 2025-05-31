@@ -1,6 +1,4 @@
-discord
+discord.py
 gspread
-nose
 python-dotenv
 pytz
-sphinx
