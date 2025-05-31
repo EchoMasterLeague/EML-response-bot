@@ -65,7 +65,7 @@ log "Activating Virtual Environment..."
 source "$PROJECT_DIR/venv/bin/activate" || die $EXIT_CODE_VENV_START "Failed to activate Virtual Environment"
 
 log "Installing dependencies..."
-pip install --quiet -r requirements.txt || die $EXIT_CODE_DEPENDENCIES "Failed to install dependencies"
+pip install --upgrade --quiet -r requirements.txt || die $EXIT_CODE_DEPENDENCIES "Failed to install dependencies"
 
 log "Starting Arena Bot..."
 cd "$VRARENA_DIR" || die $EXIT_CODE_VRARENA_DIR "Failed to change directory to $VRARENA_DIR"
